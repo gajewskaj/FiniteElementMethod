@@ -1,3 +1,4 @@
+import common
 from common import *
 from grid import Grid
 import numpy as np
@@ -36,7 +37,7 @@ class SystemOfEquations:
                 for i in range(0, 4):
                     self.H[element.node_ids[j] - 1][element.node_ids[i] - 1] += local_h[j][i]
                     self.C[element.node_ids[j] - 1][element.node_ids[i] - 1] += element.C[j][i]
-        #print(f"Global H:\n{self.H}\nGlobal C:{self.C}")
+        #common.main_logger.debug(f"Global H:\n{self.H}\nGlobal C:{self.C}")
 
     def _aggreagte_p(self, grid: Grid) -> None:
         """
@@ -45,7 +46,7 @@ class SystemOfEquations:
         for element in grid.elements:
             for i in range(0, 4):
                 self.P[element.node_ids[i] - 1] += element.P[i]
-        #print(f"Global P:\n{self.P}")
+        #common.main_logger.debug(f"Global P:\n{self.P}")
 
     def solve(self) -> np.ndarray:
         """
@@ -62,3 +63,20 @@ class SystemOfEquations:
         result: np.ndarray = linalg.solve(H, P)
         self.t0 = result
         return result
+
+def simulate(grid: Grid) -> list[np.ndarray]:
+    """
+    Returns temeratures in element nodes for all time steps.
+    """
+    temperatures: list[np.ndarray] = []
+    soe = SystemOfEquations(grid)
+    tau0: int = 0
+    tauk: float = grid.global_data.simulation_time
+    step: float = grid.global_data.simulation_step_time
+    common.main_logger.debug(f"Time        Min temp    Max temp")
+    while tau0 < tauk:
+        result: np.ndarray = soe.solve()
+        temperatures.append(result)
+        common.main_logger.debug(f"{(soe.dtau):<12}{round(min(result)[0], 3):<12}{round(max(result)[0], 3):<12}")
+        tau0+=step
+    return temperatures

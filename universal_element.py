@@ -14,9 +14,9 @@ class UniversalElement(GaussianQuadrature):
     """
     def __init__(self, n):
         super().__init__(n)
-        self.dn_dksi_tab = np.empty((self.n*self.n, 4))
-        self.dn_deta_tab = np.empty((self.n*self.n, 4))
-        self.n_tab = np.empty((self.n*self.n, 4))
+        self.dn_dksi_tab = np.empty((self.n*self.n, 4), dtype=float)
+        self.dn_deta_tab = np.empty((self.n*self.n, 4), dtype=float)
+        self.n_tab = np.empty((self.n*self.n, 4), dtype=float)
         self.surfaces: list[Surface] = [
             Surface(n), # down
             Surface(n), # right

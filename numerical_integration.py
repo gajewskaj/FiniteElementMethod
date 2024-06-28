@@ -1,4 +1,5 @@
 from common import *
+import common
 from math import *
 import numpy as np
 
@@ -57,7 +58,8 @@ class GaussianQuadrature:
                                     (322 + 13*sqrt(70))/900,
                                     (322 - 13*sqrt(70))/900])
             case _:
-                raise FiniteElementMethodException('Number of nodes in numerical integration (n) must be an integer in range (1;5).')
+                common.main_logger.error("Number of nodes in numerical integration must be an integer in range (1;5).")
+                raise HandledException
 
     def calculate_1d(self) -> float:
         """
