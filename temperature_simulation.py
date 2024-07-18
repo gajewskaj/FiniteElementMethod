@@ -39,30 +39,30 @@ def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.n
         data["temperatures"] = temperatures[i]
         filename: str = f"frame{i+1}.vtk"
         generate_file(data, template, output_dir_path, filename)
-    common.main_logger.info(f"Output files generated in '{output_dir_path}'.")
+    common.logger.info(f"Output files generated in '{output_dir_path}'.")
 
 def run() -> None:
     """
     Runs all the necessary functions to calculate max and min temperature of the element in time.
     """
     try:
-        common.main_logger = init_logging(os.path.join(output_path, "log.log"))
-        sanity_check()
+        common.logger = init_logging()
+        # sanity_check()
         input_filepath, output_dir_path = get_input_filepath()
         grid = Grid.create_from_file(input_filepath)
 
         start: float = time.time() # Start measuring time
         LocalMatricesCalculation.calculate(5, grid)
         temperatures: list[float] = simulate(grid)
-        common.main_logger.debug(temperatures)
+        common.logger.debug(temperatures)
         end: float = time.time() # Stop measuring time
 
-        common.main_logger.info(f"Calculated in {end-start} seconds.")
+        common.logger.info(f"Calculated in {end-start} seconds.")
         generate_vtk_files(output_dir_path, grid, temperatures)
     except HandledException:
-        common.main_logger.info("Script execution failed due to an exception.")
+        common.logger.info("Script execution failed due to an exception.")
     except Exception as e:
-        common.main_logger.error(f"Script execution failed due to an unexpected exception.", exc_info=True)
+        common.logger.error(f"Script execution failed due to an unexpected exception.", exc_info=True)
 
 if __name__ == "__main__":
     run()

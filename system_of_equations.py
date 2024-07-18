@@ -73,10 +73,10 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     tau0: int = 0
     tauk: float = grid.global_data.simulation_time
     step: float = grid.global_data.simulation_step_time
-    common.main_logger.debug(f"Time        Min temp    Max temp")
+    common.logger.debug(f"Time        Min temp    Max temp")
     while tau0 < tauk:
         result: np.ndarray = soe.solve()
         temperatures.append(result)
-        common.main_logger.debug(f"{(soe.dtau):<12}{round(min(result)[0], 3):<12}{round(max(result)[0], 3):<12}")
+        common.logger.debug(f"{(soe.dtau):<12}{round(min(result)[0], 3):<12}{round(max(result)[0], 3):<12}")
         tau0+=step
     return temperatures

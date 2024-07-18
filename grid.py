@@ -20,16 +20,16 @@ class GlobalData:
         self.elements_number: int = global_data_dict["Elementsnumber"]
 
     def print(self) -> None:
-        common.main_logger.debug(f"Simulation time: \t{self.simulation_time}")
-        common.main_logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
-        common.main_logger.debug(f"Conductivity: \t\t{self.conductivity}")
-        common.main_logger.debug(f"Alfa: \t\t\t{self.alfa}")
-        common.main_logger.debug(f"Tot: \t\t\t{self.tot}")
-        common.main_logger.debug(f"Initial temp: \t\t{self.initial_temp}")
-        common.main_logger.debug(f"Density: \t\t{self.density}")
-        common.main_logger.debug(f"Specific heat: \t\t{self.specific_heat}")
-        common.main_logger.debug(f"Nodes number: \t\t{self.nodes_number}")
-        common.main_logger.debug(f"Elements number: \t{self.elements_number}")
+        common.logger.debug(f"Simulation time: \t{self.simulation_time}")
+        common.logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
+        common.logger.debug(f"Conductivity: \t\t{self.conductivity}")
+        common.logger.debug(f"Alfa: \t\t\t{self.alfa}")
+        common.logger.debug(f"Tot: \t\t\t{self.tot}")
+        common.logger.debug(f"Initial temp: \t\t{self.initial_temp}")
+        common.logger.debug(f"Density: \t\t{self.density}")
+        common.logger.debug(f"Specific heat: \t\t{self.specific_heat}")
+        common.logger.debug(f"Nodes number: \t\t{self.nodes_number}")
+        common.logger.debug(f"Elements number: \t{self.elements_number}")
 
 class Node:
     """
@@ -47,7 +47,7 @@ class Node:
         self.BC: float = 0
 
     def print(self) -> None:
-        common.main_logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
+        common.logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
 
 class Element:
     """
@@ -69,7 +69,7 @@ class Element:
         self.C: np.ndarray = np.empty((4, 4), dtype=float)
 
     def print(self) -> None:
-        common.main_logger.debug(f"Element {self.id}: \t{self.node_ids}")
+        common.logger.debug(f"Element {self.id}: \t{self.node_ids}")
 
 class Grid:
     """
@@ -150,7 +150,7 @@ class Grid:
                 nodes[node_id - 1].BC = 1
 
         try:
-            common.main_logger.info(f"Creating a grid from input file: '{os.path.basename(input_filepath)}'.")
+            common.logger.info(f"Creating a grid from input file: '{os.path.basename(input_filepath)}'.")
             f = open(input_filepath, "r")
             file_content: str = f.readlines()
             global_data: GlobalData = _read_global_data(file_content)
@@ -165,18 +165,18 @@ class Grid:
             f.close()
             return cls(global_data, elements, nodes)
         except FileNotFoundError:
-            common.main_logger.error(f"Cannnot find an input file: '{input_filepath}'", exc_info=True)
+            common.logger.error(f"Cannnot find an input file: '{input_filepath}'", exc_info=True)
             raise HandledException
         except Exception:
-            common.main_logger.error(f"Unknown exception while creating a grid from input file.", exc_info=True)
+            common.logger.error(f"Unknown exception while creating a grid from input file.", exc_info=True)
             raise HandledException
 
     def print(self) -> None:
         self.global_data.print()
-        common.main_logger.debug("\nNodes:")
+        common.logger.debug("\nNodes:")
         for node in self.nodes:
             node.print()
-        common.main_logger.debug("\nElements:")
+        common.logger.debug("\nElements:")
         for element in self.elements:
             element.print()
-        common.main_logger.debug(f"\nBC:\n{self.BC}\n")
+        common.logger.debug(f"\nBC:\n{self.BC}\n")

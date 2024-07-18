@@ -8,7 +8,10 @@ output_path: str = os.path.join(script_path, "Output")
 templates_path: str = os.path.join(script_path, "Templates")
 test_path: str = os.path.join(script_path, "Test")
 
-main_logger: logging.Logger = None
+MAIN_LOGGER_NAME = "main_logger"
+TEST_LOGGER_NAME = "test_logger"
+
+logger: logging.Logger = None
 
 class HandledException(Exception):
     pass
@@ -20,24 +23,39 @@ class NoTracebackFilter(logging.Filter):
             record.exc_text = None
         return True
 
-def init_logging(log_filepath: str) -> logging.Logger:
-    logger = logging.getLogger()
+def init_logging(logger_name: str = MAIN_LOGGER_NAME) -> logging.Logger:
+    match(logger_name):
+        case "main_logger":
+            logger = logging.getLogger(logger_name)
+            logger = logging.getLogger(MAIN_LOGGER_NAME)
+            log_filepath = os.path.join(output_path, "log.log")
+            logger.setLevel(logging.DEBUG)
 
-    logger.setLevel(logging.DEBUG)
+            file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            file_handler = logging.FileHandler(log_filepath)
+            file_handler.setFormatter(file_formatter)
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
 
-    file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-    console_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
+            console_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(console_formatter)
+            console_handler.setLevel(logging.INFO)
+            console_handler.addFilter(NoTracebackFilter())
+            logger.addHandler(console_handler)
 
-    file_handler = logging.FileHandler(log_filepath)
-    file_handler.setFormatter(file_formatter)
-    file_handler.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
+        case "test_logger":
+            logger = logging.getLogger(logger_name)
+            logger = logging.getLogger(TEST_LOGGER_NAME)
+            log_filepath = os.path.join(output_path, "test_log.log")
+            logger.setLevel(logging.DEBUG)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(console_formatter)
-    console_handler.setLevel(logging.INFO)
-    console_handler.addFilter(NoTracebackFilter())
-    logger.addHandler(console_handler)
+            file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            file_handler = logging.FileHandler(log_filepath)
+            file_handler.setFormatter(file_formatter)
+            logger.addHandler(file_handler)
+
+            logger.info("here2")
 
     return logger
 
@@ -59,7 +77,7 @@ def create_or_clear_directory(input_filename: str) -> str:
                 elif os.path.isdir(filepath):
                     dir_path.rmtree(filepath)
             except Exception:
-                main_logger.error(f"Error while claring output directory: '{dir_path}'. Failed to delete '{os.path.basename(filepath)}'.", exc_info=True)
+                logger.error(f"Error while claring output directory: '{dir_path}'. Failed to delete '{os.path.basename(filepath)}'.", exc_info=True)
                 raise HandledException
     finally:
         return dir_path
@@ -77,4 +95,4 @@ def generate_file(data: dict, template: Template, dest_dir: str, output_fileame:
 
 def print2dTab(tab: list[list]) -> None:
     for inner_tab in tab:
-        main_logger.debug(inner_tab)
+        logger.debug(inner_tab)

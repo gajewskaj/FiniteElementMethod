@@ -10,7 +10,7 @@ class LocalMatricesCalculation:
     Abstract class for calculating of H, C, Hbc matrices and P vector for each element of the given grid.
     """
     def __init__(self):
-        common.main_logger.error(f"{type(self).__name__} is an abstract class. You cannot create an instance of this class.")
+        common.logger.error(f"{type(self).__name__} is an abstract class. You cannot create an instance of this class.")
         raise HandledException
 
     @staticmethod
