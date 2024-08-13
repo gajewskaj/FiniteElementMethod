@@ -47,7 +47,6 @@ def run() -> None:
     """
     try:
         common.logger = init_logging()
-        # sanity_check()
         input_filepath, output_dir_path = get_input_filepath()
         grid = Grid.create_from_file(input_filepath)
 

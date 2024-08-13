@@ -16,3 +16,6 @@ Check out a ParaView simulation created using the output from my program:
 5. Output files will be generated:
 
 ![FemOutput](https://github.com/jbahyrycz/FiniteElementMethod/assets/86531146/e4064025-ac1b-46e6-9a73-7849da33a6c4)
+
+### How to run tests
+`py test.py -v`
