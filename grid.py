@@ -7,7 +7,7 @@ class GlobalData:
     """
     Stores general information like simulation time, conductivity, initial temperature, density etc.
     """
-    def __init__(self, global_data_dict: dict):
+    def __init__(self, global_data_dict: dict[str, int | float]):
         self.simulation_time: float = global_data_dict["SimulationTime"]
         self.simulation_step_time: float = global_data_dict["SimulationStepTime"]
         self.conductivity: float = global_data_dict["Conductivity"]
@@ -18,6 +18,19 @@ class GlobalData:
         self.specific_heat: float = global_data_dict["SpecificHeat"]
         self.nodes_number: int = global_data_dict["Nodesnumber"]
         self.elements_number: int = global_data_dict["Elementsnumber"]
+
+    def __eq__(self, other) -> bool:
+        result: bool = isclose(self.simulation_time, other.simulation_time) and \
+                       isclose(self.simulation_step_time, other.simulation_step_time) and \
+                       isclose(self.conductivity, other.conductivity) and \
+                       isclose(self.alfa, other.alfa) and \
+                       isclose(self.tot, other.tot) and \
+                       isclose(self.initial_temp, other.initial_temp) and \
+                       isclose(self.density, other.density) and \
+                       isclose(self.specific_heat, other.specific_heat) and \
+                       self.nodes_number == other.nodes_number and \
+                       self.elements_number == other.elements_number
+        return result
 
     def print(self) -> None:
         common.logger.debug(f"Simulation time: \t{self.simulation_time}")
@@ -40,11 +53,18 @@ class Node:
     y:       y coord
     BC:      border condition (0 or 1)
     """
-    def __init__(self, id: int, x: float, y: float):
+    def __init__(self, id: int, x: float, y: float, BC: float = 0):
         self.id: int = id
         self.x: float = x
         self.y: float = y
-        self.BC: float = 0
+        self.BC: float = BC
+
+    def __eq__(self, other) -> bool:
+        result: bool = self.id == other.id and \
+                       isclose(self.x, other.x) and \
+                       isclose(self.y, other.y) and \
+                       isclose(self.BC, other.BC)
+        return result
 
     def print(self) -> None:
         common.logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
@@ -63,10 +83,19 @@ class Element:
     def __init__(self, id: int, node_ids: np.ndarray[int]):
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
-        self.H: np.ndarray = np.empty((4, 4), dtype=float)
-        self.Hbc: np.ndarray = np.empty((4, 4), dtype=float)
-        self.P: np.ndarray = np.empty((4, 1), dtype=float)
-        self.C: np.ndarray = np.empty((4, 4), dtype=float)
+        self.H: np.ndarray = np.zeros((4, 4), dtype=float)
+        self.Hbc: np.ndarray = np.zeros((4, 4), dtype=float)
+        self.P: np.ndarray = np.zeros((4, 1), dtype=float)
+        self.C: np.ndarray = np.zeros((4, 4), dtype=float)
+
+    def __eq__(self, other) -> bool:
+        result: bool = self.id == other.id and \
+                       self.node_ids == other.node_ids and \
+                       np.allclose(self.H, other.H) and \
+                       np.allclose(self.Hbc, other.Hbc) and \
+                       np.allclose(self.P, other.P) and \
+                       np.allclose(self.C, other.C)
+        return result
 
     def print(self) -> None:
         common.logger.debug(f"Element {self.id}: \t{self.node_ids}")

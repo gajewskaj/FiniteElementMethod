@@ -1,7 +1,7 @@
 from common import *
 import common
 from universal_element import UniversalElement, Surface
-from grid import Grid, GlobalData, Node
+from grid import Grid, GlobalData, Element, Node
 from math import *
 import numpy as np
 
@@ -20,6 +20,7 @@ class LocalMatricesCalculation:
         """
         u_el = UniversalElement(n)
         for element in grid.elements:
+            element: Element
             element.H, element.C, element.Hbc, element.P = LocalMatricesCalculation._calculate_for_element([grid.nodes[element.node_ids[0] - 1],
                                       grid.nodes[element.node_ids[1] - 1],
                                       grid.nodes[element.node_ids[2] - 1],

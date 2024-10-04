@@ -55,8 +55,6 @@ def init_logging(logger_name: str = MAIN_LOGGER_NAME) -> logging.Logger:
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
 
-            logger.info("here2")
-
     return logger
 
 def create_or_clear_directory(input_filename: str) -> str:
