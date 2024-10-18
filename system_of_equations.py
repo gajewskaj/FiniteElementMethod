@@ -2,7 +2,8 @@ import common
 from common import *
 from grid import Grid
 import numpy as np
-from numpy import linalg
+import scipy.sparse
+import scipy.sparse.linalg
 
 class SystemOfEquations:
     """
@@ -21,32 +22,36 @@ class SystemOfEquations:
         self.t0: np.ndarray = np.full((self.dim, 1), grid.global_data.initial_temp)
         self.step: float = grid.global_data.simulation_step_time
         self.dtau: float = 0.0
-        self.H: np.ndarray = np.zeros((self.dim, self.dim))
-        self.P: np.ndarray = np.zeros((self.dim, 1))
-        self.C: np.ndarray = np.zeros((self.dim, self.dim))
+        self.P = self._aggregate_p(grid)
+        self.H, self.C = self._aggregate_h_c(grid)
         self._aggregate_h_c(grid)
-        self._aggreagte_p(grid)
 
-    def _aggregate_h_c(self, grid: Grid) -> None:
+    def _aggregate_h_c(self, grid: Grid) -> tuple[scipy.sparse.csr_matrix]:
         """
         Creates global H and C matrices.
         """
+        H = scipy.sparse.lil_matrix((self.dim, self.dim))
+        C = scipy.sparse.lil_matrix((self.dim, self.dim))
         for element in grid.elements:
             local_h = element.H + element.Hbc
             for j in range(0, 4):
                 for i in range(0, 4):
-                    self.H[element.node_ids[j] - 1][element.node_ids[i] - 1] += local_h[j][i]
-                    self.C[element.node_ids[j] - 1][element.node_ids[i] - 1] += element.C[j][i]
-        #common.main_logger.debug(f"Global H:\n{self.H}\nGlobal C:{self.C}")
+                    H[element.node_ids[j] - 1, element.node_ids[i] - 1] += local_h[j][i]
+                    C[element.node_ids[j] - 1, element.node_ids[i] - 1] += element.C[j][i]
+        H = H.tocsr()
+        C = C.tocsr()
+        return H, C
 
-    def _aggreagte_p(self, grid: Grid) -> None:
+    def _aggregate_p(self, grid: Grid) -> np.ndarray:
         """
         Creates global P vector from local (per element) P vectors.
         """
+        P: np.ndarray = np.zeros((self.dim, 1))
         for element in grid.elements:
             for i in range(0, 4):
-                self.P[element.node_ids[i] - 1] += element.P[i]
-        #common.main_logger.debug(f"Global P:\n{self.P}")
+                P[element.node_ids[i] - 1] += element.P[i]
+        return P
+        #common.main_logger.debug(f"Global P:\n{P}")
 
     def solve(self) -> np.ndarray:
         """
@@ -58,10 +63,13 @@ class SystemOfEquations:
         H[n] + C[n]/dTau * t1[n] = C[n]/dTau * t0[n] + P[n]
         """
         self.dtau += self.step
-        H = self.H + self.C/(self.step)
-        P = self.P + np.matmul(self.C/(self.step), self.t0)
-        result: np.ndarray = linalg.solve(H, P)
+        H = self.H + self.C/self.step
+        # H = self.H + self.C/(self.step)
+        P = self.P + self.C.dot(self.t0)/self.step
+        result: np.ndarray = scipy.sparse.linalg.spsolve(H, P)
+        # result: np.ndarray = np.linalg.solve(H, P)
         self.t0 = result
+        self.t0 = result.reshape(-1, 1)
         return result
 
 def simulate(grid: Grid) -> list[np.ndarray]:
@@ -73,10 +81,10 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     tau0: int = 0
     tauk: float = grid.global_data.simulation_time
     step: float = grid.global_data.simulation_step_time
-    common.logger.debug(f"Time        Min temp    Max temp")
+    common.logger.info(f"Time        Min temp    Max temp")
     while tau0 < tauk:
         result: np.ndarray = soe.solve()
         temperatures.append(result)
-        common.logger.debug(f"{(soe.dtau):<12}{round(min(result)[0], 3):<12}{round(max(result)[0], 3):<12}")
+        common.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
         tau0+=step
     return temperatures
