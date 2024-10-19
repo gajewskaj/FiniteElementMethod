@@ -24,7 +24,6 @@ class SystemOfEquations:
         self.dtau: float = 0.0
         self.P = self._aggregate_p(grid)
         self.H, self.C = self._aggregate_h_c(grid)
-        self._aggregate_h_c(grid)
 
     def _aggregate_h_c(self, grid: Grid) -> tuple[scipy.sparse.csr_matrix]:
         """

@@ -14,7 +14,7 @@ def get_input_filepath() -> tuple[str]:
     Gets path to grid file from user.
     """
     input_filepath: str = os.path.join(input_path, "example_grid.txt")
-    output_dir_path: str = create_or_clear_directory(input_filepath)
+    output_dir_path: str = create_or_clear_directory(os.path.join(output_path, os.path.basename(input_filepath).split(".")[0]))
     return input_filepath, output_dir_path
 
 def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
@@ -46,6 +46,7 @@ def run() -> None:
     Runs all the necessary functions to calculate max and min temperature of the element in time.
     """
     try:
+        create_or_clear_directory(output_path)
         common.logger = init_logging()
         input_filepath, output_dir_path = get_input_filepath()
         grid = Grid.create_from_file(input_filepath)

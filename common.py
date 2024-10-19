@@ -57,12 +57,11 @@ def init_logging(logger_name: str = MAIN_LOGGER_NAME) -> logging.Logger:
 
     return logger
 
-def create_or_clear_directory(input_filename: str) -> str:
+def create_or_clear_directory(dir_path: str) -> str:
     try:
         os.mkdir(output_path)
     except FileExistsError:
         pass
-    dir_path = os.path.join(output_path, os.path.basename(input_filename).split(".")[0])
 
     try:
         os.mkdir(dir_path)
