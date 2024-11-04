@@ -1,37 +1,56 @@
-from common import *
-import common
-from universal_element import UniversalElement, Surface
-from grid import Grid, GlobalData, Element, Node
 from math import *
 import numpy as np
+from . import common
+from .common import *
+from .universal_element import UniversalElement, Surface
+from .grid import Grid, GlobalData, Element, Node
 
 class LocalMatricesCalculation:
     """
-    Abstract class for calculating of H, C, Hbc matrices and P vector for each element of the given grid.
+    Abstract class for calculating H, C, Hbc matrices and P vector for each element of the given grid.
     """
+
     def __init__(self):
+        """
+        Initializes the LocalMatricesCalculation class.
+        Raises an exception since this is an abstract class.
+        """
         common.logger.error(f"{type(self).__name__} is an abstract class. You cannot create an instance of this class.")
         raise HandledException
 
     @staticmethod
     def calculate(n: int, grid: Grid) -> None:
         """
-        Calculates H, C, Hbc matrices and P vector for each element in the grid, output is stored in Element class.
+        Calculates H, C, Hbc matrices and P vector for each element in the grid.
+        The output is stored in the Element class.
+
+        Args:
+            n (int): Number of integration points.
+            grid (Grid): The grid containing elements and nodes.
         """
         u_el = UniversalElement(n)
         for element in grid.elements:
             element: Element
-            element.H, element.C, element.Hbc, element.P = LocalMatricesCalculation._calculate_for_element([grid.nodes[element.node_ids[0] - 1],
-                                      grid.nodes[element.node_ids[1] - 1],
-                                      grid.nodes[element.node_ids[2] - 1],
-                                      grid.nodes[element.node_ids[3] - 1]],
-                                      u_el, grid.global_data)
+            element.H, element.C, element.Hbc, element.P = LocalMatricesCalculation._calculate_for_element(
+                [grid.nodes[element.node_ids[0] - 1],
+                 grid.nodes[element.node_ids[1] - 1],
+                 grid.nodes[element.node_ids[2] - 1],
+                 grid.nodes[element.node_ids[3] - 1]], 
+                u_el, grid.global_data)
             #common.main_logger.debug(f"H:\n{element.H}\nC:{element.C}\nHbc:\n{element.Hbc}\nP:\n{element.P}")
 
     @staticmethod
-    def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_data: GlobalData) -> None:
+    def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_data: GlobalData) -> tuple:
         """
-        Calculates H, C, Hbc marices and P vector for the element.
+        Calculates H, C, Hbc matrices and P vector for the element.
+
+        Args:
+            nodes (np.ndarray[Node]): Array of nodes for the element.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            gl_data (GlobalData): Global data containing material properties.
+
+        Returns:
+            tuple: H, C, Hbc matrices and P vector.
         """
         x_coords, y_coords = LocalMatricesCalculation._fill_x_y_coords(nodes)
         dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab = LocalMatricesCalculation._fill_x_y_ksi_eta_tabs(x_coords, y_coords, u_el)
@@ -60,7 +79,13 @@ class LocalMatricesCalculation:
     @staticmethod
     def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:
         """
-        Fills lists storing x and y coords of nodes belonging to the element.
+        Fills lists storing x and y coordinates of nodes belonging to the element.
+
+        Args:
+            nodes (np.ndarray[Node]): Array of nodes for the element.
+
+        Returns:
+            tuple: Lists of x and y coordinates.
         """
         x_coords = []; y_coords = []
         for i in range(0, 4):
@@ -73,6 +98,14 @@ class LocalMatricesCalculation:
     def _fill_x_y_ksi_eta_tabs(x_coords: list[float], y_coords: list[float], u_el: UniversalElement) -> tuple[list[float]]:
         """
         Calculates dx/dksi, dx/deta, dy/dksi, dy/deta for every integration point and returns 4 tables with output.
+
+        Args:
+            x_coords (list[float]): List of x coordinates.
+            y_coords (list[float]): List of y coordinates.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+
+        Returns:
+            tuple: Lists of dx/dksi, dx/deta, dy/dksi, dy/deta.
         """
         dx_dksi_tab = []; dx_deta_tab = []; dy_dksi_tab = []; dy_deta_tab = []
         for i in range(0, u_el.n*u_el.n):
@@ -88,12 +121,25 @@ class LocalMatricesCalculation:
         """
         Fills dN/dx and dN/dy tables and calculates Jacobian and det[J].
 
-        mxJ: Jacobian matrix
-        detJ: Jacobian determinant
+        Args:
+            dx_dksi_tab (list): List of dx/dksi values.
+            dx_deta_tab (list): List of dx/deta values.
+            dy_dksi_tab (list): List of dy/dksi values.
+            dy_deta_tab (list): List of dy/deta values.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+
+        Returns:
+            tuple: Lists of dN/dx, dN/dy and det[J] values.
         """
         def initialize_dNdXdNdY(n: int) -> tuple[list[list]]:
             """
             Initializes empty tables for dN/dx and dN/dy calculations.
+
+            Args:
+                n (int): Number of integration points.
+
+            Returns:
+                tuple: Empty tables for dN/dx and dN/dy.
             """
             dn_dx_tab = []; dn_dy_tab = []
             for j in range(n*n):
@@ -131,6 +177,19 @@ class LocalMatricesCalculation:
     def _calculate_for_integration_points(dn_dx_tab: list, dn_dy_tab: list, NTab: list, det_tab: list, n: int, c: int, d: int, sH: int) -> tuple[np.ndarray]:
         """
         Calculates H, C matrices for each integration point. Returns list of matrices.
+
+        Args:
+            dn_dx_tab (list): List of dN/dx values.
+            dn_dy_tab (list): List of dN/dy values.
+            NTab (list): List of shape function values.
+            det_tab (list): List of det[J] values.
+            n (int): Number of integration points.
+            c (int): Conductivity.
+            d (int): Density.
+            sH (int): Specific heat.
+
+        Returns:
+            tuple: Lists of H and C matrices for each integration point.
         """
         mxHTab = []
         mxCTab = []
@@ -158,6 +217,17 @@ class LocalMatricesCalculation:
     def _calculate_for_surface(surface: Surface, nodes: tuple[Node], weights: np.ndarray[float], n: int, alfa: int, tot: int) -> tuple:
         """
         Calculates Hbc matrix and P vector for the given surface of the element.
+
+        Args:
+            surface (Surface): Surface of the element.
+            nodes (tuple[Node]): Nodes of the surface.
+            weights (np.ndarray[float]): Weights for integration points.
+            n (int): Number of integration points.
+            alfa (int): Heat transfer coefficient.
+            tot (int): Ambient temperature.
+
+        Returns:
+            tuple: Hbc matrix and P vector.
         """
         Hbc = np.zeros((4, 4))
         P = np.zeros((4, 1))
@@ -180,5 +250,15 @@ class LocalMatricesCalculation:
     def _interpolate(dN1: float, dN2: float, dN3: float, dN4: float, var: list[float]) -> float:
         """
         Returns dx/deta, dx/dksi, dy/deta or dy/dksi depending on given arguments.
+
+        Args:
+            dN1 (float): Derivative of shape function N1.
+            dN2 (float): Derivative of shape function N2.
+            dN3 (float): Derivative of shape function N3.
+            dN4 (float): Derivative of shape function N4.
+            var (list[float]): List of variable values.
+
+        Returns:
+            float: Interpolated value.
         """
         return dN1*var[0] + dN2*var[1] + dN3*var[2] + dN4*var[3]

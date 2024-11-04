@@ -1,7 +1,7 @@
-from common import *
-import common
 from math import *
 import numpy as np
+from . import common
+from .common import *
 
 class GaussianQuadrature:
     """

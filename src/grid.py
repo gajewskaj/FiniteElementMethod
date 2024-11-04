@@ -1,13 +1,31 @@
-import common
-from common import *
-from universal_element import *
 import numpy as np
+from . import common
+from .common import *
+from .universal_element import *
 
 class GlobalData:
     """
-    Stores general information like simulation time, conductivity, initial temperature, density etc.
+    Stores general information like simulation time, conductivity, initial temperature, density, etc.
+
+    Attributes:
+        simulation_time (float): Total simulation time.
+        simulation_step_time (float): Time step for the simulation.
+        conductivity (float): Thermal conductivity.
+        alfa (float): Heat transfer coefficient.
+        tot (float): Ambient temperature.
+        initial_temp (float): Initial temperature.
+        density (float): Material density.
+        specific_heat (float): Specific heat capacity.
+        nodes_number (int): Number of nodes in the grid.
+        elements_number (int): Number of elements in the grid.
     """
     def __init__(self, global_data_dict: dict[str, int | float]):
+        """
+        Initializes GlobalData with values from a dictionary.
+
+        Args:
+            global_data_dict (dict): Dictionary containing global data.
+        """
         self.simulation_time: float = global_data_dict["SimulationTime"]
         self.simulation_step_time: float = global_data_dict["SimulationStepTime"]
         self.conductivity: float = global_data_dict["Conductivity"]
@@ -19,7 +37,16 @@ class GlobalData:
         self.nodes_number: int = global_data_dict["Nodesnumber"]
         self.elements_number: int = global_data_dict["Elementsnumber"]
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: 'GlobalData') -> bool:
+        """
+        Checks if two GlobalData instances are equal.
+
+        Args:
+            other (GlobalData): Another GlobalData instance.
+
+        Returns:
+            bool: True if equal, False otherwise.
+        """
         result: bool = isclose(self.simulation_time, other.simulation_time) and \
                        isclose(self.simulation_step_time, other.simulation_step_time) and \
                        isclose(self.conductivity, other.conductivity) and \
@@ -33,6 +60,9 @@ class GlobalData:
         return result
 
     def print(self) -> None:
+        """
+        Prints the global data.
+        """
         common.logger.debug(f"Simulation time: \t{self.simulation_time}")
         common.logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
         common.logger.debug(f"Conductivity: \t\t{self.conductivity}")
@@ -48,18 +78,37 @@ class Node:
     """
     Stores information about a single node of the grid.
 
-    id:      Node"s ID
-    x:       x coord
-    y:       y coord
-    BC:      border condition (0 or 1)
+    Attributes:
+        id (int): Node's ID.
+        x (float): x coordinate.
+        y (float): y coordinate.
+        BC (float): Border condition (0 or 1).
     """
     def __init__(self, id: int, x: float, y: float, BC: float = 0):
+        """
+        Initializes a Node instance.
+
+        Args:
+            id (int): Node's ID.
+            x (float): x coordinate.
+            y (float): y coordinate.
+            BC (float, optional): Border condition. Defaults to 0.
+        """
         self.id: int = id
         self.x: float = x
         self.y: float = y
         self.BC: float = BC
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: 'Node') -> bool:
+        """
+        Checks if two Node instances are equal.
+
+        Args:
+            other (Node): Another Node instance.
+
+        Returns:
+            bool: True if equal, False otherwise.
+        """
         result: bool = self.id == other.id and \
                        isclose(self.x, other.x) and \
                        isclose(self.y, other.y) and \
@@ -67,20 +116,31 @@ class Node:
         return result
 
     def print(self) -> None:
+        """
+        Prints the node data.
+        """
         common.logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
 
 class Element:
     """
     Stores information about a single 4-node element of the grid.
 
-    id:         Element"s ID
-    IDs:        IDs od nodes belonging to the element
-    H:          H matrix for the element (4x4)
-    Hbc:        Hbc matrix for the element (4x4)
-    P:          P vector for the element (4X1)
-    C:          C matrix for the element (4x4)
+    Attributes:
+        id (int): Element's ID.
+        node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+        H (np.ndarray): H matrix for the element (4x4).
+        Hbc (np.ndarray): Hbc matrix for the element (4x4).
+        P (np.ndarray): P vector for the element (4x1).
+        C (np.ndarray): C matrix for the element (4x4).
     """
     def __init__(self, id: int, node_ids: np.ndarray[int]):
+        """
+        Initializes an Element instance.
+
+        Args:
+            id (int): Element's ID.
+            node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+        """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
         self.H: np.ndarray = np.zeros((4, 4), dtype=float)
@@ -88,7 +148,16 @@ class Element:
         self.P: np.ndarray = np.zeros((4, 1), dtype=float)
         self.C: np.ndarray = np.zeros((4, 4), dtype=float)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: 'Element') -> bool:
+        """
+        Checks if two Element instances are equal.
+
+        Args:
+            other (Element): Another Element instance.
+
+        Returns:
+            bool: True if equal, False otherwise.
+        """
         result: bool = self.id == other.id and \
                        self.node_ids == other.node_ids and \
                        np.allclose(self.H, other.H) and \
@@ -98,27 +167,57 @@ class Element:
         return result
 
     def print(self) -> None:
+        """
+        Prints the element data.
+        """
         common.logger.debug(f"Element {self.id}: \t{self.node_ids}")
 
 class Grid:
     """
     Stores information allowing to recreate the grid.
 
-    globalData:     i.e. simulation time, conductivity, initial temperature, density etc.
-    nodes:          list of nodes in the grid
-    elements:       list of elements in the grid
-    BC:             list of nodes with border condition
+    Attributes:
+        global_data (GlobalData): General simulation data.
+        nodes (np.ndarray[Node]): List of nodes in the grid.
+        elements (np.ndarray[Element]): List of elements in the grid.
+        BC (list[int]): List of nodes with border condition.
     """
     def __init__(self, global_data: GlobalData = None, elements: np.ndarray[Element] = None, nodes: np.ndarray[Node] = None):
+        """
+        Initializes a Grid instance.
+
+        Args:
+            global_data (GlobalData, optional): General simulation data. Defaults to None.
+            elements (np.ndarray[Element], optional): List of elements in the grid. Defaults to None.
+            nodes (np.ndarray[Node], optional): List of nodes in the grid. Defaults to None.
+        """
         self.global_data: GlobalData = global_data
         self.nodes: np.ndarray[Node] = nodes
         self.elements: np.ndarray[Element] = elements
 
     @classmethod
     def create_from_file(cls, input_filepath: str):
+        """
+        Creates a Grid instance from an input file.
+
+        Args:
+            input_filepath (str): Path to the input file.
+
+        Returns:
+            Grid: A Grid instance.
+
+        Raises:
+            HandledException: If the input file is not found or an unknown error occurs.
+        """
         def _read_global_data(input: str) -> GlobalData:
             """
             Reads global data from input file.
+
+            Args:
+                input (str): Content of the input file.
+
+            Returns:
+                GlobalData: An instance of GlobalData.
             """
             global_data_dict = {}
             for i in range (0, 8):
@@ -139,6 +238,14 @@ class Grid:
         def _read_nodes(input: str, nodes_start_line: int, nodes_number: int) -> np.ndarray[Node]:
             """
             Reads nodes from input file.
+
+            Args:
+                input (str): Content of the input file.
+                nodes_start_line (int): Line number where nodes data starts.
+                nodes_number (int): Number of nodes.
+
+            Returns:
+                np.ndarray[Node]: Array of Node instances.
             """
             node_list = np.empty(nodes_number, dtype=Node)
             for i in range (nodes_start_line, nodes_start_line + nodes_number):
@@ -149,6 +256,14 @@ class Grid:
         def _read_elements(input: str, elements_start_line: int, elements_number: int) -> np.ndarray[Element]:
             """
             Reads elements data from input file.
+
+            Args:
+                input (str): Content of the input file.
+                elements_start_line (int): Line number where elements data starts.
+                elements_number (int): Number of elements.
+
+            Returns:
+                np.ndarray[Element]: Array of Element instances.
             """
             elements = np.empty(elements_number, dtype=Element)
             node_ids = []
@@ -163,6 +278,13 @@ class Grid:
         def _read_bc(input: str, bc_start_line: int) -> list[int]:
             """
             Reads nodes with border condition from input file.
+
+            Args:
+                input (str): Content of the input file.
+                bc_start_line (int): Line number where border condition data starts.
+
+            Returns:
+                list[int]: List of node IDs with border condition.
             """
             node_ids = []
             line = input[bc_start_line]
@@ -174,6 +296,10 @@ class Grid:
         def _add_bc_to_node(nodes: np.ndarray[Node], BC: list[int]) -> None:
             """
             Adds border condition to node.
+
+            Args:
+                nodes (np.ndarray[Node]): Array of Node instances.
+                BC (list[int]): List of node IDs with border condition.
             """
             for node_id in BC:
                 nodes[node_id - 1].BC = 1
@@ -201,6 +327,9 @@ class Grid:
             raise HandledException
 
     def print(self) -> None:
+        """
+        Prints the grid data.
+        """
         self.global_data.print()
         common.logger.debug("\nNodes:")
         for node in self.nodes:
