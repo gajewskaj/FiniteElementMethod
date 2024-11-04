@@ -22,19 +22,6 @@ def parse_arguments() -> Settings:
     args = parser.parse_args()
     return Settings(args.input, args.force_cpu)
 
-def get_input_filepath(input_filepath: str) -> tuple[str]:
-    """
-    Gets path to grid file from user.
-
-    Args:
-        input_filepath (str): Path to the input grid file.
-
-    Returns:
-        tuple[str]: Input file path and output directory path.
-    """
-    output_dir_path: str = create_or_clear_directory(os.path.join(output_path, os.path.basename(input_filepath).split(".")[0]))
-    return input_filepath, output_dir_path
-
 def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
     """
     Creates files for simulation in ParaView environment.
@@ -74,8 +61,9 @@ def run() -> None:
         common.settings = settings
         create_or_clear_directory(output_path)
         common.logger = init_logging()
-        input_filepath, output_dir_path = get_input_filepath(settings.input_filepath)
-        grid = Grid.create_from_file(input_filepath)
+        output_dir_path = create_or_clear_directory(os.path.join(output_path,
+                                                                 os.path.basename(settings.input_filepath).split(".")[0]))
+        grid = Grid.create_from_file(settings.input_filepath)
         LocalMatricesCalculation.calculate(5, grid)
         from src.system_of_equations import simulate
         temperatures: list[float] = simulate(grid)
@@ -84,7 +72,7 @@ def run() -> None:
     except HandledException:
         common.logger.info("Script execution failed due to an exception.")
     except Exception as e:
-        common.logger.error(f"Script execution failed due to an unexpected exception.", exc_info=True)
+        common.logger.error(f"Script execution failed due to an unexpected exception. Check log file for details.", exc_info=True)
 
 if __name__ == "__main__":
     run()

@@ -15,7 +15,13 @@ if not common.settings.force_cpu:
         import cupyx.scipy.sparse.linalg as gpu_linalg
         cp_available = cp.cuda.runtime.getDeviceCount() > 0
     except ImportError:
+        common.logger.warning(f"Failed to import CuPy. GPU will NOT be used for the further calculations.", exc_info=True)
+        # In future add prompt asking if the user wants to proceed in that case
         cp_available = False
+    except Exception as e:
+        common.logger.error(f"Exception while importing CuPy for GPU calculations. \
+If you want to run the calculations on CPU instead, use: '--force-cpu' option.")
+        raise RuntimeError from e
 
 from .common import *
 from .grid import Element, Grid
@@ -237,10 +243,10 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     temperatures: list[np.ndarray] = []
     soe: SystemOfEquations
     if cp_available:
-        common.logger.info("Using GPU.")
+        common.logger.info("Starting calculations on GPU.")
         soe = SystemOfEquationsGPU(grid)
     else:
-        common.logger.info("Using CPU.")
+        common.logger.info("Starting calculations on CPU.")
         soe = SystemOfEquationsCPU(grid)
     tau0: int = 0
     tauk: float = grid.global_data.simulation_time

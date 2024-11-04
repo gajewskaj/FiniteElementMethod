@@ -1,5 +1,6 @@
 import os
 import logging
+import shutil
 from jinja2 import Environment, FileSystemLoader, Template
 
 script_path: str = os.getcwd()
@@ -99,12 +100,12 @@ def create_or_clear_directory(dir_path: str) -> str:
         for filename in os.listdir(dir_path):
             try:
                 filepath = os.path.join(dir_path, filename)
-                if os.path.isfile(filepath) or os.islink(filepath):
+                if os.path.isfile(filepath) or os.path.islink(filepath):
                     os.unlink(filepath)
                 elif os.path.isdir(filepath):
-                    dir_path.rmtree(filepath)
+                    shutil.rmtree(filepath)
             except Exception:
-                logger.error(f"Error while claring output directory: '{dir_path}'. Failed to delete '{os.path.basename(filepath)}'.", exc_info=True)
+                logger.error(f"Error while clearing output directory: '{dir_path}'. Failed to delete '{os.path.basename(filepath)}'.", exc_info=True)
                 raise HandledException
     finally:
         return dir_path
