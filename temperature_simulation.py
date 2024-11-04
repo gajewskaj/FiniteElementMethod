@@ -49,14 +49,9 @@ def run() -> None:
         common.logger = init_logging()
         input_filepath, output_dir_path = get_input_filepath()
         grid = Grid.create_from_file(input_filepath)
-
-        start: float = time.time() # Start measuring time
         LocalMatricesCalculation.calculate(5, grid)
         temperatures: list[float] = simulate(grid)
         common.logger.debug(temperatures)
-        end: float = time.time() # Stop measuring time
-
-        common.logger.info(f"Calculated in {end-start} seconds.")
         generate_vtk_files(output_dir_path, grid, temperatures)
     except HandledException:
         common.logger.info("Script execution failed due to an exception.")
