@@ -1,6 +1,5 @@
 import time
 import common
-from assertion_data import *
 from common import *
 from grid import Grid
 from jinja2 import Template
