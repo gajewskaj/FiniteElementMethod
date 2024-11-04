@@ -1,24 +1,48 @@
-import time
-import common
-from common import *
-from grid import Grid
-from jinja2 import Template
-from local_matrices_calculation import LocalMatricesCalculation
-from system_of_equations import simulate
+import os
 import numpy as np
-from test import *
+import argparse
+from jinja2 import Template
+import src.common as common
+from src.common import *
+from src.grid import Grid
+from src.local_matrices_calculation import LocalMatricesCalculation
 
-def get_input_filepath() -> tuple[str]:
+def parse_arguments() -> Settings:
+    """
+    Parses command line arguments.
+
+    Returns:
+        Settings: Parsed arguments as a Settings object.
+    """
+    parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
+    parser.add_argument('--input', type=str, default=os.path.join(input_path, "example_grid.txt"),
+                        help='Path to the input grid file')
+    parser.add_argument('--force-cpu', action='store_true',
+                        help='Force the simulation to run on CPU')
+    args = parser.parse_args()
+    return Settings(args.input, args.force_cpu)
+
+def get_input_filepath(input_filepath: str) -> tuple[str]:
     """
     Gets path to grid file from user.
+
+    Args:
+        input_filepath (str): Path to the input grid file.
+
+    Returns:
+        tuple[str]: Input file path and output directory path.
     """
-    input_filepath: str = os.path.join(input_path, "example_grid.txt")
     output_dir_path: str = create_or_clear_directory(os.path.join(output_path, os.path.basename(input_filepath).split(".")[0]))
     return input_filepath, output_dir_path
 
 def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
     """
     Creates files for simulation in ParaView environment.
+
+    Args:
+        output_dir_path (str): Path to the output directory.
+        grid (Grid): Grid object containing simulation data.
+        temperatures (list[np.ndarray]): List of temperature arrays for each time step.
     """
     num_files: int = len(temperatures)
     element_nodes_number: int = []
@@ -44,12 +68,16 @@ def run() -> None:
     """
     Runs all the necessary functions to calculate max and min temperature of the element in time.
     """
+    global settings
     try:
+        settings = parse_arguments()
+        common.settings = settings
         create_or_clear_directory(output_path)
         common.logger = init_logging()
-        input_filepath, output_dir_path = get_input_filepath()
+        input_filepath, output_dir_path = get_input_filepath(settings.input_filepath)
         grid = Grid.create_from_file(input_filepath)
         LocalMatricesCalculation.calculate(5, grid)
+        from src.system_of_equations import simulate
         temperatures: list[float] = simulate(grid)
         common.logger.debug(temperatures)
         generate_vtk_files(output_dir_path, grid, temperatures)
