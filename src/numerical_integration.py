@@ -7,10 +7,11 @@ class GaussianQuadrature:
     """
     A class for numerical integration using Gaussian Quadrature.
 
-    fun:        function to integrate
-    n:          number of integration points
-    points:     list of integration points, xi
-    weights:    weights for integration points, wi
+    Attributes:
+        - fun (callable): Function to integrate.
+        - n (int): Number of integration points.
+        - points (np.ndarray): List of integration points, xi.
+        - weights (np.ndarray): Weights for integration points, wi.
     """
     def __init__(self, n: int, fun: callable = None):
         self.fun: callable = fun
@@ -64,6 +65,9 @@ class GaussianQuadrature:
     def calculate_1d(self) -> float:
         """
         Calculates integral for function of 1 variable f(x).
+
+        Returns:
+            float: The calculated integral.
         """
         result = 0.0
         for i in range (0, self.n):
@@ -74,6 +78,9 @@ class GaussianQuadrature:
     def calculate_2d(self) -> float:
         """
         Calculates integral for function of 2 variables f(x, y).
+
+        Returns:
+            float: The calculated integral.
         """
         result = 0.0
         for i in range (0, self.n):

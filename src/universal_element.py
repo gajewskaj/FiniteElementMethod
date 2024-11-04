@@ -8,17 +8,17 @@ class UniversalElement(GaussianQuadrature):
     Contains all the calculations that are universal for every 4-node element.
 
     Attributes:
-        dNdKsiTab (np.ndarray): Table of dN/dKsi results for N1, N2, N3, N4 in integration points (n^2x4).
-        dNdEtaTab (np.ndarray): Table of dN/dEta results for N1, N2, N3, N4 in integration points (n^2x4).
-        NTab (np.ndarray): Table of N(ksi, eta) values for N1, N2, N3, N4 in integration points (nx4).
-        surfaces (list[Surface]): List of Surface type elements, necessary for calculations that take border conditions into account.
+        - dNdKsiTab (np.ndarray): Table of dN/dKsi results for N1, N2, N3, N4 in integration points (n^2x4).
+        - dNdEtaTab (np.ndarray): Table of dN/dEta results for N1, N2, N3, N4 in integration points (n^2x4).
+        - NTab (np.ndarray): Table of N(ksi, eta) values for N1, N2, N3, N4 in integration points (nx4).
+        - surfaces (list[Surface]): List of Surface type elements, necessary for calculations that take border conditions into account.
     """
     def __init__(self, n):
         """
         Initializes the UniversalElement with the given number of integration points.
 
         Args:
-            n (int): Number of integration points.
+            - n (int): Number of integration points.
         """
         super().__init__(n)
         self.dn_dksi_tab = np.empty((self.n*self.n, 4), dtype=float)
@@ -64,15 +64,15 @@ class Surface():
     Describes the surface of the universal element.
 
     Attributes:
-        n (int): Number of integration points.
-        N (np.ndarray): Table of N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.
+        - n (int): Number of integration points.
+        - N (np.ndarray): Table of N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.
     """
     def __init__(self, n: int):
         """
         Initializes the Surface with the given number of integration points.
 
         Args:
-            n (int): Number of integration points.
+            - n (int): Number of integration points.
         """
         self.n = n
         self.N = np.zeros((self.n, 4))
@@ -83,8 +83,8 @@ class Surface():
         Results are stored in the table.
 
         Args:
-            ksi_list (np.ndarray[float]): List of ksi values for integration points.
-            eta_list (np.ndarray[float]): List of eta values for integration points.
+            - ksi_list (np.ndarray[float]): List of ksi values for integration points.
+            - eta_list (np.ndarray[float]): List of eta values for integration points.
         """
         for j in range(0, len(ksi_list)):
             for i in range(0, 4):
@@ -95,8 +95,8 @@ def N1(ksi: float, eta: float) -> float:
     Shape function N1.
 
     Args:
-        ksi (float): Ksi coordinate.
-        eta (float): Eta coordinate.
+        - ksi (float): Ksi coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of N1 at (ksi, eta).
@@ -108,8 +108,8 @@ def N2(ksi: float, eta: float) -> float:
     Shape function N2.
 
     Args:
-        ksi (float): Ksi coordinate.
-        eta (float): Eta coordinate.
+        - ksi (float): Ksi coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of N2 at (ksi, eta).
@@ -121,8 +121,8 @@ def N3(ksi: float, eta: float) -> float:
     Shape function N3.
 
     Args:
-        ksi (float): Ksi coordinate.
-        eta (float): Eta coordinate.
+        - ksi (float): Ksi coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of N3 at (ksi, eta).
@@ -134,8 +134,8 @@ def N4(ksi: float, eta: float) -> float:
     Shape function N4.
 
     Args:
-        ksi (float): Ksi coordinate.
-        eta (float): Eta coordinate.
+        - ksi (float): Ksi coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of N4 at (ksi, eta).
@@ -147,7 +147,7 @@ def dN1Ksi(eta: float) -> float:
     Derivative of N1 with respect to Ksi.
 
     Args:
-        eta (float): Eta coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of dN1/dKsi at (eta).
@@ -159,7 +159,7 @@ def dN2Ksi(eta: float) -> float:
     Derivative of N2 with respect to Ksi.
 
     Args:
-        eta (float): Eta coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of dN2/dKsi at (eta).
@@ -171,7 +171,7 @@ def dN3Ksi(eta: float) -> float:
     Derivative of N3 with respect to Ksi.
 
     Args:
-        eta (float): Eta coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of dN3/dKsi at (eta).
@@ -183,7 +183,7 @@ def dN4Ksi(eta: float) -> float:
     Derivative of N4 with respect to Ksi.
 
     Args:
-        eta (float): Eta coordinate.
+        - eta (float): Eta coordinate.
 
     Returns:
         float: Value of dN4/dKsi at (eta).
@@ -195,7 +195,7 @@ def dN1Eta(ksi: float) -> float:
     Derivative of N1 with respect to Eta.
 
     Args:
-        ksi (float): Ksi coordinate.
+        - ksi (float): Ksi coordinate.
 
     Returns:
         float: Value of dN1/dEta at (ksi).
@@ -207,7 +207,7 @@ def dN2Eta(ksi: float) -> float:
     Derivative of N2 with respect to Eta.
 
     Args:
-        ksi (float): Ksi coordinate.
+        - ksi (float): Ksi coordinate.
 
     Returns:
         float: Value of dN2/dEta at (ksi).
@@ -219,7 +219,7 @@ def dN3Eta(ksi: float) -> float:
     Derivative of N3 with respect to Eta.
 
     Args:
-        ksi (float): Ksi coordinate.
+        - ksi (float): Ksi coordinate.
 
     Returns:
         float: Value of dN3/dEta at (ksi).
@@ -231,7 +231,7 @@ def dN4Eta(ksi: float) -> float:
     Derivative of N4 with respect to Eta.
 
     Args:
-        ksi (float): Ksi coordinate.
+        - ksi (float): Ksi coordinate.
 
     Returns:
         float: Value of dN4/dEta at (ksi).

@@ -1,0 +1,783 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src package &mdash; FiniteElementMethod v1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5cb08e4e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="main module" href="main.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            FiniteElementMethod
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">FiniteElementMethod</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="main.html">main module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">src package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.common">src.common module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.HandledException"><code class="docutils literal notranslate"><span class="pre">HandledException</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.NoTracebackFilter"><code class="docutils literal notranslate"><span class="pre">NoTracebackFilter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.create_or_clear_directory"><code class="docutils literal notranslate"><span class="pre">create_or_clear_directory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.generate_file"><code class="docutils literal notranslate"><span class="pre">generate_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.init_logging"><code class="docutils literal notranslate"><span class="pre">init_logging()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.initialize_jinja_environment"><code class="docutils literal notranslate"><span class="pre">initialize_jinja_environment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.common.print2dTab"><code class="docutils literal notranslate"><span class="pre">print2dTab()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.grid">src.grid module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.grid.Element"><code class="docutils literal notranslate"><span class="pre">Element</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.grid.GlobalData"><code class="docutils literal notranslate"><span class="pre">GlobalData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.grid.Grid"><code class="docutils literal notranslate"><span class="pre">Grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.grid.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.local_matrices_calculation">src.local_matrices_calculation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.local_matrices_calculation.LocalMatricesCalculation"><code class="docutils literal notranslate"><span class="pre">LocalMatricesCalculation</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.numerical_integration">src.numerical_integration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.numerical_integration.GaussianQuadrature"><code class="docutils literal notranslate"><span class="pre">GaussianQuadrature</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.system_of_equations">src.system_of_equations module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.system_of_equations.SystemOfEquations"><code class="docutils literal notranslate"><span class="pre">SystemOfEquations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.system_of_equations.SystemOfEquationsCPU"><code class="docutils literal notranslate"><span class="pre">SystemOfEquationsCPU</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.system_of_equations.SystemOfEquationsGPU"><code class="docutils literal notranslate"><span class="pre">SystemOfEquationsGPU</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.system_of_equations.simulate"><code class="docutils literal notranslate"><span class="pre">simulate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src.universal_element">src.universal_element module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.N1"><code class="docutils literal notranslate"><span class="pre">N1()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.N2"><code class="docutils literal notranslate"><span class="pre">N2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.N3"><code class="docutils literal notranslate"><span class="pre">N3()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.N4"><code class="docutils literal notranslate"><span class="pre">N4()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.Surface"><code class="docutils literal notranslate"><span class="pre">Surface</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.UniversalElement"><code class="docutils literal notranslate"><span class="pre">UniversalElement</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN1Eta"><code class="docutils literal notranslate"><span class="pre">dN1Eta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN1Ksi"><code class="docutils literal notranslate"><span class="pre">dN1Ksi()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN2Eta"><code class="docutils literal notranslate"><span class="pre">dN2Eta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN2Ksi"><code class="docutils literal notranslate"><span class="pre">dN2Ksi()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN3Eta"><code class="docutils literal notranslate"><span class="pre">dN3Eta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN3Ksi"><code class="docutils literal notranslate"><span class="pre">dN3Ksi()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN4Eta"><code class="docutils literal notranslate"><span class="pre">dN4Eta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#src.universal_element.dN4Ksi"><code class="docutils literal notranslate"><span class="pre">dN4Ksi()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-src">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FiniteElementMethod</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">FiniteElementMethod</a></li>
+      <li class="breadcrumb-item active">src package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/src.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="src-package">
+<h1>src package<a class="headerlink" href="#src-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-src.common">
+<span id="src-common-module"></span><h2>src.common module<a class="headerlink" href="#module-src.common" title="Link to this heading"></a></h2>
+<dl class="py exception">
+<dt class="sig sig-object py" id="src.common.HandledException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">HandledException</span></span><a class="reference internal" href="_modules/src/common.html#HandledException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.HandledException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Custom exception class for handling specific errors.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.common.NoTracebackFilter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">NoTracebackFilter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/common.html#NoTracebackFilter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.NoTracebackFilter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Filter</span></code></p>
+<p>Logging filter to remove traceback information from log records.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.common.NoTracebackFilter.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/common.html#NoTracebackFilter.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.NoTracebackFilter.filter" title="Link to this definition"></a></dt>
+<dd><p>Determine if the specified record is to be logged.</p>
+<p>Returns True if the record should be logged, or False otherwise.
+If deemed appropriate, the record may be modified in-place.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.common.Settings">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">Settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_cpu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/common.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.Settings" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to store settings provided as parameters.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.common.create_or_clear_directory">
+<span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">create_or_clear_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/src/common.html#create_or_clear_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.create_or_clear_directory" title="Link to this definition"></a></dt>
+<dd><p>Create a directory or clear its contents if it already exists.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>dir_path (str): The path of the directory to create or clear.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>str: The path of the created or cleared directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.common.generate_file">
+<span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">generate_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_fileame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/common.html#generate_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.generate_file" title="Link to this definition"></a></dt>
+<dd><p>Generate a file from a template and data.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>data (dict): The data to render the template with.</p></li>
+<li><p>template (Template): The Jinja2 template to use.</p></li>
+<li><p>dest_dir (str): The directory to save the generated file in.</p></li>
+<li><p>output_fileame (str): The name of the generated file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.common.init_logging">
+<span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">init_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'main_logger'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/src/common.html#init_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.init_logging" title="Link to this definition"></a></dt>
+<dd><p>Initialize and configure the logging system.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>logger_name (str): The name of the logger to initialize.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>logging.Logger: Configured logger instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.common.initialize_jinja_environment">
+<span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">initialize_jinja_environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Template</span></span></span><a class="reference internal" href="_modules/src/common.html#initialize_jinja_environment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.initialize_jinja_environment" title="Link to this definition"></a></dt>
+<dd><p>Initialize the Jinja2 environment and load a template.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>template_filepath (str): The path to the template file.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>Template: The loaded Jinja2 template.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.common.print2dTab">
+<span class="sig-prename descclassname"><span class="pre">src.common.</span></span><span class="sig-name descname"><span class="pre">print2dTab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/common.html#print2dTab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.common.print2dTab" title="Link to this definition"></a></dt>
+<dd><p>Print a 2D list to the logger.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>tab (list[list]): The 2D list to print.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.grid">
+<span id="src-grid-module"></span><h2>src.grid module<a class="headerlink" href="#module-src.grid" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.grid.Element">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.grid.</span></span><span class="sig-name descname"><span class="pre">Element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/grid.html#Element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Element" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Stores information about a single 4-node element of the grid.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>id (int): Element’s ID.</p></li>
+<li><p>node_ids (np.ndarray[int]): IDs of nodes belonging to the element.</p></li>
+<li><p>H (np.ndarray): H matrix for the element (4x4).</p></li>
+<li><p>Hbc (np.ndarray): Hbc matrix for the element (4x4).</p></li>
+<li><p>P (np.ndarray): P vector for the element (4x1).</p></li>
+<li><p>C (np.ndarray): C matrix for the element (4x4).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.grid.Element.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/grid.html#Element.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Element.print" title="Link to this definition"></a></dt>
+<dd><p>Prints the element data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.grid.GlobalData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.grid.</span></span><span class="sig-name descname"><span class="pre">GlobalData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">global_data_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/grid.html#GlobalData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.GlobalData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Stores general information like simulation time, conductivity, initial temperature, density, etc.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>simulation_time (float): Total simulation time.</p></li>
+<li><p>simulation_step_time (float): Time step for the simulation.</p></li>
+<li><p>conductivity (float): Thermal conductivity.</p></li>
+<li><p>alfa (float): Heat transfer coefficient.</p></li>
+<li><p>tot (float): Ambient temperature.</p></li>
+<li><p>initial_temp (float): Initial temperature.</p></li>
+<li><p>density (float): Material density.</p></li>
+<li><p>specific_heat (float): Specific heat capacity.</p></li>
+<li><p>nodes_number (int): Number of nodes in the grid.</p></li>
+<li><p>elements_number (int): Number of elements in the grid.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.grid.GlobalData.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/grid.html#GlobalData.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.GlobalData.print" title="Link to this definition"></a></dt>
+<dd><p>Prints the global data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.grid.Grid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.grid.</span></span><span class="sig-name descname"><span class="pre">Grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">global_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.GlobalData" title="src.grid.GlobalData"><span class="pre">GlobalData</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.grid.Element" title="src.grid.Element"><span class="pre">Element</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.grid.Node" title="src.grid.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/grid.html#Grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Grid" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Stores information allowing to recreate the grid.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>global_data (GlobalData): General simulation data.</p></li>
+<li><p>nodes (np.ndarray[Node]): List of nodes in the grid.</p></li>
+<li><p>elements (np.ndarray[Element]): List of elements in the grid.</p></li>
+<li><p>BC (list[int]): List of nodes with border condition.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.grid.Grid.create_from_file">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/grid.html#Grid.create_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Grid.create_from_file" title="Link to this definition"></a></dt>
+<dd><p>Creates a Grid instance from an input file.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>input_filepath (str): Path to the input file.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>Grid: A Grid instance.</p>
+</dd>
+<dt>Raises:</dt><dd><p>HandledException: If the input file is not found or an unknown error occurs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.grid.Grid.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/grid.html#Grid.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Grid.print" title="Link to this definition"></a></dt>
+<dd><p>Prints the grid data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.grid.Node">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.grid.</span></span><span class="sig-name descname"><span class="pre">Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">BC</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/grid.html#Node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Node" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Stores information about a single node of the grid.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>id (int): Node’s ID.</p></li>
+<li><p>x (float): x coordinate.</p></li>
+<li><p>y (float): y coordinate.</p></li>
+<li><p>BC (float): Border condition (0 or 1).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.grid.Node.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/grid.html#Node.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.grid.Node.print" title="Link to this definition"></a></dt>
+<dd><p>Prints the node data.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.local_matrices_calculation">
+<span id="src-local-matrices-calculation-module"></span><h2>src.local_matrices_calculation module<a class="headerlink" href="#module-src.local_matrices_calculation" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.local_matrices_calculation.LocalMatricesCalculation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.local_matrices_calculation.</span></span><span class="sig-name descname"><span class="pre">LocalMatricesCalculation</span></span><a class="reference internal" href="_modules/src/local_matrices_calculation.html#LocalMatricesCalculation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.local_matrices_calculation.LocalMatricesCalculation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Abstract class for calculating H, C, Hbc matrices and P vector for each element of the given grid.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.local_matrices_calculation.LocalMatricesCalculation.calculate">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.Grid" title="src.grid.Grid"><span class="pre">Grid</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/src/local_matrices_calculation.html#LocalMatricesCalculation.calculate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.local_matrices_calculation.LocalMatricesCalculation.calculate" title="Link to this definition"></a></dt>
+<dd><p>Calculates H, C, Hbc matrices and P vector for each element in the grid.
+The output is stored in the Element class.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><ul>
+<li><p>n (int): Number of integration points.</p></li>
+</ul>
+</li>
+<li><ul>
+<li><p>grid (Grid): The grid containing elements and nodes.</p></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.numerical_integration">
+<span id="src-numerical-integration-module"></span><h2>src.numerical_integration module<a class="headerlink" href="#module-src.numerical_integration" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.numerical_integration.GaussianQuadrature">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.numerical_integration.</span></span><span class="sig-name descname"><span class="pre">GaussianQuadrature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/numerical_integration.html#GaussianQuadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.numerical_integration.GaussianQuadrature" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for numerical integration using Gaussian Quadrature.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>fun (callable): Function to integrate.</p></li>
+<li><p>n (int): Number of integration points.</p></li>
+<li><p>points (np.ndarray): List of integration points, xi.</p></li>
+<li><p>weights (np.ndarray): Weights for integration points, wi.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.numerical_integration.GaussianQuadrature.calculate_1d">
+<span class="sig-name descname"><span class="pre">calculate_1d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/numerical_integration.html#GaussianQuadrature.calculate_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.numerical_integration.GaussianQuadrature.calculate_1d" title="Link to this definition"></a></dt>
+<dd><p>Calculates integral for function of 1 variable f(x).</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>float: The calculated integral.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.numerical_integration.GaussianQuadrature.calculate_2d">
+<span class="sig-name descname"><span class="pre">calculate_2d</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/numerical_integration.html#GaussianQuadrature.calculate_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.numerical_integration.GaussianQuadrature.calculate_2d" title="Link to this definition"></a></dt>
+<dd><p>Calculates integral for function of 2 variables f(x, y).</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>float: The calculated integral.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.system_of_equations">
+<span id="src-system-of-equations-module"></span><h2>src.system_of_equations module<a class="headerlink" href="#module-src.system_of_equations" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquations">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.system_of_equations.</span></span><span class="sig-name descname"><span class="pre">SystemOfEquations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.Grid" title="src.grid.Grid"><span class="pre">Grid</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquations" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract class designed for calculating temperature in each node of the grid by creating and solving a system of equations.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>H (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.</p></li>
+<li><p>P (np.ndarray or cp.ndarray): Global P vector.</p></li>
+<li><p>C (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global C matrix.</p></li>
+<li><p>t0 (np.ndarray or cp.ndarray): Vector filled with initial temperature values.</p></li>
+<li><p>step (float): Simulation step time.</p></li>
+<li><p>dtau (float): Current time - start time.</p></li>
+<li><p>dim (int): Dimensions of H matrix and P vector.</p></li>
+<li><p>elements (list[Element]): List of elements in the grid.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquations.solve">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquations.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquations.solve" title="Link to this definition"></a></dt>
+<dd><p>Solves system of equations for calculating temperature in each node at any given time.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>np.ndarray: The temperature values at each node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquationsCPU">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.system_of_equations.</span></span><span class="sig-name descname"><span class="pre">SystemOfEquationsCPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.Grid" title="src.grid.Grid"><span class="pre">Grid</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquationsCPU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquationsCPU" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.system_of_equations.SystemOfEquations" title="src.system_of_equations.SystemOfEquations"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemOfEquations</span></code></a></p>
+<p>Class for calculating temperature in each node of the grid by creating and solving a system of equations using CPU and NumPy, SciPy modules.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>H (scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.</p></li>
+<li><p>P (np.ndarray): Global P vector.</p></li>
+<li><p>C (scipy.sparse.csr_matrix): Global C matrix.</p></li>
+<li><p>t0 (np.ndarray): Vector filled with initial temperature values.</p></li>
+<li><p>step (float): Simulation step time.</p></li>
+<li><p>dtau (float): Current time - start time.</p></li>
+<li><p>dim (int): Dimensions of H matrix and P vector.</p></li>
+<li><p>elements (list[Element]): List of elements in the grid.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquationsCPU.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquationsCPU.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquationsCPU.solve" title="Link to this definition"></a></dt>
+<dd><p>Solves system of equations using CPU.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>np.ndarray: The temperature values at each node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquationsGPU">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.system_of_equations.</span></span><span class="sig-name descname"><span class="pre">SystemOfEquationsGPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.Grid" title="src.grid.Grid"><span class="pre">Grid</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquationsGPU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquationsGPU" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.system_of_equations.SystemOfEquations" title="src.system_of_equations.SystemOfEquations"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemOfEquations</span></code></a></p>
+<p>Class for calculating temperature in each node of the grid by creating and solving a system of equations using GPU and CuPy module.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>H (cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.</p></li>
+<li><p>P (cp.ndarray): Global P vector.</p></li>
+<li><p>C (cupyx.scipy.sparse.csr_matrix): Global C matrix.</p></li>
+<li><p>t0 (cp.ndarray): Vector filled with initial temperature values.</p></li>
+<li><p>step (float): Simulation step time.</p></li>
+<li><p>dtau (float): Current time - start time.</p></li>
+<li><p>dim (int): Dimensions of H matrix and P vector.</p></li>
+<li><p>elements (list[Element]): List of elements in the grid.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.system_of_equations.SystemOfEquationsGPU.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/src/system_of_equations.html#SystemOfEquationsGPU.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.SystemOfEquationsGPU.solve" title="Link to this definition"></a></dt>
+<dd><p>Solves system of equations using GPU.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>np.ndarray: The temperature values at each node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.system_of_equations.simulate">
+<span class="sig-prename descclassname"><span class="pre">src.system_of_equations.</span></span><span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.grid.Grid" title="src.grid.Grid"><span class="pre">Grid</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/src/system_of_equations.html#simulate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.system_of_equations.simulate" title="Link to this definition"></a></dt>
+<dd><p>Returns temperatures in element nodes for all time steps.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>grid (Grid): The grid containing elements.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>list[np.ndarray]: List of temperature values at each node for all time steps.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.universal_element">
+<span id="src-universal-element-module"></span><h2>src.universal_element module<a class="headerlink" href="#module-src.universal_element" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.N1">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">N1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#N1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.N1" title="Link to this definition"></a></dt>
+<dd><p>Shape function N1.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of N1 at (ksi, eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.N2">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">N2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#N2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.N2" title="Link to this definition"></a></dt>
+<dd><p>Shape function N2.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of N2 at (ksi, eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.N3">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">N3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#N3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.N3" title="Link to this definition"></a></dt>
+<dd><p>Shape function N3.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of N3 at (ksi, eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.N4">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">N4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#N4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.N4" title="Link to this definition"></a></dt>
+<dd><p>Shape function N4.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of N4 at (ksi, eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.universal_element.Surface">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">Surface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/universal_element.html#Surface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.Surface" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Describes the surface of the universal element.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>n (int): Number of integration points.</p></li>
+<li><p>N (np.ndarray): Table of N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.universal_element.Surface.fill_N">
+<span class="sig-name descname"><span class="pre">fill_N</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/universal_element.html#Surface.fill_N"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.Surface.fill_N" title="Link to this definition"></a></dt>
+<dd><p>Calculates N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.
+Results are stored in the table.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi_list (np.ndarray[float]): List of ksi values for integration points.</p></li>
+<li><p>eta_list (np.ndarray[float]): List of eta values for integration points.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.universal_element.UniversalElement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">UniversalElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/universal_element.html#UniversalElement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.UniversalElement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.numerical_integration.GaussianQuadrature" title="src.numerical_integration.GaussianQuadrature"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianQuadrature</span></code></a></p>
+<p>Contains all the calculations that are universal for every 4-node element.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>dNdKsiTab (np.ndarray): Table of dN/dKsi results for N1, N2, N3, N4 in integration points (n^2x4).</p></li>
+<li><p>dNdEtaTab (np.ndarray): Table of dN/dEta results for N1, N2, N3, N4 in integration points (n^2x4).</p></li>
+<li><p>NTab (np.ndarray): Table of N(ksi, eta) values for N1, N2, N3, N4 in integration points (nx4).</p></li>
+<li><p>surfaces (list[Surface]): List of Surface type elements, necessary for calculations that take border conditions into account.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN1Eta">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN1Eta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN1Eta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN1Eta" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N1 with respect to Eta.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN1/dEta at (ksi).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN1Ksi">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN1Ksi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN1Ksi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN1Ksi" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N1 with respect to Ksi.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN1/dKsi at (eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN2Eta">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN2Eta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN2Eta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN2Eta" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N2 with respect to Eta.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN2/dEta at (ksi).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN2Ksi">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN2Ksi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN2Ksi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN2Ksi" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N2 with respect to Ksi.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN2/dKsi at (eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN3Eta">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN3Eta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN3Eta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN3Eta" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N3 with respect to Eta.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN3/dEta at (ksi).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN3Ksi">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN3Ksi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN3Ksi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN3Ksi" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N3 with respect to Ksi.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN3/dKsi at (eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN4Eta">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN4Eta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN4Eta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN4Eta" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N4 with respect to Eta.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ksi (float): Ksi coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN4/dEta at (ksi).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.universal_element.dN4Ksi">
+<span class="sig-prename descclassname"><span class="pre">src.universal_element.</span></span><span class="sig-name descname"><span class="pre">dN4Ksi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/src/universal_element.html#dN4Ksi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.universal_element.dN4Ksi" title="Link to this definition"></a></dt>
+<dd><p>Derivative of N4 with respect to Ksi.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>eta (float): Eta coordinate.</p></li>
+</ul>
+</dd>
+<dt>Returns:</dt><dd><p>float: Value of dN4/dKsi at (eta).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="main.html" class="btn btn-neutral float-left" title="main module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Julia Bahyrycz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

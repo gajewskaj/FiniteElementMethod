@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.local_matrices_calculation &mdash; FiniteElementMethod v1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5cb08e4e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            FiniteElementMethod
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">FiniteElementMethod</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">FiniteElementMethod</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.local_matrices_calculation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.local_matrices_calculation</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">common</span>
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.universal_element</span> <span class="kn">import</span> <span class="n">UniversalElement</span><span class="p">,</span> <span class="n">Surface</span>
+<span class="kn">from</span> <span class="nn">.grid</span> <span class="kn">import</span> <span class="n">Grid</span><span class="p">,</span> <span class="n">GlobalData</span><span class="p">,</span> <span class="n">Element</span><span class="p">,</span> <span class="n">Node</span>
+
+<div class="viewcode-block" id="LocalMatricesCalculation">
+<a class="viewcode-back" href="../../src.html#src.local_matrices_calculation.LocalMatricesCalculation">[docs]</a>
+<span class="k">class</span> <span class="nc">LocalMatricesCalculation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for calculating H, C, Hbc matrices and P vector for each element of the given grid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the LocalMatricesCalculation class.</span>
+<span class="sd">        Raises an exception since this is an abstract class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is an abstract class. You cannot create an instance of this class.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">HandledException</span>
+
+<div class="viewcode-block" id="LocalMatricesCalculation.calculate">
+<a class="viewcode-back" href="../../src.html#src.local_matrices_calculation.LocalMatricesCalculation.calculate">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">grid</span><span class="p">:</span> <span class="n">Grid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates H, C, Hbc matrices and P vector for each element in the grid.</span>
+<span class="sd">        The output is stored in the Element class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - - n (int): Number of integration points.</span>
+<span class="sd">            - - grid (Grid): The grid containing elements and nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">u_el</span> <span class="o">=</span> <span class="n">UniversalElement</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">grid</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+            <span class="n">element</span><span class="p">:</span> <span class="n">Element</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">C</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">Hbc</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_element</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">grid</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">node_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="n">grid</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">node_ids</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="n">grid</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">node_ids</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                 <span class="n">grid</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">node_ids</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]],</span> 
+                <span class="n">u_el</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">global_data</span><span class="p">)</span></div>
+
+            <span class="c1">#common.main_logger.debug(f&quot;H:\n{element.H}\nC:{element.C}\nHbc:\n{element.Hbc}\nP:\n{element.P}&quot;)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_calculate_for_element</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">u_el</span><span class="p">:</span> <span class="n">UniversalElement</span><span class="p">,</span> <span class="n">gl_data</span><span class="p">:</span> <span class="n">GlobalData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates H, C, Hbc matrices and P vector for the element.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - nodes (np.ndarray[Node]): Array of nodes for the element.</span>
+<span class="sd">            - u_el (UniversalElement): Universal element containing shape functions and derivatives.</span>
+<span class="sd">            - gl_data (GlobalData): Global data containing material properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: H, C, Hbc matrices and P vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span> <span class="o">=</span> <span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_fill_x_y_coords</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="n">dx_dksi_tab</span><span class="p">,</span> <span class="n">dx_deta_tab</span><span class="p">,</span> <span class="n">dy_dksi_tab</span><span class="p">,</span> <span class="n">dy_deta_tab</span> <span class="o">=</span> <span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_fill_x_y_ksi_eta_tabs</span><span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">u_el</span><span class="p">)</span>
+        <span class="n">dn_dx_tab</span><span class="p">,</span> <span class="n">dn_dy_tab</span><span class="p">,</span> <span class="n">det_tab</span> <span class="o">=</span> <span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_dn_dx_dn_dy</span><span class="p">(</span><span class="n">dx_dksi_tab</span><span class="p">,</span> <span class="n">dx_deta_tab</span><span class="p">,</span> <span class="n">dy_dksi_tab</span><span class="p">,</span> <span class="n">dy_deta_tab</span><span class="p">,</span> <span class="n">u_el</span><span class="p">)</span>
+        <span class="n">ip_h_matrices</span><span class="p">,</span> <span class="n">ip_c_matrices</span> <span class="o">=</span> <span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_integration_points</span><span class="p">(</span><span class="n">dn_dx_tab</span><span class="p">,</span> <span class="n">dn_dy_tab</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n_tab</span><span class="p">,</span> <span class="n">det_tab</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">conductivity</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">specific_heat</span><span class="p">)</span>
+
+        <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">Hbc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">H</span> <span class="o">+=</span> <span class="n">ip_h_matrices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="o">//</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="o">%</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+            <span class="n">C</span> <span class="o">+=</span> <span class="n">ip_c_matrices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="o">//</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="o">%</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+
+        <span class="n">tempList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tempList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_surface</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">surfaces</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">alfa</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">tot</span><span class="p">))</span>
+        <span class="n">tempList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_surface</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">surfaces</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">alfa</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">tot</span><span class="p">))</span>
+        <span class="n">tempList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_surface</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">surfaces</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">alfa</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">tot</span><span class="p">))</span>
+        <span class="n">tempList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_calculate_for_surface</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">surfaces</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">u_el</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">alfa</span><span class="p">,</span> <span class="n">gl_data</span><span class="o">.</span><span class="n">tot</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">surfaceHbc</span><span class="p">,</span> <span class="n">surfaceP</span> <span class="ow">in</span> <span class="n">tempList</span><span class="p">:</span>
+            <span class="n">Hbc</span><span class="o">+=</span><span class="n">surfaceHbc</span>
+            <span class="n">P</span><span class="o">+=</span><span class="n">surfaceP</span>
+        <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">Hbc</span><span class="p">,</span> <span class="n">P</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_fill_x_y_coords</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fills lists storing x and y coordinates of nodes belonging to the element.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - - nodes (np.ndarray[Node]): Array of nodes for the element.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Lists of x and y coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_coords</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">y_coords</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="n">x_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="c1">#common.main_logger.debug(f&quot;x_coords: {x_coords}\ny_coords: {y_coords}&quot;)</span>
+        <span class="k">return</span> <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_fill_x_y_ksi_eta_tabs</span><span class="p">(</span><span class="n">x_coords</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">y_coords</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">u_el</span><span class="p">:</span> <span class="n">UniversalElement</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates dx/dksi, dx/deta, dy/dksi, dy/deta for every integration point and returns 4 tables with output.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - x_coords (list[float]): List of x coordinates.</span>
+<span class="sd">            - y_coords (list[float]): List of y coordinates.</span>
+<span class="sd">            - u_el (UniversalElement): Universal element containing shape functions and derivatives.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Lists of dx/dksi, dx/deta, dy/dksi, dy/deta.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dx_dksi_tab</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">dx_deta_tab</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">dy_dksi_tab</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">dy_deta_tab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">dx_dksi_tab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">x_coords</span><span class="p">))</span>
+            <span class="n">dx_deta_tab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">x_coords</span><span class="p">))</span>
+            <span class="n">dy_dksi_tab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">y_coords</span><span class="p">))</span>
+            <span class="n">dy_deta_tab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalMatricesCalculation</span><span class="o">.</span><span class="n">_interpolate</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">y_coords</span><span class="p">))</span>
+        <span class="c1">#common.main_logger.debug(f&quot;dx_dksi_tab: {dx_dksi_tab}\ndx_deta_tab: {dx_deta_tab}\ndy_dksi_tab: {dy_dksi_tab}\ndy_deta_tab: {dy_deta_tab}&quot;)</span>
+        <span class="k">return</span> <span class="n">dx_dksi_tab</span><span class="p">,</span> <span class="n">dx_deta_tab</span><span class="p">,</span> <span class="n">dy_dksi_tab</span><span class="p">,</span> <span class="n">dy_deta_tab</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_dn_dx_dn_dy</span><span class="p">(</span><span class="n">dx_dksi_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dx_deta_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dy_dksi_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dy_deta_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">u_el</span><span class="p">:</span> <span class="n">UniversalElement</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fills dN/dx and dN/dy tables and calculates Jacobian and det[J].</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - dx_dksi_tab (list): List of dx/dksi values.</span>
+<span class="sd">            - dx_deta_tab (list): List of dx/deta values.</span>
+<span class="sd">            - dy_dksi_tab (list): List of dy/dksi values.</span>
+<span class="sd">            - dy_deta_tab (list): List of dy/deta values.</span>
+<span class="sd">            - u_el (UniversalElement): Universal element containing shape functions and derivatives.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Lists of dN/dx, dN/dy and det[J] values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">initialize_dNdXdNdY</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]]:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Initializes empty tables for dN/dx and dN/dy calculations.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                - n (int): Number of integration points.</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                tuple: Empty tables for dN/dx and dN/dy.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">dn_dx_tab</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">dn_dy_tab</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">*</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">dn_dx_tab</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="n">dn_dy_tab</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+                    <span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dn_dx_tab</span><span class="p">,</span> <span class="n">dn_dy_tab</span>
+
+        <span class="n">dn_dx_tab</span><span class="p">,</span> <span class="n">dn_dy_tab</span> <span class="o">=</span> <span class="n">initialize_dNdXdNdY</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">det_tab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="n">u_el</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mxJ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">dx_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">dy_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dx_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">dy_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]]])</span>
+            <span class="c1">#common.main_logger.debug(f&quot;Jacobian matrix:\n{mxJ}&quot;)</span>
+            <span class="n">detJ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">mxJ</span><span class="p">)</span>
+            <span class="c1">#common.main_logger.debug(f&quot;Jacobian determinant:\n{detJ}&quot;)</span>
+            <span class="n">det_tab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">detJ</span><span class="p">)</span>
+            <span class="n">mx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">dy_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="o">-</span><span class="n">dy_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="n">dx_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">dx_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">]]])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+                <span class="n">mx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]],[</span><span class="n">u_el</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]]])</span>
+                <span class="c1"># (1/detJ)*mx1 = mxJ^(-1)</span>
+                <span class="n">mxOutput</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(((</span><span class="mi">1</span><span class="o">/</span><span class="n">detJ</span><span class="p">)</span><span class="o">*</span><span class="n">mx1</span><span class="p">),</span> <span class="n">mx2</span><span class="p">)</span>
+                <span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mxOutput</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mxOutput</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># common.main_logger.debug(&quot;dn_dx_tab:&quot;)</span>
+        <span class="c1"># print2dTab(dn_dx_tab)</span>
+        <span class="c1"># common.main_logger.debug(&quot;dn_dy_tab:&quot;)</span>
+        <span class="c1"># print2dTab(dn_dy_tab)</span>
+        <span class="k">return</span> <span class="n">dn_dx_tab</span><span class="p">,</span> <span class="n">dn_dy_tab</span><span class="p">,</span> <span class="n">det_tab</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_calculate_for_integration_points</span><span class="p">(</span><span class="n">dn_dx_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dn_dy_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">NTab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">det_tab</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sH</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates H, C matrices for each integration point. Returns list of matrices.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - dn_dx_tab (list): List of dN/dx values.</span>
+<span class="sd">            - dn_dy_tab (list): List of dN/dy values.</span>
+<span class="sd">            - NTab (list): List of shape function values.</span>
+<span class="sd">            - det_tab (list): List of det[J] values.</span>
+<span class="sd">            - n (int): Number of integration points.</span>
+<span class="sd">            - c (int): Conductivity.</span>
+<span class="sd">            - d (int): Density.</span>
+<span class="sd">            - sH (int): Specific heat.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Lists of H and C matrices for each integration point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mxHTab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mxCTab</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">*</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mxDNdX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dx_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]]])</span>
+            <span class="n">mxDNdY</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">dn_dy_tab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]]])</span>
+            <span class="n">mxN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">NTab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">NTab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">NTab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span>
+                             <span class="p">[</span><span class="n">NTab</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]]])</span>
+            <span class="n">ipMxH</span> <span class="o">=</span> <span class="n">c</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mxDNdX</span><span class="p">,</span> <span class="n">mxDNdX</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mxDNdY</span><span class="p">,</span> <span class="n">mxDNdY</span><span class="o">.</span><span class="n">transpose</span><span class="p">()))</span><span class="o">*</span><span class="n">det_tab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">ipMxC</span> <span class="o">=</span> <span class="n">sH</span><span class="o">*</span><span class="n">d</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mxN</span><span class="p">,</span> <span class="n">mxN</span><span class="o">.</span><span class="n">transpose</span><span class="p">()))</span><span class="o">*</span><span class="n">det_tab</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1">#common.main_logger.debug(f&quot;IP {i+1}:\n{ipMxH}&quot;)</span>
+            <span class="n">mxHTab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ipMxH</span><span class="p">)</span>
+            <span class="n">mxCTab</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ipMxC</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mxHTab</span><span class="p">,</span> <span class="n">mxCTab</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_calculate_for_surface</span><span class="p">(</span><span class="n">surface</span><span class="p">:</span> <span class="n">Surface</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">alfa</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tot</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates Hbc matrix and P vector for the given surface of the element.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - surface (Surface): Surface of the element.</span>
+<span class="sd">            - nodes (tuple[Node]): Nodes of the surface.</span>
+<span class="sd">            - weights (np.ndarray[float]): Weights for integration points.</span>
+<span class="sd">            - n (int): Number of integration points.</span>
+<span class="sd">            - alfa (int): Heat transfer coefficient.</span>
+<span class="sd">            - tot (int): Ambient temperature.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Hbc matrix and P vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Hbc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">BC</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">BC</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Hbc</span><span class="p">,</span> <span class="n">P</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="nb">pow</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">detJ</span> <span class="o">=</span> <span class="n">L</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+            <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">surface</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+                            <span class="p">[</span><span class="n">surface</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
+                            <span class="p">[</span><span class="n">surface</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]],</span>
+                            <span class="p">[</span><span class="n">surface</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">3</span><span class="p">]]])</span>
+            <span class="n">Hbc</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="n">mx</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span><span class="o">*</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">P</span> <span class="o">+=</span> <span class="n">mx</span><span class="o">*</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">Hbc</span> <span class="o">=</span> <span class="n">Hbc</span><span class="o">*</span><span class="n">alfa</span><span class="o">*</span><span class="n">detJ</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">P</span><span class="o">*</span><span class="n">alfa</span><span class="o">*</span><span class="n">tot</span><span class="o">*</span><span class="n">detJ</span>
+        <span class="k">return</span> <span class="n">Hbc</span><span class="p">,</span> <span class="n">P</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_interpolate</span><span class="p">(</span><span class="n">dN1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dN2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dN3</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dN4</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">var</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns dx/deta, dx/dksi, dy/deta or dy/dksi depending on given arguments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - dN1 (float): Derivative of shape function N1.</span>
+<span class="sd">            - dN2 (float): Derivative of shape function N2.</span>
+<span class="sd">            - dN3 (float): Derivative of shape function N3.</span>
+<span class="sd">            - dN4 (float): Derivative of shape function N4.</span>
+<span class="sd">            - var (list[float]): List of variable values.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Interpolated value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">dN1</span><span class="o">*</span><span class="n">var</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dN2</span><span class="o">*</span><span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dN3</span><span class="o">*</span><span class="n">var</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">dN4</span><span class="o">*</span><span class="n">var</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Julia Bahyrycz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

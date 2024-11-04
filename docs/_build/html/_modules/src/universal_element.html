@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.universal_element &mdash; FiniteElementMethod v1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5cb08e4e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            FiniteElementMethod
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">FiniteElementMethod</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">FiniteElementMethod</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.universal_element</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.universal_element</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.numerical_integration</span> <span class="kn">import</span> <span class="n">GaussianQuadrature</span>
+
+<div class="viewcode-block" id="UniversalElement">
+<a class="viewcode-back" href="../../src.html#src.universal_element.UniversalElement">[docs]</a>
+<span class="k">class</span> <span class="nc">UniversalElement</span><span class="p">(</span><span class="n">GaussianQuadrature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains all the calculations that are universal for every 4-node element.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        - dNdKsiTab (np.ndarray): Table of dN/dKsi results for N1, N2, N3, N4 in integration points (n^2x4).</span>
+<span class="sd">        - dNdEtaTab (np.ndarray): Table of dN/dEta results for N1, N2, N3, N4 in integration points (n^2x4).</span>
+<span class="sd">        - NTab (np.ndarray): Table of N(ksi, eta) values for N1, N2, N3, N4 in integration points (nx4).</span>
+<span class="sd">        - surfaces (list[Surface]): List of Surface type elements, necessary for calculations that take border conditions into account.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the UniversalElement with the given number of integration points.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - n (int): Number of integration points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dn_dksi_tab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dn_deta_tab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surfaces</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Surface</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Surface</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="c1"># down</span>
+            <span class="n">Surface</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="c1"># right</span>
+            <span class="n">Surface</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="c1"># up</span>
+            <span class="n">Surface</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>  <span class="c1"># left</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fill_dn_dksi_dn_deta_tabs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fill_surface_tab</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_fill_dn_dksi_dn_deta_tabs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates dN/dKsi and dN/dEta for N1, N2, N3, N4 in integration points.</span>
+<span class="sd">        Results are stored in tables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">ksi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="n">eta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dn_dksi_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dn_dksi_fun_tab</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">eta</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dn_deta_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dn_deta_fun_tab</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">ksi</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_tab</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_fun_tab</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">ksi</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_fill_surface_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates integration points coordinates for surface calculations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surfaces</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ksi_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+                <span class="n">eta_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">eta_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+                <span class="n">ksi_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="o">-</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">surfaces</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fill_N</span><span class="p">(</span><span class="n">ksi_list</span><span class="p">,</span> <span class="n">eta_list</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Surface">
+<a class="viewcode-back" href="../../src.html#src.universal_element.Surface">[docs]</a>
+<span class="k">class</span> <span class="nc">Surface</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Describes the surface of the universal element.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        - n (int): Number of integration points.</span>
+<span class="sd">        - N (np.ndarray): Table of N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Surface with the given number of integration points.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - n (int): Number of integration points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Surface.fill_N">
+<a class="viewcode-back" href="../../src.html#src.universal_element.Surface.fill_N">[docs]</a>
+    <span class="k">def</span> <span class="nf">fill_N</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ksi_list</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">eta_list</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="nb">float</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.</span>
+<span class="sd">        Results are stored in the table.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - ksi_list (np.ndarray[float]): List of ksi values for integration points.</span>
+<span class="sd">            - eta_list (np.ndarray[float]): List of eta values for integration points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ksi_list</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_fun_tab</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">ksi_list</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">eta_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span></div>
+</div>
+
+
+<div class="viewcode-block" id="N1">
+<a class="viewcode-back" href="../../src.html#src.universal_element.N1">[docs]</a>
+<span class="k">def</span> <span class="nf">N1</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shape function N1.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of N1 at (ksi, eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="N2">
+<a class="viewcode-back" href="../../src.html#src.universal_element.N2">[docs]</a>
+<span class="k">def</span> <span class="nf">N2</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shape function N2.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of N2 at (ksi, eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">ksi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="N3">
+<a class="viewcode-back" href="../../src.html#src.universal_element.N3">[docs]</a>
+<span class="k">def</span> <span class="nf">N3</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shape function N3.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of N3 at (ksi, eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">ksi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="N4">
+<a class="viewcode-back" href="../../src.html#src.universal_element.N4">[docs]</a>
+<span class="k">def</span> <span class="nf">N4</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shape function N4.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of N4 at (ksi, eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN1Ksi">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN1Ksi">[docs]</a>
+<span class="k">def</span> <span class="nf">dN1Ksi</span><span class="p">(</span><span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N1 with respect to Ksi.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN1/dKsi at (eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN2Ksi">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN2Ksi">[docs]</a>
+<span class="k">def</span> <span class="nf">dN2Ksi</span><span class="p">(</span><span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N2 with respect to Ksi.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN2/dKsi at (eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN3Ksi">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN3Ksi">[docs]</a>
+<span class="k">def</span> <span class="nf">dN3Ksi</span><span class="p">(</span><span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N3 with respect to Ksi.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN3/dKsi at (eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN4Ksi">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN4Ksi">[docs]</a>
+<span class="k">def</span> <span class="nf">dN4Ksi</span><span class="p">(</span><span class="n">eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N4 with respect to Ksi.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - eta (float): Eta coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN4/dKsi at (eta).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN1Eta">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN1Eta">[docs]</a>
+<span class="k">def</span> <span class="nf">dN1Eta</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N1 with respect to Eta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN1/dEta at (ksi).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN2Eta">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN2Eta">[docs]</a>
+<span class="k">def</span> <span class="nf">dN2Eta</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N2 with respect to Eta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN2/dEta at (ksi).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">ksi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN3Eta">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN3Eta">[docs]</a>
+<span class="k">def</span> <span class="nf">dN3Eta</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N3 with respect to Eta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN3/dEta at (ksi).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">ksi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dN4Eta">
+<a class="viewcode-back" href="../../src.html#src.universal_element.dN4Eta">[docs]</a>
+<span class="k">def</span> <span class="nf">dN4Eta</span><span class="p">(</span><span class="n">ksi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Derivative of N4 with respect to Eta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        - ksi (float): Ksi coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Value of dN4/dEta at (ksi).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">)</span></div>
+
+
+<span class="n">dn_dksi_fun_tab</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">dN1Ksi</span><span class="p">,</span>
+    <span class="n">dN2Ksi</span><span class="p">,</span>
+    <span class="n">dN3Ksi</span><span class="p">,</span>
+    <span class="n">dN4Ksi</span>
+<span class="p">]</span>
+
+<span class="n">dn_deta_fun_tab</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">dN1Eta</span><span class="p">,</span>
+    <span class="n">dN2Eta</span><span class="p">,</span>
+    <span class="n">dN3Eta</span><span class="p">,</span>
+    <span class="n">dN4Eta</span>
+<span class="p">]</span>
+
+<span class="n">n_fun_tab</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">N1</span><span class="p">,</span>
+    <span class="n">N2</span><span class="p">,</span>
+    <span class="n">N3</span><span class="p">,</span>
+    <span class="n">N4</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Julia Bahyrycz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

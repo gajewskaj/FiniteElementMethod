@@ -8,23 +8,23 @@ class GlobalData:
     Stores general information like simulation time, conductivity, initial temperature, density, etc.
 
     Attributes:
-        simulation_time (float): Total simulation time.
-        simulation_step_time (float): Time step for the simulation.
-        conductivity (float): Thermal conductivity.
-        alfa (float): Heat transfer coefficient.
-        tot (float): Ambient temperature.
-        initial_temp (float): Initial temperature.
-        density (float): Material density.
-        specific_heat (float): Specific heat capacity.
-        nodes_number (int): Number of nodes in the grid.
-        elements_number (int): Number of elements in the grid.
+        - simulation_time (float): Total simulation time.
+        - simulation_step_time (float): Time step for the simulation.
+        - conductivity (float): Thermal conductivity.
+        - alfa (float): Heat transfer coefficient.
+        - tot (float): Ambient temperature.
+        - initial_temp (float): Initial temperature.
+        - density (float): Material density.
+        - specific_heat (float): Specific heat capacity.
+        - nodes_number (int): Number of nodes in the grid.
+        - elements_number (int): Number of elements in the grid.
     """
     def __init__(self, global_data_dict: dict[str, int | float]):
         """
         Initializes GlobalData with values from a dictionary.
 
         Args:
-            global_data_dict (dict): Dictionary containing global data.
+            - global_data_dict (dict): Dictionary containing global data.
         """
         self.simulation_time: float = global_data_dict["SimulationTime"]
         self.simulation_step_time: float = global_data_dict["SimulationStepTime"]
@@ -42,7 +42,7 @@ class GlobalData:
         Checks if two GlobalData instances are equal.
 
         Args:
-            other (GlobalData): Another GlobalData instance.
+            - other (GlobalData): Another GlobalData instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -79,20 +79,20 @@ class Node:
     Stores information about a single node of the grid.
 
     Attributes:
-        id (int): Node's ID.
-        x (float): x coordinate.
-        y (float): y coordinate.
-        BC (float): Border condition (0 or 1).
+        - id (int): Node's ID.
+        - x (float): x coordinate.
+        - y (float): y coordinate.
+        - BC (float): Border condition (0 or 1).
     """
     def __init__(self, id: int, x: float, y: float, BC: float = 0):
         """
         Initializes a Node instance.
 
         Args:
-            id (int): Node's ID.
-            x (float): x coordinate.
-            y (float): y coordinate.
-            BC (float, optional): Border condition. Defaults to 0.
+            - id (int): Node's ID.
+            - x (float): x coordinate.
+            - y (float): y coordinate.
+            - BC (float, optional): Border condition. Defaults to 0.
         """
         self.id: int = id
         self.x: float = x
@@ -104,7 +104,7 @@ class Node:
         Checks if two Node instances are equal.
 
         Args:
-            other (Node): Another Node instance.
+            - other (Node): Another Node instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -126,20 +126,20 @@ class Element:
     Stores information about a single 4-node element of the grid.
 
     Attributes:
-        id (int): Element's ID.
-        node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
-        H (np.ndarray): H matrix for the element (4x4).
-        Hbc (np.ndarray): Hbc matrix for the element (4x4).
-        P (np.ndarray): P vector for the element (4x1).
-        C (np.ndarray): C matrix for the element (4x4).
+        - id (int): Element's ID.
+        - node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+        - H (np.ndarray): H matrix for the element (4x4).
+        - Hbc (np.ndarray): Hbc matrix for the element (4x4).
+        - P (np.ndarray): P vector for the element (4x1).
+        - C (np.ndarray): C matrix for the element (4x4).
     """
     def __init__(self, id: int, node_ids: np.ndarray[int]):
         """
         Initializes an Element instance.
 
         Args:
-            id (int): Element's ID.
-            node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+            - id (int): Element's ID.
+            - node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
         """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
@@ -153,7 +153,7 @@ class Element:
         Checks if two Element instances are equal.
 
         Args:
-            other (Element): Another Element instance.
+            - other (Element): Another Element instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -177,19 +177,19 @@ class Grid:
     Stores information allowing to recreate the grid.
 
     Attributes:
-        global_data (GlobalData): General simulation data.
-        nodes (np.ndarray[Node]): List of nodes in the grid.
-        elements (np.ndarray[Element]): List of elements in the grid.
-        BC (list[int]): List of nodes with border condition.
+        - global_data (GlobalData): General simulation data.
+        - nodes (np.ndarray[Node]): List of nodes in the grid.
+        - elements (np.ndarray[Element]): List of elements in the grid.
+        - BC (list[int]): List of nodes with border condition.
     """
     def __init__(self, global_data: GlobalData = None, elements: np.ndarray[Element] = None, nodes: np.ndarray[Node] = None):
         """
         Initializes a Grid instance.
 
         Args:
-            global_data (GlobalData, optional): General simulation data. Defaults to None.
-            elements (np.ndarray[Element], optional): List of elements in the grid. Defaults to None.
-            nodes (np.ndarray[Node], optional): List of nodes in the grid. Defaults to None.
+            - global_data (GlobalData, optional): General simulation data. Defaults to None.
+            - elements (np.ndarray[Element], optional): List of elements in the grid. Defaults to None.
+            - nodes (np.ndarray[Node], optional): List of nodes in the grid. Defaults to None.
         """
         self.global_data: GlobalData = global_data
         self.nodes: np.ndarray[Node] = nodes
@@ -201,7 +201,7 @@ class Grid:
         Creates a Grid instance from an input file.
 
         Args:
-            input_filepath (str): Path to the input file.
+            - input_filepath (str): Path to the input file.
 
         Returns:
             Grid: A Grid instance.
@@ -214,7 +214,7 @@ class Grid:
             Reads global data from input file.
 
             Args:
-                input (str): Content of the input file.
+                - input (str): Content of the input file.
 
             Returns:
                 GlobalData: An instance of GlobalData.
@@ -240,9 +240,9 @@ class Grid:
             Reads nodes from input file.
 
             Args:
-                input (str): Content of the input file.
-                nodes_start_line (int): Line number where nodes data starts.
-                nodes_number (int): Number of nodes.
+                - input (str): Content of the input file.
+                - nodes_start_line (int): Line number where nodes data starts.
+                - nodes_number (int): Number of nodes.
 
             Returns:
                 np.ndarray[Node]: Array of Node instances.
@@ -258,9 +258,9 @@ class Grid:
             Reads elements data from input file.
 
             Args:
-                input (str): Content of the input file.
-                elements_start_line (int): Line number where elements data starts.
-                elements_number (int): Number of elements.
+                - input (str): Content of the input file.
+                - elements_start_line (int): Line number where elements data starts.
+                - elements_number (int): Number of elements.
 
             Returns:
                 np.ndarray[Element]: Array of Element instances.
@@ -280,8 +280,8 @@ class Grid:
             Reads nodes with border condition from input file.
 
             Args:
-                input (str): Content of the input file.
-                bc_start_line (int): Line number where border condition data starts.
+                - input (str): Content of the input file.
+                - bc_start_line (int): Line number where border condition data starts.
 
             Returns:
                 list[int]: List of node IDs with border condition.
@@ -298,8 +298,8 @@ class Grid:
             Adds border condition to node.
 
             Args:
-                nodes (np.ndarray[Node]): Array of Node instances.
-                BC (list[int]): List of node IDs with border condition.
+                - nodes (np.ndarray[Node]): Array of Node instances.
+                - BC (list[int]): List of node IDs with border condition.
             """
             for node_id in BC:
                 nodes[node_id - 1].BC = 1

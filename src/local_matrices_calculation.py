@@ -25,8 +25,8 @@ class LocalMatricesCalculation:
         The output is stored in the Element class.
 
         Args:
-            n (int): Number of integration points.
-            grid (Grid): The grid containing elements and nodes.
+            - - n (int): Number of integration points.
+            - - grid (Grid): The grid containing elements and nodes.
         """
         u_el = UniversalElement(n)
         for element in grid.elements:
@@ -45,9 +45,9 @@ class LocalMatricesCalculation:
         Calculates H, C, Hbc matrices and P vector for the element.
 
         Args:
-            nodes (np.ndarray[Node]): Array of nodes for the element.
-            u_el (UniversalElement): Universal element containing shape functions and derivatives.
-            gl_data (GlobalData): Global data containing material properties.
+            - nodes (np.ndarray[Node]): Array of nodes for the element.
+            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            - gl_data (GlobalData): Global data containing material properties.
 
         Returns:
             tuple: H, C, Hbc matrices and P vector.
@@ -82,7 +82,7 @@ class LocalMatricesCalculation:
         Fills lists storing x and y coordinates of nodes belonging to the element.
 
         Args:
-            nodes (np.ndarray[Node]): Array of nodes for the element.
+            - - nodes (np.ndarray[Node]): Array of nodes for the element.
 
         Returns:
             tuple: Lists of x and y coordinates.
@@ -100,9 +100,9 @@ class LocalMatricesCalculation:
         Calculates dx/dksi, dx/deta, dy/dksi, dy/deta for every integration point and returns 4 tables with output.
 
         Args:
-            x_coords (list[float]): List of x coordinates.
-            y_coords (list[float]): List of y coordinates.
-            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            - x_coords (list[float]): List of x coordinates.
+            - y_coords (list[float]): List of y coordinates.
+            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
 
         Returns:
             tuple: Lists of dx/dksi, dx/deta, dy/dksi, dy/deta.
@@ -122,11 +122,11 @@ class LocalMatricesCalculation:
         Fills dN/dx and dN/dy tables and calculates Jacobian and det[J].
 
         Args:
-            dx_dksi_tab (list): List of dx/dksi values.
-            dx_deta_tab (list): List of dx/deta values.
-            dy_dksi_tab (list): List of dy/dksi values.
-            dy_deta_tab (list): List of dy/deta values.
-            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            - dx_dksi_tab (list): List of dx/dksi values.
+            - dx_deta_tab (list): List of dx/deta values.
+            - dy_dksi_tab (list): List of dy/dksi values.
+            - dy_deta_tab (list): List of dy/deta values.
+            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
 
         Returns:
             tuple: Lists of dN/dx, dN/dy and det[J] values.
@@ -136,7 +136,7 @@ class LocalMatricesCalculation:
             Initializes empty tables for dN/dx and dN/dy calculations.
 
             Args:
-                n (int): Number of integration points.
+                - n (int): Number of integration points.
 
             Returns:
                 tuple: Empty tables for dN/dx and dN/dy.
@@ -179,14 +179,14 @@ class LocalMatricesCalculation:
         Calculates H, C matrices for each integration point. Returns list of matrices.
 
         Args:
-            dn_dx_tab (list): List of dN/dx values.
-            dn_dy_tab (list): List of dN/dy values.
-            NTab (list): List of shape function values.
-            det_tab (list): List of det[J] values.
-            n (int): Number of integration points.
-            c (int): Conductivity.
-            d (int): Density.
-            sH (int): Specific heat.
+            - dn_dx_tab (list): List of dN/dx values.
+            - dn_dy_tab (list): List of dN/dy values.
+            - NTab (list): List of shape function values.
+            - det_tab (list): List of det[J] values.
+            - n (int): Number of integration points.
+            - c (int): Conductivity.
+            - d (int): Density.
+            - sH (int): Specific heat.
 
         Returns:
             tuple: Lists of H and C matrices for each integration point.
@@ -219,12 +219,12 @@ class LocalMatricesCalculation:
         Calculates Hbc matrix and P vector for the given surface of the element.
 
         Args:
-            surface (Surface): Surface of the element.
-            nodes (tuple[Node]): Nodes of the surface.
-            weights (np.ndarray[float]): Weights for integration points.
-            n (int): Number of integration points.
-            alfa (int): Heat transfer coefficient.
-            tot (int): Ambient temperature.
+            - surface (Surface): Surface of the element.
+            - nodes (tuple[Node]): Nodes of the surface.
+            - weights (np.ndarray[float]): Weights for integration points.
+            - n (int): Number of integration points.
+            - alfa (int): Heat transfer coefficient.
+            - tot (int): Ambient temperature.
 
         Returns:
             tuple: Hbc matrix and P vector.
@@ -252,11 +252,11 @@ class LocalMatricesCalculation:
         Returns dx/deta, dx/dksi, dy/deta or dy/dksi depending on given arguments.
 
         Args:
-            dN1 (float): Derivative of shape function N1.
-            dN2 (float): Derivative of shape function N2.
-            dN3 (float): Derivative of shape function N3.
-            dN4 (float): Derivative of shape function N4.
-            var (list[float]): List of variable values.
+            - dN1 (float): Derivative of shape function N1.
+            - dN2 (float): Derivative of shape function N2.
+            - dN3 (float): Derivative of shape function N3.
+            - dN4 (float): Derivative of shape function N4.
+            - var (list[float]): List of variable values.
 
         Returns:
             float: Interpolated value.

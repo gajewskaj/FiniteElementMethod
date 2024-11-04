@@ -15,12 +15,12 @@ if not common.settings.force_cpu:
         import cupyx.scipy.sparse.linalg as gpu_linalg
         cp_available = cp.cuda.runtime.getDeviceCount() > 0
     except ImportError:
-        common.logger.warning(f"Failed to import CuPy. GPU will NOT be used for the further calculations.", exc_info=True)
+        # common.logger.warning(f"Failed to import CuPy. GPU will NOT be used for the further calculations.", exc_info=True)
         # In future add prompt asking if the user wants to proceed in that case
         cp_available = False
     except Exception as e:
-        common.logger.error(f"Exception while importing CuPy for GPU calculations. \
-If you want to run the calculations on CPU instead, use: '--force-cpu' option.")
+        # common.logger.error(f"Exception while importing CuPy for GPU calculations. \
+# If you want to run the calculations on CPU instead, use: '--force-cpu' option.")
         raise RuntimeError from e
 
 from .common import *
@@ -28,17 +28,17 @@ from .grid import Element, Grid
 
 class SystemOfEquations(ABC):
     """
-    Class for calculating temperature in each node of the grid by creating and solving a system of equations.
+    Abstract class designed for calculating temperature in each node of the grid by creating and solving a system of equations.
 
     Attributes:
-        H (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        P (np.ndarray or cp.ndarray): Global P vector.
-        C (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global C matrix.
-        t0 (np.ndarray or cp.ndarray): Vector filled with initial temperature values.
-        step (float): Simulation step time.
-        dtau (float): Current time - start time.
-        dim (int): Dimensions of H matrix and P vector.
-        elements (list[Element]): List of elements in the grid.
+        - H (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        - P (np.ndarray or cp.ndarray): Global P vector.
+        - C (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global C matrix.
+        - t0 (np.ndarray or cp.ndarray): Vector filled with initial temperature values.
+        - step (float): Simulation step time.
+        - dtau (float): Current time - start time.
+        - dim (int): Dimensions of H matrix and P vector.
+        - elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         self.dim: int = grid.global_data.nodes_number
@@ -82,14 +82,14 @@ class SystemOfEquationsCPU(SystemOfEquations):
     Class for calculating temperature in each node of the grid by creating and solving a system of equations using CPU and NumPy, SciPy modules.
 
     Attributes:
-        H (scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        P (np.ndarray): Global P vector.
-        C (scipy.sparse.csr_matrix): Global C matrix.
-        t0 (np.ndarray): Vector filled with initial temperature values.
-        step (float): Simulation step time.
-        dtau (float): Current time - start time.
-        dim (int): Dimensions of H matrix and P vector.
-        elements (list[Element]): List of elements in the grid.
+        - H (scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        - P (np.ndarray): Global P vector.
+        - C (scipy.sparse.csr_matrix): Global C matrix.
+        - t0 (np.ndarray): Vector filled with initial temperature values.
+        - step (float): Simulation step time.
+        - dtau (float): Current time - start time.
+        - dim (int): Dimensions of H matrix and P vector.
+        - elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         super().__init__(grid)
@@ -153,14 +153,14 @@ class SystemOfEquationsGPU(SystemOfEquations):
     Class for calculating temperature in each node of the grid by creating and solving a system of equations using GPU and CuPy module.
 
     Attributes:
-        H (cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        P (cp.ndarray): Global P vector.
-        C (cupyx.scipy.sparse.csr_matrix): Global C matrix.
-        t0 (cp.ndarray): Vector filled with initial temperature values.
-        step (float): Simulation step time.
-        dtau (float): Current time - start time.
-        dim (int): Dimensions of H matrix and P vector.
-        elements (list[Element]): List of elements in the grid.
+        - H (cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        - P (cp.ndarray): Global P vector.
+        - C (cupyx.scipy.sparse.csr_matrix): Global C matrix.
+        - t0 (cp.ndarray): Vector filled with initial temperature values.
+        - step (float): Simulation step time.
+        - dtau (float): Current time - start time.
+        - dim (int): Dimensions of H matrix and P vector.
+        - elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         super().__init__(grid)
@@ -235,7 +235,7 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     Returns temperatures in element nodes for all time steps.
 
     Args:
-        grid (Grid): The grid containing elements.
+        - grid (Grid): The grid containing elements.
 
     Returns:
         list[np.ndarray]: List of temperature values at each node for all time steps.

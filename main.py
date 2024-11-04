@@ -27,9 +27,9 @@ def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.n
     Creates files for simulation in ParaView environment.
 
     Args:
-        output_dir_path (str): Path to the output directory.
-        grid (Grid): Grid object containing simulation data.
-        temperatures (list[np.ndarray]): List of temperature arrays for each time step.
+        - output_dir_path (str): Path to the output directory.
+        - grid (Grid): Grid object containing simulation data.
+        - temperatures (list[np.ndarray]): List of temperature arrays for each time step.
     """
     num_files: int = len(temperatures)
     element_nodes_number: int = []
