@@ -15,7 +15,7 @@ def parse_arguments() -> Settings:
         Settings: Parsed arguments as a Settings object.
     """
     parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
-    parser.add_argument('--input', type=str, default=os.path.join(input_path, "example_grid.txt"),
+    parser.add_argument('--input', type=str, default=os.path.join(test_path, "test4_grid.txt"),
                         help='Path to the input grid file')
     parser.add_argument('--force-cpu', action='store_true',
                         help='Force the simulation to run on CPU')

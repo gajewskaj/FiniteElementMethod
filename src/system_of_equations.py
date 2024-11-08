@@ -1,5 +1,5 @@
 import time
-from typing import Union
+from typing import Union, Tuple
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -47,8 +47,8 @@ class SystemOfEquations(ABC):
         self.elements: list[Element] = grid.elements
 
     @abstractmethod
-    def _aggregate_H_C(self) -> Union[tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix],
-                                      'tuple[gpu_sparse.csr_matrix, gpu_sparse.csr_matrix]']:
+    def _aggregate_H_C(self) -> Union[Tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix],
+                                      Tuple['gpu_sparse.csr_matrix', 'gpu_sparse.csr_matrix']]:
         """
         Creates global H and C matrices.
 
@@ -96,26 +96,34 @@ class SystemOfEquationsCPU(SystemOfEquations):
         self.t0: np.ndarray = np.full((self.dim, 1), grid.global_data.initial_temp)
         self.P = self._aggregate_P()
         self.H, self.C = self._aggregate_H_C()
+        self.cpu_solve_factorized = cpu_linalg.factorized(self.H + self.C/self.step)
 
-    def _aggregate_H_C(self) -> tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix]:
+    def _aggregate_H_C(self) -> Tuple[cpu_sparse.csc_matrix, cpu_sparse.csc_matrix]:
         """
         Creates global H and C matrices using CPU.
 
         Returns:
             tuple: A tuple containing the global H and C matrices.
         """
-        H = cpu_sparse.lil_matrix((self.dim, self.dim))
-        C = cpu_sparse.lil_matrix((self.dim, self.dim))
+
+        data_H, row_H, col_H = [], [], []
+        data_C, row_C, col_C = [], [], []
 
         for element in self.elements:
-            local_H: np.ndarray = element.H + element.Hbc
-            for i in range (4):
+            local_H = element.H + element.Hbc
+            for i in range(4):
                 for j in range(4):
-                    H[element.node_ids[i] - 1, element.node_ids[j] - 1] += local_H[i][j]
-                    C[element.node_ids[i] - 1, element.node_ids[j] - 1] += element.C[i][j]
+                    if local_H[i][j] != 0:
+                        data_H.append(local_H[i][j])
+                        row_H.append(element.node_ids[i] - 1)
+                        col_H.append(element.node_ids[j] - 1)
+                    if element.C[i][j] != 0:
+                        data_C.append(element.C[i][j])
+                        row_C.append(element.node_ids[i] - 1)
+                        col_C.append(element.node_ids[j] - 1)
 
-        H = H.tocsr()
-        C = C.tocsr()
+        H: cpu_sparse.csc_matrix = cpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsc()
+        C: cpu_sparse.csc_matrix = cpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsc()
 
         return H, C
 
@@ -142,10 +150,9 @@ class SystemOfEquationsCPU(SystemOfEquations):
             np.ndarray: The temperature values at each node.
         """
         self.dtau += self.step
-        H = self.H + self.C/self.step
         P = self.P + self.C.dot(self.t0)/self.step
-        result: np.ndarray = cpu_linalg.spsolve(H, P)
-        self.t0 = result.reshape(-1, 1)
+        result: np.ndarray = self.cpu_solve_factorized(P)
+        self.t0 = result
         return result
 
 class SystemOfEquationsGPU(SystemOfEquations):
@@ -167,14 +174,16 @@ class SystemOfEquationsGPU(SystemOfEquations):
         self.t0: cp.ndarray = cp.full((self.dim, 1), grid.global_data.initial_temp)
         self.P = self._aggregate_P()
         self.H, self.C = self._aggregate_H_C()
+        self.gpu_solve_factorized = gpu_linalg.factorized(self.H + self.C/self.step)
 
-    def _aggregate_H_C(self) -> tuple['gpu_sparse.csr_matrix', 'gpu_sparse.csr_matrix']:
+    def _aggregate_H_C(self) -> Tuple['gpu_sparse.csc_matrix', 'gpu_sparse.csc_matrix']:
         """
         Creates global H and C matrices using GPU.
 
         Returns:
             tuple: A tuple containing the global H and C matrices.
         """
+
         data_H, row_H, col_H = [], [], []
         data_C, row_C, col_C = [], [], []
 
@@ -182,12 +191,14 @@ class SystemOfEquationsGPU(SystemOfEquations):
             local_H = element.H + element.Hbc
             for i in range(4):
                 for j in range(4):
-                    data_H.append(local_H[i][j])
-                    row_H.append(element.node_ids[i] - 1)
-                    col_H.append(element.node_ids[j] - 1)
-                    data_C.append(element.C[i][j])
-                    row_C.append(element.node_ids[i] - 1)
-                    col_C.append(element.node_ids[j] - 1)
+                    if local_H[i][j] != 0:
+                        data_H.append(local_H[i][j])
+                        row_H.append(element.node_ids[i] - 1)
+                        col_H.append(element.node_ids[j] - 1)
+                    if element.C[i][j] != 0:
+                        data_C.append(element.C[i][j])
+                        row_C.append(element.node_ids[i] - 1)
+                        col_C.append(element.node_ids[j] - 1)
 
         data_H = cp.array(data_H)
         row_H = cp.array(row_H)
@@ -196,8 +207,8 @@ class SystemOfEquationsGPU(SystemOfEquations):
         row_C = cp.array(row_C)
         col_C = cp.array(col_C)
 
-        H = gpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsr()
-        C = gpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsr()
+        H: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsc()
+        C: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsc()
 
         return H, C
 
@@ -213,7 +224,6 @@ class SystemOfEquationsGPU(SystemOfEquations):
         for element in self.elements:
             for i in range(0, 4):
                 P[element.node_ids[i] - 1] += cp.asarray(element.P[i])
-
         return P
 
     def solve(self) -> np.ndarray:
@@ -224,10 +234,9 @@ class SystemOfEquationsGPU(SystemOfEquations):
             np.ndarray: The temperature values at each node.
         """
         self.dtau += self.step
-        H = self.H + self.C/self.step
         P = self.P + self.C.dot(self.t0)/self.step
-        result: cp.ndarray = gpu_linalg.spsolve(H, P)
-        self.t0 = result.reshape(-1, 1)
+        result: cp.ndarray = self.gpu_solve_factorized(P)
+        self.t0 = result
         return cp.asnumpy(result)
 
 def simulate(grid: Grid) -> list[np.ndarray]:
@@ -256,7 +265,7 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     while tau0 < tauk:
         result: np.ndarray = soe.solve()
         temperatures.append(result)
-        common.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
+        # common.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
         tau0 += step
     end: float = time.time() # Stop measuring time
     common.logger.info(f"Calculated in {end-start} seconds.")
