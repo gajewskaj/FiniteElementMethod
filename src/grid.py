@@ -1,4 +1,9 @@
+import json
+
 import numpy as np
+import gmshparser
+from gmshparser import Mesh
+
 from . import common
 from .common import *
 from .universal_element import *
@@ -19,23 +24,32 @@ class GlobalData:
         - nodes_number (int): Number of nodes in the grid.
         - elements_number (int): Number of elements in the grid.
     """
-    def __init__(self, global_data_dict: dict[str, int | float]):
+    def __init__(self, simulation_time: float,
+                 simulation_step_time: float,
+                 conductivity: float,
+                 alfa: float,
+                 tot: float,
+                 initial_temp: float,
+                 density: float,
+                 specific_heat: float,
+                 nodes_number: int,
+                 elements_number: int):
         """
         Initializes GlobalData with values from a dictionary.
 
         Args:
-            - global_data_dict (dict): Dictionary containing global data.
+            - global_data_dict (dict): dictionary containing global data.
         """
-        self.simulation_time: float = global_data_dict["SimulationTime"]
-        self.simulation_step_time: float = global_data_dict["SimulationStepTime"]
-        self.conductivity: float = global_data_dict["Conductivity"]
-        self.alfa: float = global_data_dict["Alfa"]
-        self.tot: float = global_data_dict["Tot"]
-        self.initial_temp: float = global_data_dict["InitialTemp"]
-        self.density: float = global_data_dict["Density"]
-        self.specific_heat: float = global_data_dict["SpecificHeat"]
-        self.nodes_number: int = global_data_dict["Nodesnumber"]
-        self.elements_number: int = global_data_dict["Elementsnumber"]
+        self.simulation_time: float = simulation_time
+        self.simulation_step_time: float = simulation_step_time
+        self.conductivity: float = conductivity
+        self.alfa: float = alfa
+        self.tot: float = tot
+        self.initial_temp: float = initial_temp
+        self.density: float = density
+        self.specific_heat: float = specific_heat
+        self.nodes_number: int = nodes_number
+        self.elements_number: int = elements_number
 
     def __eq__(self, other: 'GlobalData') -> bool:
         """
@@ -84,7 +98,7 @@ class Node:
         - y (float): y coordinate.
         - BC (float): Border condition (0 or 1).
     """
-    def __init__(self, id: int, x: float, y: float, BC: float = 0):
+    def __init__(self, id: int, x: float, y: float, z: float = 0, BC: float = 0):
         """
         Initializes a Node instance.
 
@@ -97,6 +111,7 @@ class Node:
         self.id: int = id
         self.x: float = x
         self.y: float = y
+        self.z: float = z
         self.BC: float = BC
 
     def __eq__(self, other: 'Node') -> bool:
@@ -196,29 +211,17 @@ class Grid:
         self.elements: np.ndarray[Element] = elements
 
     @classmethod
-    def create_from_file(cls, input_filepath: str):
+    def create_from_txt(cls: 'Grid', mesh_path: str) -> 'Grid':
         """
-        Creates a Grid instance from an input file.
+        Creates a Grid instance from a text file.
 
         Args:
-            - input_filepath (str): Path to the input file.
+            - mesh_path (str): Path to the mesh .txt file.
 
         Returns:
             Grid: A Grid instance.
-
-        Raises:
-            HandledException: If the input file is not found or an unknown error occurs.
         """
         def _read_global_data(input: str) -> GlobalData:
-            """
-            Reads global data from input file.
-
-            Args:
-                - input (str): Content of the input file.
-
-            Returns:
-                GlobalData: An instance of GlobalData.
-            """
             global_data_dict = {}
             for i in range (0, 8):
                 line = input[i]
@@ -233,20 +236,20 @@ class Grid:
                     line[i] = line[i].strip()
                 line[0] = line[0] + line[1]
                 global_data_dict[line[0]] = int(line[2])
-            return GlobalData(global_data_dict)
+            simulation_time: float = global_data_dict["SimulationTime"]
+            simulation_step_time: float = global_data_dict["SimulationStepTime"]
+            conductivity: float = global_data_dict["Conductivity"]
+            alfa: float = global_data_dict["Alfa"]
+            tot: float = global_data_dict["Tot"]
+            initial_temp: float = global_data_dict["InitialTemp"]
+            density: float = global_data_dict["Density"]
+            specific_heat: float = global_data_dict["SpecificHeat"]
+            nodes_number: int = global_data_dict["Nodesnumber"]
+            elements_number: int = global_data_dict["Elementsnumber"]
+            return GlobalData(simulation_time, simulation_step_time, conductivity, alfa, tot,
+                              initial_temp, density, specific_heat, nodes_number, elements_number)
 
         def _read_nodes(input: str, nodes_start_line: int, nodes_number: int) -> np.ndarray[Node]:
-            """
-            Reads nodes from input file.
-
-            Args:
-                - input (str): Content of the input file.
-                - nodes_start_line (int): Line number where nodes data starts.
-                - nodes_number (int): Number of nodes.
-
-            Returns:
-                np.ndarray[Node]: Array of Node instances.
-            """
             node_list = np.empty(nodes_number, dtype=Node)
             for i in range (nodes_start_line, nodes_start_line + nodes_number):
                 line = input[i].split(", ")
@@ -254,17 +257,6 @@ class Grid:
             return node_list
 
         def _read_elements(input: str, elements_start_line: int, elements_number: int) -> np.ndarray[Element]:
-            """
-            Reads elements data from input file.
-
-            Args:
-                - input (str): Content of the input file.
-                - elements_start_line (int): Line number where elements data starts.
-                - elements_number (int): Number of elements.
-
-            Returns:
-                np.ndarray[Element]: Array of Element instances.
-            """
             elements = np.empty(elements_number, dtype=Element)
             node_ids = []
             for i in range (elements_start_line, elements_start_line + elements_number):
@@ -276,16 +268,6 @@ class Grid:
             return elements
 
         def _read_bc(input: str, bc_start_line: int) -> list[int]:
-            """
-            Reads nodes with border condition from input file.
-
-            Args:
-                - input (str): Content of the input file.
-                - bc_start_line (int): Line number where border condition data starts.
-
-            Returns:
-                list[int]: List of node IDs with border condition.
-            """
             node_ids = []
             line = input[bc_start_line]
             line = line.split(", ")
@@ -294,19 +276,12 @@ class Grid:
             return node_ids
 
         def _add_bc_to_node(nodes: np.ndarray[Node], BC: list[int]) -> None:
-            """
-            Adds border condition to node.
-
-            Args:
-                - nodes (np.ndarray[Node]): Array of Node instances.
-                - BC (list[int]): List of node IDs with border condition.
-            """
             for node_id in BC:
                 nodes[node_id - 1].BC = 1
 
         try:
-            common.logger.info(f"Creating a grid from input file: '{os.path.basename(input_filepath)}'.")
-            f = open(input_filepath, "r")
+            common.logger.info(f"Creating a grid from input file: '{os.path.basename(mesh_path)}'.")
+            f = open(mesh_path, "r")
             file_content: str = f.readlines()
             global_data: GlobalData = _read_global_data(file_content)
             nodes_start_line: int = 11
@@ -319,12 +294,88 @@ class Grid:
             _add_bc_to_node(nodes, BC)
             f.close()
             return cls(global_data, elements, nodes)
-        except FileNotFoundError:
-            common.logger.error(f"Cannnot find an input file: '{input_filepath}'", exc_info=True)
-            raise HandledException
-        except Exception:
-            common.logger.error(f"Unknown exception while creating a grid from input file.", exc_info=True)
-            raise HandledException
+        except Exception as e:
+            err_msg: str = f"Unknown exception while creating a Grid instance from input files: '{os.path.basename(mesh_path)}'."
+            common.logger.error(err_msg, exc_info=True)
+            raise RuntimeError(err_msg) from e
+
+    @classmethod
+    def create_from_msh_and_json(cls: 'Grid', mesh_path: str, data_path: str) -> 'Grid':
+        """
+        Creates a Grid instance from a .msh file and a .json file.
+
+        Args:
+            - mesh_path (str): Path to the .msh file.
+            - data_path (str): Path to the .json file.
+
+        Returns:
+            Grid: A Grid instance.
+        """
+        def _read_global_data(input: dict, nodes_number: int, elements_number: int) -> GlobalData:
+            global_data_dict: dict = input
+            simulation_time: float = global_data_dict["simulation_time"]
+            simulation_step_time: float = global_data_dict["simulation_step_time"]
+            conductivity: float = global_data_dict["conductivity"]
+            alfa: float = global_data_dict["alfa"]
+            tot: float = global_data_dict["tot"]
+            initial_temp: float = global_data_dict["initial_temp"]
+            density: float = global_data_dict["density"]
+            specific_heat: float = global_data_dict["specific_heat"]
+            return GlobalData(simulation_time, simulation_step_time, conductivity, alfa, tot,
+                              initial_temp, density, specific_heat, nodes_number, elements_number)
+
+        def _read_nodes(mesh: Mesh) -> np.ndarray[Node]:
+            common.logger.info("Reading nodes from mesh.")
+            nodes_number: int = mesh.get_number_of_nodes()
+            common.logger.info(f"Number of nodes: {nodes_number}.")
+            nodes = np.empty(nodes_number, dtype=Node)
+            for entity in mesh.get_node_entities():
+                for node in entity.get_nodes():
+                    n_id = node.get_tag()
+                    n_coords = node.get_coordinates()
+                    nodes[n_id - 1] = Node(n_id, n_coords[0], n_coords[1], n_coords[2])
+            return nodes
+
+        def _read_elements(mesh: Mesh) -> np.ndarray[Element]:
+            common.logger.info("Reading elements from mesh.")
+            elements_list = []
+            for entity in mesh.get_element_entities():
+                if entity.get_element_type() == 3:
+                    for element in entity.get_elements():
+                        el_id = element.get_tag()
+                        el_con = np.asarray(element.get_connectivity())
+                        elements_list.append(Element(el_id, el_con))
+            elements_number = len(elements_list)
+            common.logger.info(f"Number of elements: {elements_number}.")
+            elements = np.empty(elements_number, dtype=Element)
+            for i, element in enumerate(elements_list):
+                elements[i] = element
+            return elements
+
+        def _add_bc_to_node(nodes: np.ndarray[Node], BC: list[int]) -> None:
+            for node_id in BC:
+                nodes[node_id - 1].BC = 1
+
+        try:
+            common.logger.info(f"Creating a grid from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
+            mesh: Mesh = gmshparser.parse(mesh_path)
+            nodes: np.ndarray[Node] = _read_nodes(mesh)
+            elements: np.ndarray[Element] = _read_elements(mesh)
+            with open(data_path, "r") as data_file:
+                data = json.load(data_file)
+            global_data: GlobalData = _read_global_data(data, len(nodes), len(elements))
+            # Temporary solution, just for testing, to be changed later
+            BC: list[int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            _add_bc_to_node(nodes, BC)
+            return cls(global_data, elements, nodes)
+        except FileNotFoundError as e:
+            err_msg: str = f"File not found while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
+            common.logger.error(err_msg, exc_info=True)
+            raise FileNotFoundError(err_msg) from e
+        except Exception as e:
+            err_msg: str = f"Unknown exception while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
+            common.logger.error(err_msg, exc_info=True)
+            raise RuntimeError(err_msg) from e
 
     def print(self) -> None:
         """

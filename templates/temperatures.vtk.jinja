@@ -3,16 +3,16 @@ Unstructured Grid Example
 ASCII
 DATASET UNSTRUCTURED_GRID
 
-POINTS {{nodesNumber}} float
+POINTS {{nodes_number}} float
 {% for node in nodes %}{{node.x}} {{node.y}} 0.0
 {% endfor %}
-CELLS {{elementsNumber}} {{sumOfElementsData}}
-{% for i in range(elementsNumber) %}{{elementNodesNumber[i]}}{% for id in elements[i].nodeIds %} {{id - 1}}{% endfor %}
+CELLS {{elements_number}} {{sum_elements_data}}
+{% for i in range(elements_number) %}{{element_nodes_number[i]}}{% for id in elements[i].node_ids %} {{id - 1}}{% endfor %}
 {% endfor %}
-CELL_TYPES {{elementsNumber}}
+CELL_TYPES {{elements_number}}
 {% for element in elements %}9
 {% endfor %}
-POINT_DATA {{nodesNumber}}
+POINT_DATA {{nodes_number}}
 SCALARS Temp float 1
 LOOKUP_TABLE default
 {% for t in temperatures %}{{t[0]}}

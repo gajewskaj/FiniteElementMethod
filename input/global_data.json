@@ -1,0 +1,10 @@
+{
+    "simulation_time": 500,
+    "simulation_step_time": 50,
+    "conductivity": 25,
+    "alfa": 300,
+    "tot": 1200,
+    "initial_temp": 100,
+    "density": 7800,
+    "specific_heat": 700
+}

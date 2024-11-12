@@ -3,11 +3,12 @@ import logging
 import shutil
 from jinja2 import Environment, FileSystemLoader, Template
 
-script_path: str = os.getcwd()
-input_path: str = os.path.join(script_path, "Input")
-output_path: str = os.path.join(script_path, "Output")
-templates_path: str = os.path.join(script_path, "Templates")
-test_path: str = os.path.join(script_path, "Test")
+project_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+print(f"project path: {project_path}")
+input_path: str = os.path.join(project_path, "input")
+output_path: str = os.path.join(project_path, "output")
+templates_path: str = os.path.join(project_path, "templates")
+test_path: str = os.path.join(project_path, "test")
 
 MAIN_LOGGER_NAME = "main_logger"
 TEST_LOGGER_NAME = "test_logger"
@@ -18,8 +19,11 @@ class Settings:
     """
     Class to store settings provided as parameters.
     """
-    def __init__(self, input_filepath: str = None, force_cpu: bool = False):
-        self.input_filepath = input_filepath
+    def __init__(self, mesh_filepath: str = None,
+                 data_filepath: str = None,
+                 force_cpu: bool = False):
+        self.mesh_filepath = mesh_filepath
+        self.data_filepath = data_filepath
         self.force_cpu = force_cpu
 
 settings: Settings = Settings()

@@ -69,7 +69,12 @@
            <div itemprop="articleBody">
              
   <h1>Source code for src.grid</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">gmshparser</span>
+<span class="kn">from</span> <span class="nn">gmshparser</span> <span class="kn">import</span> <span class="n">Mesh</span>
+
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">common</span>
 <span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">.universal_element</span> <span class="kn">import</span> <span class="o">*</span>
@@ -92,23 +97,32 @@
 <span class="sd">        - nodes_number (int): Number of nodes in the grid.</span>
 <span class="sd">        - elements_number (int): Number of elements in the grid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">global_data_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulation_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">simulation_step_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">conductivity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">alfa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">tot</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">initial_temp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">specific_heat</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes GlobalData with values from a dictionary.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            - global_data_dict (dict): Dictionary containing global data.</span>
+<span class="sd">            - global_data_dict (dict): dictionary containing global data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">simulation_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SimulationTime&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">simulation_step_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SimulationStepTime&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Conductivity&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alfa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Alfa&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tot</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Tot&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initial_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;InitialTemp&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Density&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">specific_heat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SpecificHeat&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Nodesnumber&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Elementsnumber&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simulation_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">simulation_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simulation_step_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">simulation_step_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conductivity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">conductivity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alfa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">alfa</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tot</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">tot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">initial_temp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specific_heat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">specific_heat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">nodes_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">elements_number</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;GlobalData&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -163,7 +177,7 @@
 <span class="sd">        - y (float): y coordinate.</span>
 <span class="sd">        - BC (float): Border condition (0 or 1).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">BC</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">BC</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes a Node instance.</span>
 
@@ -176,6 +190,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="nb">id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">x</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">z</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BC</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">BC</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;Node&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -286,32 +301,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Element</span><span class="p">]</span> <span class="o">=</span> <span class="n">elements</span>
 
-<div class="viewcode-block" id="Grid.create_from_file">
-<a class="viewcode-back" href="../../src.html#src.grid.Grid.create_from_file">[docs]</a>
+<div class="viewcode-block" id="Grid.create_from_txt">
+<a class="viewcode-back" href="../../src.html#src.grid.Grid.create_from_txt">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">create_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">create_from_txt</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="s1">&#39;Grid&#39;</span><span class="p">,</span> <span class="n">mesh_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Grid&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a Grid instance from an input file.</span>
+<span class="sd">        Creates a Grid instance from a text file.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            - input_filepath (str): Path to the input file.</span>
+<span class="sd">            - mesh_path (str): Path to the mesh .txt file.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Grid: A Grid instance.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            HandledException: If the input file is not found or an unknown error occurs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">_read_global_data</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlobalData</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Reads global data from input file.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                - input (str): Content of the input file.</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                GlobalData: An instance of GlobalData.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">global_data_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
                 <span class="n">line</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -326,20 +329,20 @@
                     <span class="n">line</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
                 <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">global_data_dict</span><span class="p">[</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">GlobalData</span><span class="p">(</span><span class="n">global_data_dict</span><span class="p">)</span>
+            <span class="n">simulation_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SimulationTime&quot;</span><span class="p">]</span>
+            <span class="n">simulation_step_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SimulationStepTime&quot;</span><span class="p">]</span>
+            <span class="n">conductivity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Conductivity&quot;</span><span class="p">]</span>
+            <span class="n">alfa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Alfa&quot;</span><span class="p">]</span>
+            <span class="n">tot</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Tot&quot;</span><span class="p">]</span>
+            <span class="n">initial_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;InitialTemp&quot;</span><span class="p">]</span>
+            <span class="n">density</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Density&quot;</span><span class="p">]</span>
+            <span class="n">specific_heat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;SpecificHeat&quot;</span><span class="p">]</span>
+            <span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Nodesnumber&quot;</span><span class="p">]</span>
+            <span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;Elementsnumber&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">GlobalData</span><span class="p">(</span><span class="n">simulation_time</span><span class="p">,</span> <span class="n">simulation_step_time</span><span class="p">,</span> <span class="n">conductivity</span><span class="p">,</span> <span class="n">alfa</span><span class="p">,</span> <span class="n">tot</span><span class="p">,</span>
+                              <span class="n">initial_temp</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">specific_heat</span><span class="p">,</span> <span class="n">nodes_number</span><span class="p">,</span> <span class="n">elements_number</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">_read_nodes</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">nodes_start_line</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Reads nodes from input file.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                - input (str): Content of the input file.</span>
-<span class="sd">                - nodes_start_line (int): Line number where nodes data starts.</span>
-<span class="sd">                - nodes_number (int): Number of nodes.</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                np.ndarray[Node]: Array of Node instances.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">node_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nodes_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Node</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">nodes_start_line</span><span class="p">,</span> <span class="n">nodes_start_line</span> <span class="o">+</span> <span class="n">nodes_number</span><span class="p">):</span>
                 <span class="n">line</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">)</span>
@@ -347,17 +350,6 @@
             <span class="k">return</span> <span class="n">node_list</span>
 
         <span class="k">def</span> <span class="nf">_read_elements</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">elements_start_line</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Reads elements data from input file.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                - input (str): Content of the input file.</span>
-<span class="sd">                - elements_start_line (int): Line number where elements data starts.</span>
-<span class="sd">                - elements_number (int): Number of elements.</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                np.ndarray[Element]: Array of Element instances.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">elements_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Element</span><span class="p">)</span>
             <span class="n">node_ids</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">elements_start_line</span><span class="p">,</span> <span class="n">elements_start_line</span> <span class="o">+</span> <span class="n">elements_number</span><span class="p">):</span>
@@ -369,16 +361,6 @@
             <span class="k">return</span> <span class="n">elements</span>
 
         <span class="k">def</span> <span class="nf">_read_bc</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bc_start_line</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Reads nodes with border condition from input file.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                - input (str): Content of the input file.</span>
-<span class="sd">                - bc_start_line (int): Line number where border condition data starts.</span>
-
-<span class="sd">            Returns:</span>
-<span class="sd">                list[int]: List of node IDs with border condition.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">node_ids</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">line</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="n">bc_start_line</span><span class="p">]</span>
             <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">)</span>
@@ -387,19 +369,12 @@
             <span class="k">return</span> <span class="n">node_ids</span>
 
         <span class="k">def</span> <span class="nf">_add_bc_to_node</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">BC</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Adds border condition to node.</span>
-
-<span class="sd">            Args:</span>
-<span class="sd">                - nodes (np.ndarray[Node]): Array of Node instances.</span>
-<span class="sd">                - BC (list[int]): List of node IDs with border condition.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">BC</span><span class="p">:</span>
                 <span class="n">nodes</span><span class="p">[</span><span class="n">node_id</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating a grid from input file: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating a grid from input file: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
             <span class="n">file_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
             <span class="n">global_data</span><span class="p">:</span> <span class="n">GlobalData</span> <span class="o">=</span> <span class="n">_read_global_data</span><span class="p">(</span><span class="n">file_content</span><span class="p">)</span>
             <span class="n">nodes_start_line</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">11</span>
@@ -412,12 +387,91 @@
             <span class="n">_add_bc_to_node</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">BC</span><span class="p">)</span>
             <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">global_data</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannnot find an input file: &#39;</span><span class="si">{</span><span class="n">input_filepath</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">HandledException</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown exception while creating a grid from input file.&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">HandledException</span></div>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">err_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unknown exception while creating a Grid instance from input files: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span></div>
+
+
+<div class="viewcode-block" id="Grid.create_from_msh_and_json">
+<a class="viewcode-back" href="../../src.html#src.grid.Grid.create_from_msh_and_json">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_msh_and_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="s1">&#39;Grid&#39;</span><span class="p">,</span> <span class="n">mesh_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Grid&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a Grid instance from a .msh file and a .json file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            - mesh_path (str): Path to the .msh file.</span>
+<span class="sd">            - data_path (str): Path to the .json file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Grid: A Grid instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">_read_global_data</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">elements_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlobalData</span><span class="p">:</span>
+            <span class="n">global_data_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">input</span>
+            <span class="n">simulation_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;simulation_time&quot;</span><span class="p">]</span>
+            <span class="n">simulation_step_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;simulation_step_time&quot;</span><span class="p">]</span>
+            <span class="n">conductivity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;conductivity&quot;</span><span class="p">]</span>
+            <span class="n">alfa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;alfa&quot;</span><span class="p">]</span>
+            <span class="n">tot</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;tot&quot;</span><span class="p">]</span>
+            <span class="n">initial_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;initial_temp&quot;</span><span class="p">]</span>
+            <span class="n">density</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">]</span>
+            <span class="n">specific_heat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">global_data_dict</span><span class="p">[</span><span class="s2">&quot;specific_heat&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">GlobalData</span><span class="p">(</span><span class="n">simulation_time</span><span class="p">,</span> <span class="n">simulation_step_time</span><span class="p">,</span> <span class="n">conductivity</span><span class="p">,</span> <span class="n">alfa</span><span class="p">,</span> <span class="n">tot</span><span class="p">,</span>
+                              <span class="n">initial_temp</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">specific_heat</span><span class="p">,</span> <span class="n">nodes_number</span><span class="p">,</span> <span class="n">elements_number</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_read_nodes</span><span class="p">(</span><span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading nodes from mesh.&quot;</span><span class="p">)</span>
+            <span class="n">nodes_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">get_number_of_nodes</span><span class="p">()</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of nodes: </span><span class="si">{</span><span class="n">nodes_number</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nodes_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">get_node_entities</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">():</span>
+                    <span class="n">n_id</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_tag</span><span class="p">()</span>
+                    <span class="n">n_coords</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_coordinates</span><span class="p">()</span>
+                    <span class="n">nodes</span><span class="p">[</span><span class="n">n_id</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="n">n_id</span><span class="p">,</span> <span class="n">n_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_coords</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">nodes</span>
+
+        <span class="k">def</span> <span class="nf">_read_elements</span><span class="p">(</span><span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading elements from mesh.&quot;</span><span class="p">)</span>
+            <span class="n">elements_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">get_element_entities</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">entity</span><span class="o">.</span><span class="n">get_element_type</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">get_elements</span><span class="p">():</span>
+                        <span class="n">el_id</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">get_tag</span><span class="p">()</span>
+                        <span class="n">el_con</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">get_connectivity</span><span class="p">())</span>
+                        <span class="n">elements_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Element</span><span class="p">(</span><span class="n">el_id</span><span class="p">,</span> <span class="n">el_con</span><span class="p">))</span>
+            <span class="n">elements_number</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements_list</span><span class="p">)</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of elements: </span><span class="si">{</span><span class="n">elements_number</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">elements_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Element</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elements_list</span><span class="p">):</span>
+                <span class="n">elements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">element</span>
+            <span class="k">return</span> <span class="n">elements</span>
+
+        <span class="k">def</span> <span class="nf">_add_bc_to_node</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">BC</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">BC</span><span class="p">:</span>
+                <span class="n">nodes</span><span class="p">[</span><span class="n">node_id</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating a grid from input files: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="n">mesh</span><span class="p">:</span> <span class="n">Mesh</span> <span class="o">=</span> <span class="n">gmshparser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span>
+            <span class="n">nodes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Node</span><span class="p">]</span> <span class="o">=</span> <span class="n">_read_nodes</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+            <span class="n">elements</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Element</span><span class="p">]</span> <span class="o">=</span> <span class="n">_read_elements</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span>
+            <span class="n">global_data</span><span class="p">:</span> <span class="n">GlobalData</span> <span class="o">=</span> <span class="n">_read_global_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">))</span>
+            <span class="c1"># Temporary solution, just for testing, to be changed later</span>
+            <span class="n">BC</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">]</span>
+            <span class="n">_add_bc_to_node</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">BC</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">global_data</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">nodes</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">err_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;File not found while creating a Grid instance from input files: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">err_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unknown exception while creating a Grid instance from input files: &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">mesh_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="n">common</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span></div>
 
 
 <div class="viewcode-block" id="Grid.print">

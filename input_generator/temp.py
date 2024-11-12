@@ -1,78 +1,64 @@
+import os
 import sys
 import gmsh
 
-def create_mesh():
-    gmsh.initialize()
-    gmsh.model.add("example_grid")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src import common
 
-    nodes = [
-        (1, 0.100000001, 0.00499999989, 0.0),
-        (2, 0.0666666701, 0.00499999989, 0.0),
-        (3, 0.0333333351, 0.00499999989, 0.0),
-        (4, 0.0, 0.00499999989, 0.0),
-        (5, 0.100000001, -0.0283333343, 0.0),
-        (6, 0.0666666701, -0.0283333343, 0.0),
-        (7, 0.0333333351, -0.0283333343, 0.0),
-        (8, 0.0, -0.0283333343, 0.0),
-        (9, 0.100000001, -0.0616666675, 0.0),
-        (10, 0.0666666701, -0.0616666675, 0.0),
-        (11, 0.0333333351, -0.0616666675, 0.0),
-        (12, 0.0, -0.0616666675, 0.0),
-        (13, 0.100000001, -0.0949999988, 0.0),
-        (14, 0.0666666701, -0.0949999988, 0.0),
-        (15, 0.0333333351, -0.0949999988, 0.0),
-        (16, 0.0, -0.0949999988, 0.0)
-    ]
+# Initialize Gmsh
+gmsh.initialize()
 
-    for node in nodes:
-        gmsh.model.geo.addPoint(node[1], node[2], node[3], tag=node[0])
-        print(f"Added node {node[0]} at ({node[1]}, {node[2]}, {node[3]})")
+# Create a new model
+gmsh.model.add("quadrilateral_mesh")
 
-    gmsh.model.geo.synchronize()
+# Define the size of the mesh (100x100 elements)
+num_elements_x = 3
+num_elements_y = 3
+# length_x = 0.100000001  # Length of the mesh along the x-axis
+# length_y = 0.00499999989+0.0949999988  # Length of the mesh along the y-axis
+min_x = 0
+max_x = 0.100000001
+min_y = -0.0949999988
+max_y = 0.00499999989
 
-    elements = [
-        (1, [1, 2, 6, 5]),
-        (2, [2, 3, 7, 6]),
-        (3, [3, 4, 8, 7]),
-        (4, [5, 6, 10, 9]),
-        (5, [6, 7, 11, 10]),
-        (6, [7, 8, 12, 11]),
-        (7, [9, 10, 14, 13]),
-        (8, [10, 11, 15, 14]),
-        (9, [11, 12, 16, 15])
-    ]
+# Define the corner points of the quadrilateral
+p1 = gmsh.model.geo.addPoint(min_x, min_y, 0)      # Bottom-left corner (0, 0)
+p2 = gmsh.model.geo.addPoint(max_x, min_y, 0)  # Bottom-right corner (1, 0)
+p3 = gmsh.model.geo.addPoint(max_x, max_y, 0)  # Top-right corner (1, 1)
+p4 = gmsh.model.geo.addPoint(min_x, max_y, 0)      # Top-left corner (0, 1)
 
-    for element in elements:
-        element_id, node_ids = element
-        lines = []
-        for i in range(4):
-            start_node = node_ids[i]
-            end_node = node_ids[(i + 1) % 4]
-            line_tag = gmsh.model.geo.addLine(start_node, end_node)
-            lines.append(line_tag)
-        curve_loop = gmsh.model.geo.addCurveLoop(lines)
-        gmsh.model.geo.addPlaneSurface([curve_loop], tag=element_id)
+# Create the edges of the quadrilateral
+l1 = gmsh.model.geo.addLine(p1, p2)
+l2 = gmsh.model.geo.addLine(p2, p3)
+l3 = gmsh.model.geo.addLine(p3, p4)
+l4 = gmsh.model.geo.addLine(p4, p1)
 
-    boundary_conditions = [1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16]
-    gmsh.model.addPhysicalGroup(0, boundary_conditions, tag=1)
-    gmsh.model.setPhysicalName(0, 1, "Boundary")
+# Create a curve loop and a plane surface for the quadrilateral
+curve_loop = gmsh.model.geo.addCurveLoop([l1, l2, l3, l4])
+surface = gmsh.model.geo.addPlaneSurface([curve_loop])
 
-    all_nodes = set(node[0] for node in nodes)
-    non_boundary_nodes = list(all_nodes - set(boundary_conditions))
+# Apply a structured quadrilateral mesh using a transfinite algorithm
+gmsh.model.geo.mesh.setTransfiniteCurve(l1, num_elements_x + 1)  # Number of divisions along x
+gmsh.model.geo.mesh.setTransfiniteCurve(l3, num_elements_x + 1)
+gmsh.model.geo.mesh.setTransfiniteCurve(l2, num_elements_y + 1)  # Number of divisions along y
+gmsh.model.geo.mesh.setTransfiniteCurve(l4, num_elements_y + 1)
 
-    gmsh.model.addPhysicalGroup(0, non_boundary_nodes, tag=2)
-    gmsh.model.setPhysicalName(0, 2, "NonBoundary")
+# Set the transfinite meshing for the surface
+gmsh.model.geo.mesh.setTransfiniteSurface(surface)
+gmsh.model.geo.mesh.setRecombine(2, surface)  # Set recombination to create quadrilaterals
 
-    gmsh.model.geo.synchronize()
+# Synchronize the model
+gmsh.model.geo.synchronize()
 
-    gmsh.model.mesh.generate(2)
+# Generate the mesh
+gmsh.model.mesh.generate(2)  # 2D mesh
 
-    gmsh.write("example_grid.msh")
+# Save the mesh to a file
+gmsh.write(os.path.join(common.input_path, "quadrilateral_mesh.msh"))
 
-    if 'close' not in sys.argv:
-        gmsh.fltk.run()
+# Optionally, display the mesh in the Gmsh GUI
+if '-nopopup' not in sys.argv:
+    gmsh.fltk.run()
 
-    gmsh.finalize()
-
-if __name__ == "__main__":
-    create_mesh()
+# Finalize Gmsh
+gmsh.finalize()

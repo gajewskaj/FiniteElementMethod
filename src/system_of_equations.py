@@ -1,5 +1,5 @@
 import time
-from typing import Union, Tuple
+from typing import Union
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -47,8 +47,8 @@ class SystemOfEquations(ABC):
         self.elements: list[Element] = grid.elements
 
     @abstractmethod
-    def _aggregate_H_C(self) -> Union[Tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix],
-                                      Tuple['gpu_sparse.csr_matrix', 'gpu_sparse.csr_matrix']]:
+    def _aggregate_H_C(self) -> Union[tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix],
+                                      tuple['gpu_sparse.csr_matrix', 'gpu_sparse.csr_matrix']]:
         """
         Creates global H and C matrices.
 
@@ -98,7 +98,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
         self.H, self.C = self._aggregate_H_C()
         self.cpu_solve_factorized = cpu_linalg.factorized(self.H + self.C/self.step)
 
-    def _aggregate_H_C(self) -> Tuple[cpu_sparse.csc_matrix, cpu_sparse.csc_matrix]:
+    def _aggregate_H_C(self) -> tuple[cpu_sparse.csc_matrix, cpu_sparse.csc_matrix]:
         """
         Creates global H and C matrices using CPU.
 
@@ -176,7 +176,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
         self.H, self.C = self._aggregate_H_C()
         self.gpu_solve_factorized = gpu_linalg.factorized(self.H + self.C/self.step)
 
-    def _aggregate_H_C(self) -> Tuple['gpu_sparse.csc_matrix', 'gpu_sparse.csc_matrix']:
+    def _aggregate_H_C(self) -> tuple['gpu_sparse.csc_matrix', 'gpu_sparse.csc_matrix']:
         """
         Creates global H and C matrices using GPU.
 
@@ -265,7 +265,7 @@ def simulate(grid: Grid) -> list[np.ndarray]:
     while tau0 < tauk:
         result: np.ndarray = soe.solve()
         temperatures.append(result)
-        # common.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
+        common.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
         tau0 += step
     end: float = time.time() # Stop measuring time
     common.logger.info(f"Calculated in {end-start} seconds.")
