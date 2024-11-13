@@ -1,6 +1,5 @@
 import numpy as np
-from math import *
-from .common import *
+
 from .numerical_integration import GaussianQuadrature
 
 class UniversalElement(GaussianQuadrature):

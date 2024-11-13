@@ -1,9 +1,9 @@
-from math import *
+from math import sqrt
 import numpy as np
-from . import common
-from .common import *
-from .universal_element import UniversalElement, Surface
+
+from . import config
 from .grid import Grid, GlobalData, Element, Node
+from .universal_element import UniversalElement, Surface
 
 class LocalMatricesCalculation:
     """
@@ -15,8 +15,9 @@ class LocalMatricesCalculation:
         Initializes the LocalMatricesCalculation class.
         Raises an exception since this is an abstract class.
         """
-        common.logger.error(f"{type(self).__name__} is an abstract class. You cannot create an instance of this class.")
-        raise HandledException
+        err_msg: str = f"{type(self).__name__} is an abstract class. You cannot create an instance of this class."
+        config.logger.error(err_msg)
+        raise RuntimeError(err_msg)
 
     @staticmethod
     def calculate(n: int, grid: Grid) -> None:
@@ -37,7 +38,7 @@ class LocalMatricesCalculation:
                  grid.nodes[element.node_ids[2] - 1],
                  grid.nodes[element.node_ids[3] - 1]], 
                 u_el, grid.global_data)
-            #common.main_logger.debug(f"H:\n{element.H}\nC:{element.C}\nHbc:\n{element.Hbc}\nP:\n{element.P}")
+            #config.main_logger.debug(f"H:\n{element.H}\nC:{element.C}\nHbc:\n{element.Hbc}\nP:\n{element.P}")
 
     @staticmethod
     def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_data: GlobalData) -> tuple:
@@ -91,7 +92,7 @@ class LocalMatricesCalculation:
         for i in range(0, 4):
             x_coords.append(nodes[i].x)
             y_coords.append(nodes[i].y)
-        #common.main_logger.debug(f"x_coords: {x_coords}\ny_coords: {y_coords}")
+        #config.main_logger.debug(f"x_coords: {x_coords}\ny_coords: {y_coords}")
         return x_coords, y_coords
 
     @staticmethod
@@ -113,7 +114,7 @@ class LocalMatricesCalculation:
             dx_deta_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], x_coords))
             dy_dksi_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_dksi_tab[i][0], u_el.dn_dksi_tab[i][1], u_el.dn_dksi_tab[i][2], u_el.dn_dksi_tab[i][3], y_coords))
             dy_deta_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], y_coords))
-        #common.main_logger.debug(f"dx_dksi_tab: {dx_dksi_tab}\ndx_deta_tab: {dx_deta_tab}\ndy_dksi_tab: {dy_dksi_tab}\ndy_deta_tab: {dy_deta_tab}")
+        #config.main_logger.debug(f"dx_dksi_tab: {dx_dksi_tab}\ndx_deta_tab: {dx_deta_tab}\ndy_dksi_tab: {dy_dksi_tab}\ndy_deta_tab: {dy_deta_tab}")
         return dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab
 
     @staticmethod
@@ -155,9 +156,9 @@ class LocalMatricesCalculation:
         for j in range(u_el.n*u_el.n):
             mxJ = np.array([[dx_dksi_tab[j], dy_dksi_tab[j]],
                              [dx_deta_tab[j], dy_deta_tab[j]]])
-            #common.main_logger.debug(f"Jacobian matrix:\n{mxJ}")
+            #config.main_logger.debug(f"Jacobian matrix:\n{mxJ}")
             detJ = np.linalg.det(mxJ)
-            #common.main_logger.debug(f"Jacobian determinant:\n{detJ}")
+            #config.main_logger.debug(f"Jacobian determinant:\n{detJ}")
             det_tab.append(detJ)
             mx1 = np.array([[dy_deta_tab[j], -dy_dksi_tab[j]],
                              [-dx_deta_tab[j], dx_dksi_tab[j]]])
@@ -167,9 +168,9 @@ class LocalMatricesCalculation:
                 mxOutput = np.matmul(((1/detJ)*mx1), mx2)
                 dn_dx_tab[j][i] = mxOutput[0][0]
                 dn_dy_tab[j][i] = mxOutput[1][0]
-        # common.main_logger.debug("dn_dx_tab:")
+        # config.main_logger.debug("dn_dx_tab:")
         # print2dTab(dn_dx_tab)
-        # common.main_logger.debug("dn_dy_tab:")
+        # config.main_logger.debug("dn_dy_tab:")
         # print2dTab(dn_dy_tab)
         return dn_dx_tab, dn_dy_tab, det_tab
 
@@ -208,7 +209,7 @@ class LocalMatricesCalculation:
                              [NTab[i][3]]])
             ipMxH = c*(np.matmul(mxDNdX, mxDNdX.transpose()) + np.matmul(mxDNdY, mxDNdY.transpose()))*det_tab[i]
             ipMxC = sH*d*(np.matmul(mxN, mxN.transpose()))*det_tab[i]
-            #common.main_logger.debug(f"IP {i+1}:\n{ipMxH}")
+            #config.main_logger.debug(f"IP {i+1}:\n{ipMxH}")
             mxHTab.append(ipMxH)
             mxCTab.append(ipMxC)
         return mxHTab, mxCTab
