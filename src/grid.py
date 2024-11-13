@@ -1,12 +1,12 @@
 import json
+from math import isclose
+import os
 
-import numpy as np
 import gmshparser
 from gmshparser import Mesh
+import numpy as np
 
-from . import common
-from .common import *
-from .universal_element import *
+from . import config
 
 class GlobalData:
     """
@@ -77,16 +77,16 @@ class GlobalData:
         """
         Prints the global data.
         """
-        common.logger.debug(f"Simulation time: \t{self.simulation_time}")
-        common.logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
-        common.logger.debug(f"Conductivity: \t\t{self.conductivity}")
-        common.logger.debug(f"Alfa: \t\t\t{self.alfa}")
-        common.logger.debug(f"Tot: \t\t\t{self.tot}")
-        common.logger.debug(f"Initial temp: \t\t{self.initial_temp}")
-        common.logger.debug(f"Density: \t\t{self.density}")
-        common.logger.debug(f"Specific heat: \t\t{self.specific_heat}")
-        common.logger.debug(f"Nodes number: \t\t{self.nodes_number}")
-        common.logger.debug(f"Elements number: \t{self.elements_number}")
+        config.logger.debug(f"Simulation time: \t{self.simulation_time}")
+        config.logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
+        config.logger.debug(f"Conductivity: \t\t{self.conductivity}")
+        config.logger.debug(f"Alfa: \t\t\t{self.alfa}")
+        config.logger.debug(f"Tot: \t\t\t{self.tot}")
+        config.logger.debug(f"Initial temp: \t\t{self.initial_temp}")
+        config.logger.debug(f"Density: \t\t{self.density}")
+        config.logger.debug(f"Specific heat: \t\t{self.specific_heat}")
+        config.logger.debug(f"Nodes number: \t\t{self.nodes_number}")
+        config.logger.debug(f"Elements number: \t{self.elements_number}")
 
 class Node:
     """
@@ -134,7 +134,7 @@ class Node:
         """
         Prints the node data.
         """
-        common.logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
+        config.logger.debug(f"Node {self.id}: \t({self.x}, {self.y})")
 
 class Element:
     """
@@ -185,7 +185,7 @@ class Element:
         """
         Prints the element data.
         """
-        common.logger.debug(f"Element {self.id}: \t{self.node_ids}")
+        config.logger.debug(f"Element {self.id}: \t{self.node_ids}")
 
 class Grid:
     """
@@ -280,7 +280,7 @@ class Grid:
                 nodes[node_id - 1].BC = 1
 
         try:
-            common.logger.info(f"Creating a grid from input file: '{os.path.basename(mesh_path)}'.")
+            config.logger.info(f"Creating a grid from input file: '{os.path.basename(mesh_path)}'.")
             f = open(mesh_path, "r")
             file_content: str = f.readlines()
             global_data: GlobalData = _read_global_data(file_content)
@@ -294,10 +294,10 @@ class Grid:
             _add_bc_to_node(nodes, BC)
             f.close()
             return cls(global_data, elements, nodes)
-        except Exception as e:
+        except Exception:
             err_msg: str = f"Unknown exception while creating a Grid instance from input files: '{os.path.basename(mesh_path)}'."
-            common.logger.error(err_msg, exc_info=True)
-            raise RuntimeError(err_msg) from e
+            config.logger.error(err_msg, exc_info=True)
+            raise RuntimeError(err_msg)
 
     @classmethod
     def create_from_msh_and_json(cls: 'Grid', mesh_path: str, data_path: str) -> 'Grid':
@@ -325,19 +325,20 @@ class Grid:
                               initial_temp, density, specific_heat, nodes_number, elements_number)
 
         def _read_nodes(mesh: Mesh) -> np.ndarray[Node]:
-            common.logger.info("Reading nodes from mesh.")
+            config.logger.info("Reading nodes from mesh.")
             nodes_number: int = mesh.get_number_of_nodes()
-            common.logger.info(f"Number of nodes: {nodes_number}.")
+            config.logger.info(f"Number of nodes: {nodes_number}.")
             nodes = np.empty(nodes_number, dtype=Node)
             for entity in mesh.get_node_entities():
+                entity_dim = 1 if entity.get_dimension() in [0, 1] else 0
                 for node in entity.get_nodes():
                     n_id = node.get_tag()
                     n_coords = node.get_coordinates()
-                    nodes[n_id - 1] = Node(n_id, n_coords[0], n_coords[1], n_coords[2])
+                    nodes[n_id - 1] = Node(n_id, n_coords[0], n_coords[1], n_coords[2], entity_dim)
             return nodes
 
         def _read_elements(mesh: Mesh) -> np.ndarray[Element]:
-            common.logger.info("Reading elements from mesh.")
+            config.logger.info("Reading elements from mesh.")
             elements_list = []
             for entity in mesh.get_element_entities():
                 if entity.get_element_type() == 3:
@@ -346,46 +347,39 @@ class Grid:
                         el_con = np.asarray(element.get_connectivity())
                         elements_list.append(Element(el_id, el_con))
             elements_number = len(elements_list)
-            common.logger.info(f"Number of elements: {elements_number}.")
+            config.logger.info(f"Number of elements: {elements_number}.")
             elements = np.empty(elements_number, dtype=Element)
             for i, element in enumerate(elements_list):
                 elements[i] = element
             return elements
 
-        def _add_bc_to_node(nodes: np.ndarray[Node], BC: list[int]) -> None:
-            for node_id in BC:
-                nodes[node_id - 1].BC = 1
-
         try:
-            common.logger.info(f"Creating a grid from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
+            config.logger.info(f"Creating a grid from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
             mesh: Mesh = gmshparser.parse(mesh_path)
             nodes: np.ndarray[Node] = _read_nodes(mesh)
             elements: np.ndarray[Element] = _read_elements(mesh)
             with open(data_path, "r") as data_file:
                 data = json.load(data_file)
             global_data: GlobalData = _read_global_data(data, len(nodes), len(elements))
-            # Temporary solution, just for testing, to be changed later
-            BC: list[int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            _add_bc_to_node(nodes, BC)
             return cls(global_data, elements, nodes)
         except FileNotFoundError as e:
             err_msg: str = f"File not found while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
-            common.logger.error(err_msg, exc_info=True)
-            raise FileNotFoundError(err_msg) from e
+            config.logger.error(err_msg, exc_info=True)
+            raise FileNotFoundError(err_msg)
         except Exception as e:
             err_msg: str = f"Unknown exception while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
-            common.logger.error(err_msg, exc_info=True)
-            raise RuntimeError(err_msg) from e
+            config.logger.error(err_msg, exc_info=True)
+            raise RuntimeError(err_msg)
 
     def print(self) -> None:
         """
         Prints the grid data.
         """
         self.global_data.print()
-        common.logger.debug("\nNodes:")
+        config.logger.debug("\nNodes:")
         for node in self.nodes:
             node.print()
-        common.logger.debug("\nElements:")
+        config.logger.debug("\nElements:")
         for element in self.elements:
             element.print()
-        common.logger.debug(f"\nBC:\n{self.BC}\n")
+        config.logger.debug(f"\nBC:\n{self.BC}\n")

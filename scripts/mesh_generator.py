@@ -3,7 +3,7 @@ import sys
 import gmsh
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src import common
+from src import config
 
 # Initialize Gmsh
 gmsh.initialize()
@@ -54,7 +54,7 @@ gmsh.model.geo.synchronize()
 gmsh.model.mesh.generate(2)  # 2D mesh
 
 # Save the mesh to a file
-gmsh.write(os.path.join(common.input_path, "quadrilateral_mesh.msh"))
+gmsh.write(os.path.join(config.input_path, "quadrilateral_mesh.msh"))
 
 # Optionally, display the mesh in the Gmsh GUI
 if '-nopopup' not in sys.argv:
