@@ -2,6 +2,8 @@ import os
 import pathlib
 import argparse
 
+import numpy as np
+
 from src.helpers import create_or_clear_directory, init_logging
 from src import config
 from src.grid import Grid
@@ -16,7 +18,7 @@ def parse_arguments() -> tuple[str, str, bool]:
         Settings: Parsed arguments as a Settings object.
     """
     parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
-    parser.add_argument('--mesh', type=str, default=os.path.join(config.test_path, "test1_grid.txt"),
+    parser.add_argument('--mesh', type=str, default=os.path.join(config.test_path, "test4_grid.txt"),
                         help='Path to the input grid file')
     parser.add_argument('--data', type=str, default=None,
                         help='Path to the input data file')
@@ -52,8 +54,10 @@ def run() -> None:
         LocalMatricesCalculation.calculate(5, grid)
         # Simulate temperatures in the grid for given timeframes
         from src.system_of_equations import simulate
-        temperatures: list[float] = simulate(grid)
-        config.logger.debug(temperatures)
+        times, temperatures = simulate(grid)
+        config.logger.debug(f"Time        Min temp    Max temp")
+        for i in range(len(temperatures)):
+            config.logger.debug(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
         # Generate .vtk files for ParaView
         generate_vtk_files(output_dir_path, grid, temperatures)
     except Exception:

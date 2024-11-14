@@ -235,17 +235,19 @@ class SystemOfEquationsGPU(SystemOfEquations):
         self.t0 = result
         return cp.asnumpy(result)
 
-def simulate(grid: Grid) -> list[np.ndarray]:
+def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     """
     Returns temperatures in element nodes for all time steps.
 
     Args:
-        - grid (Grid): The grid containing elements.
+        grid (Grid): The grid containing elements.
 
     Returns:
-        list[np.ndarray]: List of temperature values at each node for all time steps.
+        - list[float]: List of time steps.
+        - list[np.ndarray]: List of temperature values at each node for all time steps.
     """
-    temperatures: list[np.ndarray] = []
+    times: list[float | 'cp.float32'] = []
+    temperatures: list[np.ndarray | 'cp.ndarray']= []
     soe: SystemOfEquations
     if cp_available:
         config.logger.info("Starting calculations on GPU.")
@@ -257,13 +259,14 @@ def simulate(grid: Grid) -> list[np.ndarray]:
         soe = SystemOfEquationsCPU(grid)
         tauk: float = grid.global_data.simulation_time
         dtau: float = soe.step
-    config.logger.info(f"Time        Min temp    Max temp")
     start: float = time.time() # Start measuring time
     while dtau <= tauk:
         result: np.ndarray = soe.solve()
+        times.append(dtau)
         temperatures.append(result)
-        config.logger.info(f"{(dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
         dtau += soe.step
     end: float = time.time() # Stop measuring time
     config.logger.info(f"Calculated in {end-start} seconds.")
-    return temperatures
+    if cp_available:
+        return cp.asnumpy(times), cp.asnumpy(temperatures)
+    return times, temperatures
