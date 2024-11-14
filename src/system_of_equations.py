@@ -43,7 +43,6 @@ class SystemOfEquations(ABC):
     def __init__(self, grid: Grid):
         self.dim: int = grid.global_data.nodes_number
         self.step: float = grid.global_data.simulation_step_time
-        self.dtau: float = 0.0
         self.elements: list[Element] = grid.elements
 
     @abstractmethod
@@ -87,7 +86,6 @@ class SystemOfEquationsCPU(SystemOfEquations):
         - C (scipy.sparse.csr_matrix): Global C matrix.
         - t0 (np.ndarray): Vector filled with initial temperature values.
         - step (float): Simulation step time.
-        - dtau (float): Current time - start time.
         - dim (int): Dimensions of H matrix and P vector.
         - elements (list[Element]): List of elements in the grid.
     """
@@ -149,7 +147,6 @@ class SystemOfEquationsCPU(SystemOfEquations):
         Returns:
             np.ndarray: The temperature values at each node.
         """
-        self.dtau += self.step
         P = self.P + self.C.dot(self.t0)/self.step
         result: np.ndarray = self.cpu_solve_factorized(P)
         self.t0 = result
@@ -165,14 +162,14 @@ class SystemOfEquationsGPU(SystemOfEquations):
         - C (cupyx.scipy.sparse.csr_matrix): Global C matrix.
         - t0 (cp.ndarray): Vector filled with initial temperature values.
         - step (float): Simulation step time.
-        - dtau (float): Current time - start time.
         - dim (int): Dimensions of H matrix and P vector.
         - elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         super().__init__(grid)
         self.t0: cp.ndarray = cp.full((self.dim, 1), grid.global_data.initial_temp)
-        self.P = self._aggregate_P()
+        self.step = cp.float32(self.step)
+        self.P: cp.ndarray = self._aggregate_P()
         self.H, self.C = self._aggregate_H_C()
         self.gpu_solve_factorized = gpu_linalg.factorized(self.H + self.C/self.step)
 
@@ -233,40 +230,43 @@ class SystemOfEquationsGPU(SystemOfEquations):
         Returns:
             np.ndarray: The temperature values at each node.
         """
-        self.dtau += self.step
         P = self.P + self.C.dot(self.t0)/self.step
         result: cp.ndarray = self.gpu_solve_factorized(P)
         self.t0 = result
         return cp.asnumpy(result)
 
-def simulate(grid: Grid) -> list[np.ndarray]:
+def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     """
     Returns temperatures in element nodes for all time steps.
 
     Args:
-        - grid (Grid): The grid containing elements.
+        grid (Grid): The grid containing elements.
 
     Returns:
-        list[np.ndarray]: List of temperature values at each node for all time steps.
+        - list[float]: List of time steps.
+        - list[np.ndarray]: List of temperature values at each node for all time steps.
     """
-    temperatures: list[np.ndarray] = []
+    times: list[float | 'cp.float32'] = []
+    temperatures: list[np.ndarray | 'cp.ndarray']= []
     soe: SystemOfEquations
     if cp_available:
         config.logger.info("Starting calculations on GPU.")
         soe = SystemOfEquationsGPU(grid)
+        tauk = cp.float32(grid.global_data.simulation_time)
+        dtau: cp.float32 = soe.step
     else:
         config.logger.info("Starting calculations on CPU.")
         soe = SystemOfEquationsCPU(grid)
-    tau0: int = 0
-    tauk: float = grid.global_data.simulation_time
-    step: float = grid.global_data.simulation_step_time
-    config.logger.info(f"Time        Min temp    Max temp")
+        tauk: float = grid.global_data.simulation_time
+        dtau: float = soe.step
     start: float = time.time() # Start measuring time
-    while tau0 < tauk:
+    while dtau <= tauk:
         result: np.ndarray = soe.solve()
+        times.append(dtau)
         temperatures.append(result)
-        config.logger.info(f"{(soe.dtau):<12}{round(np.min(result), 3):<12}{round(np.max(result), 3):<12}")
-        tau0 += step
+        dtau += soe.step
     end: float = time.time() # Stop measuring time
     config.logger.info(f"Calculated in {end-start} seconds.")
-    return temperatures
+    if cp_available:
+        return cp.asnumpy(times), cp.asnumpy(temperatures)
+    return times, temperatures

@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import gmsh
@@ -5,15 +6,23 @@ import gmsh
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src import config
 
+def parse_arguments() -> tuple[int, int]:
+    parser = argparse.ArgumentParser(description="Mesh generator")
+    parser.add_argument('--x_elem', type=int, default=100,
+                        help='Number of x elements')
+    parser.add_argument('--y_elem', type=int, default=100,
+                        help='Number of y elements')
+    args = parser.parse_args()
+    return args.x_elem, args.y_elem
+
 # Initialize Gmsh
 gmsh.initialize()
 
 # Create a new model
 gmsh.model.add("quadrilateral_mesh")
 
-# Define the size of the mesh (100x100 elements)
-num_elements_x = 3
-num_elements_y = 3
+# Define the size of the mesh
+num_elements_x, num_elements_y = parse_arguments()
 # length_x = 0.100000001  # Length of the mesh along the x-axis
 # length_y = 0.00499999989+0.0949999988  # Length of the mesh along the y-axis
 min_x = 0
@@ -55,10 +64,6 @@ gmsh.model.mesh.generate(2)  # 2D mesh
 
 # Save the mesh to a file
 gmsh.write(os.path.join(config.input_path, "quadrilateral_mesh.msh"))
-
-# Optionally, display the mesh in the Gmsh GUI
-if '-nopopup' not in sys.argv:
-    gmsh.fltk.run()
 
 # Finalize Gmsh
 gmsh.finalize()
