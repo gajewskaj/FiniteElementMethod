@@ -12,8 +12,8 @@ gmsh.initialize()
 gmsh.model.add("quadrilateral_mesh")
 
 # Define the size of the mesh (100x100 elements)
-num_elements_x = 3
-num_elements_y = 3
+num_elements_x = 100
+num_elements_y = 100
 # length_x = 0.100000001  # Length of the mesh along the x-axis
 # length_y = 0.00499999989+0.0949999988  # Length of the mesh along the y-axis
 min_x = 0
