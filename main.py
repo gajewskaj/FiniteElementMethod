@@ -53,8 +53,8 @@ def run() -> None:
             grid = Grid.create_from_txt(mesh_filepath)
         # Calculate matrices stored in elements
         start: float = time.time() # Start measuring time
-        LocalMatricesCalculation.calculate(2, grid)
-        # calculate_local_matrices(2, grid)
+        # LocalMatricesCalculation.calculate(2, grid)
+        calculate_local_matrices(2, grid)
         end: float = time.time() # Stop measuring time
         config.logger.info(f"Local matrices calculated in {end-start} seconds.")
         # Simulate temperatures in the grid for given timeframes
