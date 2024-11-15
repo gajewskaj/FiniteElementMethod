@@ -31,14 +31,14 @@ class SystemOfEquations(ABC):
     Abstract class designed for calculating temperature in each node of the grid by creating and solving a system of equations.
 
     Attributes:
-        - H (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        - P (np.ndarray or cp.ndarray): Global P vector.
-        - C (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global C matrix.
-        - t0 (np.ndarray or cp.ndarray): Vector filled with initial temperature values.
-        - step (float): Simulation step time.
-        - dtau (float): Current time - start time.
-        - dim (int): Dimensions of H matrix and P vector.
-        - elements (list[Element]): List of elements in the grid.
+        H (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        P (np.ndarray or cp.ndarray): Global P vector.
+        C (scipy.sparse.csr_matrix or cupyx.scipy.sparse.csr_matrix): Global C matrix.
+        t0 (np.ndarray or cp.ndarray): Vector filled with initial temperature values.
+        step (float): Simulation step time.
+        dtau (float): Current time - start time.
+        dim (int): Dimensions of H matrix and P vector.
+        elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         self.dim: int = grid.global_data.nodes_number
@@ -81,13 +81,13 @@ class SystemOfEquationsCPU(SystemOfEquations):
     Class for calculating temperature in each node of the grid by creating and solving a system of equations using CPU and NumPy, SciPy modules.
 
     Attributes:
-        - H (scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        - P (np.ndarray): Global P vector.
-        - C (scipy.sparse.csr_matrix): Global C matrix.
-        - t0 (np.ndarray): Vector filled with initial temperature values.
-        - step (float): Simulation step time.
-        - dim (int): Dimensions of H matrix and P vector.
-        - elements (list[Element]): List of elements in the grid.
+        H (scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        P (np.ndarray): Global P vector.
+        C (scipy.sparse.csr_matrix): Global C matrix.
+        t0 (np.ndarray): Vector filled with initial temperature values.
+        step (float): Simulation step time.
+        dim (int): Dimensions of H matrix and P vector.
+        elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         super().__init__(grid)
@@ -157,13 +157,13 @@ class SystemOfEquationsGPU(SystemOfEquations):
     Class for calculating temperature in each node of the grid by creating and solving a system of equations using GPU and CuPy module.
 
     Attributes:
-        - H (cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
-        - P (cp.ndarray): Global P vector.
-        - C (cupyx.scipy.sparse.csr_matrix): Global C matrix.
-        - t0 (cp.ndarray): Vector filled with initial temperature values.
-        - step (float): Simulation step time.
-        - dim (int): Dimensions of H matrix and P vector.
-        - elements (list[Element]): List of elements in the grid.
+        H (cupyx.scipy.sparse.csr_matrix): Global matrix of H + Hbc of each element of the grid.
+        P (cp.ndarray): Global P vector.
+        C (cupyx.scipy.sparse.csr_matrix): Global C matrix.
+        t0 (cp.ndarray): Vector filled with initial temperature values.
+        step (float): Simulation step time.
+        dim (int): Dimensions of H matrix and P vector.
+        elements (list[Element]): List of elements in the grid.
     """
     def __init__(self, grid: Grid):
         super().__init__(grid)
@@ -223,17 +223,17 @@ class SystemOfEquationsGPU(SystemOfEquations):
                 P[element.node_ids[i] - 1] += cp.asarray(element.P[i])
         return P
 
-    def solve(self) -> np.ndarray:
+    def solve(self) -> 'cp.ndarray':
         """
         Solves system of equations using GPU.
 
         Returns:
-            np.ndarray: The temperature values at each node.
+            cp.ndarray: The temperature values at each node.
         """
         P = self.P + self.C.dot(self.t0)/self.step
         result: cp.ndarray = self.gpu_solve_factorized(P)
         self.t0 = result
-        return cp.asnumpy(result)
+        return result
 
 def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     """
@@ -243,22 +243,24 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
         grid (Grid): The grid containing elements.
 
     Returns:
-        - list[float]: List of time steps.
-        - list[np.ndarray]: List of temperature values at each node for all time steps.
+        list[float]: List of time steps.
+        list[np.ndarray]: List of temperature values at each node for all time steps.
     """
     times: list[float | 'cp.float32'] = []
-    temperatures: list[np.ndarray | 'cp.ndarray']= []
+    temperatures: list[np.ndarray | 'cp.ndarray'] = []
     soe: SystemOfEquations
     if cp_available:
-        config.logger.info("Starting calculations on GPU.")
+        config.logger.info("Initializing system of equations.")
         soe = SystemOfEquationsGPU(grid)
         tauk = cp.float32(grid.global_data.simulation_time)
         dtau: cp.float32 = soe.step
+        config.logger.info("Calculating temperatures for every timestamp on GPU.")
     else:
-        config.logger.info("Starting calculations on CPU.")
+        config.logger.info("Initializing system of equations.")
         soe = SystemOfEquationsCPU(grid)
         tauk: float = grid.global_data.simulation_time
         dtau: float = soe.step
+        config.logger.info("Calculating temperatures for every timestamp on CPU.")
     start: float = time.time() # Start measuring time
     while dtau <= tauk:
         result: np.ndarray = soe.solve()
@@ -266,7 +268,7 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
         temperatures.append(result)
         dtau += soe.step
     end: float = time.time() # Stop measuring time
-    config.logger.info(f"Calculated in {end-start} seconds.")
+    config.logger.info(f"Temperatures calculated in {end-start} seconds.")
     if cp_available:
-        return cp.asnumpy(times), cp.asnumpy(temperatures)
+        return cp.asnumpy(times), [temp.get() for temp in temperatures]
     return times, temperatures

@@ -16,7 +16,7 @@ class LocalMatricesCalculation:
         Raises an exception since this is an abstract class.
         """
         err_msg: str = f"{type(self).__name__} is an abstract class. You cannot create an instance of this class."
-        config.logger.error(err_msg)
+        #config.logger.error(err_msg)
         raise RuntimeError(err_msg)
 
     @staticmethod
@@ -26,19 +26,20 @@ class LocalMatricesCalculation:
         The output is stored in the Element class.
 
         Args:
-            - - n (int): Number of integration points.
-            - - grid (Grid): The grid containing elements and nodes.
+            n (int): Number of integration points.
+            grid (Grid): The grid containing elements and nodes.
         """
+        #config.logger.info(f"Calculating local matrices for {len(grid.elements)} elements.")
         u_el = UniversalElement(n)
         for element in grid.elements:
             element: Element
-            element.H, element.C, element.Hbc, element.P = LocalMatricesCalculation._calculate_for_element(
+            #config.logger.debug(f"Element {element.id}.")
+            element.H, element.C = LocalMatricesCalculation._calculate_for_element(
                 [grid.nodes[element.node_ids[0] - 1],
                  grid.nodes[element.node_ids[1] - 1],
                  grid.nodes[element.node_ids[2] - 1],
-                 grid.nodes[element.node_ids[3] - 1]], 
+                 grid.nodes[element.node_ids[3] - 1]],
                 u_el, grid.global_data)
-            #config.main_logger.debug(f"H:\n{element.H}\nC:{element.C}\nHbc:\n{element.Hbc}\nP:\n{element.P}")
 
     @staticmethod
     def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_data: GlobalData) -> tuple:
@@ -46,36 +47,51 @@ class LocalMatricesCalculation:
         Calculates H, C, Hbc matrices and P vector for the element.
 
         Args:
-            - nodes (np.ndarray[Node]): Array of nodes for the element.
-            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
-            - gl_data (GlobalData): Global data containing material properties.
+            nodes (np.ndarray[Node]): Array of nodes for the element.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            gl_data (GlobalData): Global data containing material properties.
 
         Returns:
             tuple: H, C, Hbc matrices and P vector.
         """
         x_coords, y_coords = LocalMatricesCalculation._fill_x_y_coords(nodes)
+        #config.logger.debug(f"X coordinates: {x_coords}")
+        #config.logger.debug(f"Y coordinates: {y_coords}")
         dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab = LocalMatricesCalculation._fill_x_y_ksi_eta_tabs(x_coords, y_coords, u_el)
+        #config.logger.debug(f"dx/dksi: {dx_dksi_tab}")
+        #config.logger.debug(f"dx/deta: {dx_deta_tab}")
+        #config.logger.debug(f"dy/dksi: {dy_dksi_tab}")
+        #config.logger.debug(f"dy/deta: {dy_deta_tab}")
         dn_dx_tab, dn_dy_tab, det_tab = LocalMatricesCalculation._dn_dx_dn_dy(dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab, u_el)
+        #config.logger.debug(f"dN/dx: {dn_dx_tab}")
+        #config.logger.debug(f"dN/dy: {dn_dy_tab}")
+        #config.logger.debug(f"det[J]: {det_tab}")
         ip_h_matrices, ip_c_matrices = LocalMatricesCalculation._calculate_for_integration_points(dn_dx_tab, dn_dy_tab, u_el.n_tab, det_tab, u_el.n, gl_data.conductivity, gl_data.density, gl_data.specific_heat)
-
+        #config.logger.debug(f"H matrices: {ip_h_matrices}")
+        #config.logger.debug(f"C matrices: {ip_c_matrices}")
         H = np.zeros((4, 4))
         C = np.zeros((4, 4))
-        Hbc = np.zeros((4, 4))
-        P = np.zeros((4, 1))
+        # Hbc = np.zeros((4, 4))
+        # P = np.zeros((4, 1))
 
         for i in range(0, u_el.n*u_el.n):
             H += ip_h_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
             C += ip_c_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
 
-        tempList = []
-        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[0], (nodes[0], nodes[1]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[1], (nodes[1], nodes[2]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[2], (nodes[2], nodes[3]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[3], (nodes[3], nodes[0]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        for surfaceHbc, surfaceP in tempList:
-            Hbc+=surfaceHbc
-            P+=surfaceP
-        return H, C, Hbc, P
+        # tempList = []
+        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[0], (nodes[0], nodes[1]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[1], (nodes[1], nodes[2]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[2], (nodes[2], nodes[3]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[3], (nodes[3], nodes[0]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        # for surfaceHbc, surfaceP in tempList:
+        #     Hbc+=surfaceHbc
+        #     P+=surfaceP
+
+        #config.logger.debug(f"H matrix: {H}")
+        #config.logger.debug(f"C matrix: {C}")
+        #config.logger.debug(f"Hbc matrix: {Hbc}")
+        #config.logger.debug(f"P vector: {P}")
+        return H, C
 
     @staticmethod
     def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:
@@ -83,7 +99,7 @@ class LocalMatricesCalculation:
         Fills lists storing x and y coordinates of nodes belonging to the element.
 
         Args:
-            - - nodes (np.ndarray[Node]): Array of nodes for the element.
+            nodes (np.ndarray[Node]): Array of nodes for the element.
 
         Returns:
             tuple: Lists of x and y coordinates.
@@ -92,7 +108,6 @@ class LocalMatricesCalculation:
         for i in range(0, 4):
             x_coords.append(nodes[i].x)
             y_coords.append(nodes[i].y)
-        #config.main_logger.debug(f"x_coords: {x_coords}\ny_coords: {y_coords}")
         return x_coords, y_coords
 
     @staticmethod
@@ -101,9 +116,9 @@ class LocalMatricesCalculation:
         Calculates dx/dksi, dx/deta, dy/dksi, dy/deta for every integration point and returns 4 tables with output.
 
         Args:
-            - x_coords (list[float]): List of x coordinates.
-            - y_coords (list[float]): List of y coordinates.
-            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            x_coords (list[float]): List of x coordinates.
+            y_coords (list[float]): List of y coordinates.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
 
         Returns:
             tuple: Lists of dx/dksi, dx/deta, dy/dksi, dy/deta.
@@ -114,7 +129,6 @@ class LocalMatricesCalculation:
             dx_deta_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], x_coords))
             dy_dksi_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_dksi_tab[i][0], u_el.dn_dksi_tab[i][1], u_el.dn_dksi_tab[i][2], u_el.dn_dksi_tab[i][3], y_coords))
             dy_deta_tab.append(LocalMatricesCalculation._interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], y_coords))
-        #config.main_logger.debug(f"dx_dksi_tab: {dx_dksi_tab}\ndx_deta_tab: {dx_deta_tab}\ndy_dksi_tab: {dy_dksi_tab}\ndy_deta_tab: {dy_deta_tab}")
         return dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab
 
     @staticmethod
@@ -123,11 +137,11 @@ class LocalMatricesCalculation:
         Fills dN/dx and dN/dy tables and calculates Jacobian and det[J].
 
         Args:
-            - dx_dksi_tab (list): List of dx/dksi values.
-            - dx_deta_tab (list): List of dx/deta values.
-            - dy_dksi_tab (list): List of dy/dksi values.
-            - dy_deta_tab (list): List of dy/deta values.
-            - u_el (UniversalElement): Universal element containing shape functions and derivatives.
+            dx_dksi_tab (list): List of dx/dksi values.
+            dx_deta_tab (list): List of dx/deta values.
+            dy_dksi_tab (list): List of dy/dksi values.
+            dy_deta_tab (list): List of dy/deta values.
+            u_el (UniversalElement): Universal element containing shape functions and derivatives.
 
         Returns:
             tuple: Lists of dN/dx, dN/dy and det[J] values.
@@ -137,7 +151,7 @@ class LocalMatricesCalculation:
             Initializes empty tables for dN/dx and dN/dy calculations.
 
             Args:
-                - n (int): Number of integration points.
+                n (int): Number of integration points.
 
             Returns:
                 tuple: Empty tables for dN/dx and dN/dy.
@@ -156,9 +170,7 @@ class LocalMatricesCalculation:
         for j in range(u_el.n*u_el.n):
             mxJ = np.array([[dx_dksi_tab[j], dy_dksi_tab[j]],
                              [dx_deta_tab[j], dy_deta_tab[j]]])
-            #config.main_logger.debug(f"Jacobian matrix:\n{mxJ}")
             detJ = np.linalg.det(mxJ)
-            #config.main_logger.debug(f"Jacobian determinant:\n{detJ}")
             det_tab.append(detJ)
             mx1 = np.array([[dy_deta_tab[j], -dy_dksi_tab[j]],
                              [-dx_deta_tab[j], dx_dksi_tab[j]]])
@@ -168,10 +180,6 @@ class LocalMatricesCalculation:
                 mxOutput = np.matmul(((1/detJ)*mx1), mx2)
                 dn_dx_tab[j][i] = mxOutput[0][0]
                 dn_dy_tab[j][i] = mxOutput[1][0]
-        # config.main_logger.debug("dn_dx_tab:")
-        # print2dTab(dn_dx_tab)
-        # config.main_logger.debug("dn_dy_tab:")
-        # print2dTab(dn_dy_tab)
         return dn_dx_tab, dn_dy_tab, det_tab
 
     @staticmethod
@@ -180,14 +188,14 @@ class LocalMatricesCalculation:
         Calculates H, C matrices for each integration point. Returns list of matrices.
 
         Args:
-            - dn_dx_tab (list): List of dN/dx values.
-            - dn_dy_tab (list): List of dN/dy values.
-            - NTab (list): List of shape function values.
-            - det_tab (list): List of det[J] values.
-            - n (int): Number of integration points.
-            - c (int): Conductivity.
-            - d (int): Density.
-            - sH (int): Specific heat.
+            dn_dx_tab (list): List of dN/dx values.
+            dn_dy_tab (list): List of dN/dy values.
+            NTab (list): List of shape function values.
+            det_tab (list): List of det[J] values.
+            n (int): Number of integration points.
+            c (int): Conductivity.
+            d (int): Density.
+            sH (int): Specific heat.
 
         Returns:
             tuple: Lists of H and C matrices for each integration point.
@@ -209,7 +217,6 @@ class LocalMatricesCalculation:
                              [NTab[i][3]]])
             ipMxH = c*(np.matmul(mxDNdX, mxDNdX.transpose()) + np.matmul(mxDNdY, mxDNdY.transpose()))*det_tab[i]
             ipMxC = sH*d*(np.matmul(mxN, mxN.transpose()))*det_tab[i]
-            #config.main_logger.debug(f"IP {i+1}:\n{ipMxH}")
             mxHTab.append(ipMxH)
             mxCTab.append(ipMxC)
         return mxHTab, mxCTab
@@ -220,12 +227,12 @@ class LocalMatricesCalculation:
         Calculates Hbc matrix and P vector for the given surface of the element.
 
         Args:
-            - surface (Surface): Surface of the element.
-            - nodes (tuple[Node]): Nodes of the surface.
-            - weights (np.ndarray[float]): Weights for integration points.
-            - n (int): Number of integration points.
-            - alfa (int): Heat transfer coefficient.
-            - tot (int): Ambient temperature.
+            surface (Surface): Surface of the element.
+            nodes (tuple[Node]): Nodes of the surface.
+            weights (np.ndarray[float]): Weights for integration points.
+            n (int): Number of integration points.
+            alfa (int): Heat transfer coefficient.
+            tot (int): Ambient temperature.
 
         Returns:
             tuple: Hbc matrix and P vector.
@@ -253,11 +260,11 @@ class LocalMatricesCalculation:
         Returns dx/deta, dx/dksi, dy/deta or dy/dksi depending on given arguments.
 
         Args:
-            - dN1 (float): Derivative of shape function N1.
-            - dN2 (float): Derivative of shape function N2.
-            - dN3 (float): Derivative of shape function N3.
-            - dN4 (float): Derivative of shape function N4.
-            - var (list[float]): List of variable values.
+            dN1 (float): Derivative of shape function N1.
+            dN2 (float): Derivative of shape function N2.
+            dN3 (float): Derivative of shape function N3.
+            dN4 (float): Derivative of shape function N4.
+            var (list[float]): List of variable values.
 
         Returns:
             float: Interpolated value.

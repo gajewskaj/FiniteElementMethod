@@ -8,10 +8,10 @@ class GaussianQuadrature:
     A class for numerical integration using Gaussian Quadrature.
 
     Attributes:
-        - fun (callable): Function to integrate.
-        - n (int): Number of integration points.
-        - points (np.ndarray): List of integration points, xi.
-        - weights (np.ndarray): Weights for integration points, wi.
+        fun (callable): Function to integrate.
+        n (int): Number of integration points.
+        points (np.ndarray): List of integration points, xi.
+        weights (np.ndarray): Weights for integration points, wi.
     """
     def __init__(self, n: int, fun: callable = None):
         self.fun: callable = fun

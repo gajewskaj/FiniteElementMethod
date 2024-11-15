@@ -13,16 +13,16 @@ class GlobalData:
     Stores general information like simulation time, conductivity, initial temperature, density, etc.
 
     Attributes:
-        - simulation_time (float): Total simulation time.
-        - simulation_step_time (float): Time step for the simulation.
-        - conductivity (float): Thermal conductivity.
-        - alfa (float): Heat transfer coefficient.
-        - tot (float): Ambient temperature.
-        - initial_temp (float): Initial temperature.
-        - density (float): Material density.
-        - specific_heat (float): Specific heat capacity.
-        - nodes_number (int): Number of nodes in the grid.
-        - elements_number (int): Number of elements in the grid.
+        simulation_time (float): Total simulation time.
+        simulation_step_time (float): Time step for the simulation.
+        conductivity (float): Thermal conductivity.
+        alfa (float): Heat transfer coefficient.
+        tot (float): Ambient temperature.
+        initial_temp (float): Initial temperature.
+        density (float): Material density.
+        specific_heat (float): Specific heat capacity.
+        nodes_number (int): Number of nodes in the grid.
+        elements_number (int): Number of elements in the grid.
     """
     def __init__(self, simulation_time: float,
                  simulation_step_time: float,
@@ -38,7 +38,7 @@ class GlobalData:
         Initializes GlobalData with values from a dictionary.
 
         Args:
-            - global_data_dict (dict): dictionary containing global data.
+            global_data_dict (dict): dictionary containing global data.
         """
         self.simulation_time: float = simulation_time
         self.simulation_step_time: float = simulation_step_time
@@ -56,7 +56,7 @@ class GlobalData:
         Checks if two GlobalData instances are equal.
 
         Args:
-            - other (GlobalData): Another GlobalData instance.
+            other (GlobalData): Another GlobalData instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -93,20 +93,20 @@ class Node:
     Stores information about a single node of the grid.
 
     Attributes:
-        - id (int): Node's ID.
-        - x (float): x coordinate.
-        - y (float): y coordinate.
-        - BC (float): Border condition (0 or 1).
+        id (int): Node's ID.
+        x (float): x coordinate.
+        y (float): y coordinate.
+        BC (float): Border condition (0 or 1).
     """
     def __init__(self, id: int, x: float, y: float, z: float = 0, BC: float = 0):
         """
         Initializes a Node instance.
 
         Args:
-            - id (int): Node's ID.
-            - x (float): x coordinate.
-            - y (float): y coordinate.
-            - BC (float, optional): Border condition. Defaults to 0.
+            id (int): Node's ID.
+            x (float): x coordinate.
+            y (float): y coordinate.
+            BC (float, optional): Border condition. Defaults to 0.
         """
         self.id: int = id
         self.x: float = x
@@ -119,7 +119,7 @@ class Node:
         Checks if two Node instances are equal.
 
         Args:
-            - other (Node): Another Node instance.
+            other (Node): Another Node instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -141,20 +141,20 @@ class Element:
     Stores information about a single 4-node element of the grid.
 
     Attributes:
-        - id (int): Element's ID.
-        - node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
-        - H (np.ndarray): H matrix for the element (4x4).
-        - Hbc (np.ndarray): Hbc matrix for the element (4x4).
-        - P (np.ndarray): P vector for the element (4x1).
-        - C (np.ndarray): C matrix for the element (4x4).
+        id (int): Element's ID.
+        node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+        H (np.ndarray): H matrix for the element (4x4).
+        Hbc (np.ndarray): Hbc matrix for the element (4x4).
+        P (np.ndarray): P vector for the element (4x1).
+        C (np.ndarray): C matrix for the element (4x4).
     """
     def __init__(self, id: int, node_ids: np.ndarray[int]):
         """
         Initializes an Element instance.
 
         Args:
-            - id (int): Element's ID.
-            - node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
+            id (int): Element's ID.
+            node_ids (np.ndarray[int]): IDs of nodes belonging to the element.
         """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
@@ -168,7 +168,7 @@ class Element:
         Checks if two Element instances are equal.
 
         Args:
-            - other (Element): Another Element instance.
+            other (Element): Another Element instance.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -192,19 +192,19 @@ class Grid:
     Stores information allowing to recreate the grid.
 
     Attributes:
-        - global_data (GlobalData): General simulation data.
-        - nodes (np.ndarray[Node]): List of nodes in the grid.
-        - elements (np.ndarray[Element]): List of elements in the grid.
-        - BC (list[int]): List of nodes with border condition.
+        global_data (GlobalData): General simulation data.
+        nodes (np.ndarray[Node]): List of nodes in the grid.
+        elements (np.ndarray[Element]): List of elements in the grid.
+        BC (list[int]): List of nodes with border condition.
     """
     def __init__(self, global_data: GlobalData = None, elements: np.ndarray[Element] = None, nodes: np.ndarray[Node] = None):
         """
         Initializes a Grid instance.
 
         Args:
-            - global_data (GlobalData, optional): General simulation data. Defaults to None.
-            - elements (np.ndarray[Element], optional): List of elements in the grid. Defaults to None.
-            - nodes (np.ndarray[Node], optional): List of nodes in the grid. Defaults to None.
+            global_data (GlobalData, optional): General simulation data. Defaults to None.
+            elements (np.ndarray[Element], optional): List of elements in the grid. Defaults to None.
+            nodes (np.ndarray[Node], optional): List of nodes in the grid. Defaults to None.
         """
         self.global_data: GlobalData = global_data
         self.nodes: np.ndarray[Node] = nodes
@@ -216,7 +216,7 @@ class Grid:
         Creates a Grid instance from a text file.
 
         Args:
-            - mesh_path (str): Path to the mesh .txt file.
+            mesh_path (str): Path to the mesh .txt file.
 
         Returns:
             Grid: A Grid instance.
@@ -305,8 +305,8 @@ class Grid:
         Creates a Grid instance from a .msh file and a .json file.
 
         Args:
-            - mesh_path (str): Path to the .msh file.
-            - data_path (str): Path to the .json file.
+            mesh_path (str): Path to the .msh file.
+            data_path (str): Path to the .json file.
 
         Returns:
             Grid: A Grid instance.

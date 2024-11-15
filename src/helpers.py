@@ -12,12 +12,13 @@ class NoTracebackFilter(logging.Filter):
             record.exc_text = None
         return True
 
-def init_logging(logger_name: str = config.MAIN_LOGGER_NAME) -> logging.Logger:
+def init_logging(logger_name: str = config.MAIN_LOGGER_NAME,
+                 log_dirpath: str = config.output_path) -> logging.Logger:
     """
     Initialize and configure the logging system.
 
     Args:
-        - logger_name (str): The name of the logger to initialize.
+        logger_name (str): The name of the logger to initialize.
 
     Returns:
         logging.Logger: Configured logger instance.
@@ -26,7 +27,7 @@ def init_logging(logger_name: str = config.MAIN_LOGGER_NAME) -> logging.Logger:
         case "main_logger":
             logger = logging.getLogger(logger_name)
             logger = logging.getLogger(config.MAIN_LOGGER_NAME)
-            log_filepath = os.path.join(config.output_path, "log.log")
+            log_filepath = os.path.join(log_dirpath, "log.log")
             logger.setLevel(logging.DEBUG)
 
             file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -35,7 +36,7 @@ def init_logging(logger_name: str = config.MAIN_LOGGER_NAME) -> logging.Logger:
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
 
-            console_formatter = logging.Formatter(fmt="[%(levelname)s] %(message)s")
+            console_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(console_formatter)
             console_handler.setLevel(logging.INFO)
@@ -45,7 +46,7 @@ def init_logging(logger_name: str = config.MAIN_LOGGER_NAME) -> logging.Logger:
         case "test_logger":
             logger = logging.getLogger(logger_name)
             logger = logging.getLogger(config.TEST_LOGGER_NAME)
-            log_filepath = os.path.join(config.output_path, "test_log.log")
+            log_filepath = os.path.join(log_dirpath, "test_log.log")
             logger.setLevel(logging.DEBUG)
 
             file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -60,7 +61,7 @@ def create_or_clear_directory(dir_path: str) -> str:
     Create a directory or clear its contents if it already exists.
 
     Args:
-        - dir_path (str): The path of the directory to create or clear.
+        dir_path (str): The path of the directory to create or clear.
 
     Returns:
         str: The path of the created or cleared directory.
@@ -92,7 +93,7 @@ def print2dTab(tab: list[list]) -> None:
     Print a 2D list to the logger.
 
     Args:
-        - tab (list[list]): The 2D list to print.
+        tab (list[list]): The 2D list to print.
     """
     for inner_tab in tab:
         config.logger.debug(inner_tab)

@@ -3,32 +3,33 @@ import os
 import sys
 import gmsh
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src import config
 
-def parse_arguments() -> tuple[int, int]:
+def parse_arguments() -> tuple[int, int, str]:
     parser = argparse.ArgumentParser(description="Mesh generator")
-    parser.add_argument('--x_elem', type=int, default=100,
-                        help='Number of x elements')
-    parser.add_argument('--y_elem', type=int, default=100,
-                        help='Number of y elements')
+    parser.add_argument("--x-elem", type=int, default=100,
+                        help="Number of x elements")
+    parser.add_argument("--y-elem", type=int, default=100,
+                        help="Number of y elements")
+    parser.add_argument("--output", type=str, default="quadrilateral_mesh.msh",
+                        help="Name of the output file")
     args = parser.parse_args()
-    return args.x_elem, args.y_elem
+    return args.x_elem, args.y_elem, args.output
+
+# Define the size of the mesh
+num_elements_x, num_elements_y, filename = parse_arguments()
+
+min_x = 0
+max_x = 0.100000001
+min_y = -0.0949999988
+max_y = 0.00499999989
 
 # Initialize Gmsh
 gmsh.initialize()
 
 # Create a new model
-gmsh.model.add("quadrilateral_mesh")
-
-# Define the size of the mesh
-num_elements_x, num_elements_y = parse_arguments()
-# length_x = 0.100000001  # Length of the mesh along the x-axis
-# length_y = 0.00499999989+0.0949999988  # Length of the mesh along the y-axis
-min_x = 0
-max_x = 0.100000001
-min_y = -0.0949999988
-max_y = 0.00499999989
+gmsh.model.add(filename.strip(".msh"))
 
 # Define the corner points of the quadrilateral
 p1 = gmsh.model.geo.addPoint(min_x, min_y, 0)      # Bottom-left corner (0, 0)
@@ -63,7 +64,7 @@ gmsh.model.geo.synchronize()
 gmsh.model.mesh.generate(2)  # 2D mesh
 
 # Save the mesh to a file
-gmsh.write(os.path.join(config.input_path, "quadrilateral_mesh.msh"))
+gmsh.write(os.path.join(config.input_path, filename))
 
 # Finalize Gmsh
 gmsh.finalize()
