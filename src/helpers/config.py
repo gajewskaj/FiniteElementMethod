@@ -1,7 +1,10 @@
 import logging
 import os
+import sys
 
-project_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+project_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 input_path: str = os.path.join(project_path, "input")
 output_path: str = os.path.join(project_path, "output")
 templates_path: str = os.path.join(project_path, "templates")
@@ -12,4 +15,5 @@ TEST_LOGGER_NAME = "test_logger"
 
 logger: logging.Logger = logging.Logger(MAIN_LOGGER_NAME)
 
-force_cpu: bool = False
+use_gpu: bool = False
+

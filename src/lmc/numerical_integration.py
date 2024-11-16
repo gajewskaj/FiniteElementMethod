@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from . import config
+from src.helpers import config
 
 class GaussianQuadrature:
     """

@@ -1,6 +1,6 @@
 import numpy as np
 
-from .numerical_integration import GaussianQuadrature
+from src.lmc.numerical_integration import GaussianQuadrature
 
 class UniversalElement(GaussianQuadrature):
     """

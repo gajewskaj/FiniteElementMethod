@@ -3,8 +3,8 @@ import os
 from jinja2 import  Environment, FileSystemLoader, Template
 import numpy as np
 
-from . import config
-from .grid import Grid
+from src.helpers import config
+from src.grid.grid import Grid
 
 def initialize_jinja_environment(template_filepath: str) -> Template:
     """

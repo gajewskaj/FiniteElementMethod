@@ -1,13 +1,12 @@
 from math import sqrt
 
 import cupy as cp
-
-import numpy as np
 from numba import cuda
+import numpy as np
 
-from . import config
-from .grid import Grid, GlobalData, Element, Node
-from .universal_element import UniversalElement, Surface
+from src.helpers import config
+from src.grid.grid import Grid, Element
+from src.lmc.universal_element import UniversalElement
 
 NODES_PER_ELEMENT = 4
 

@@ -2,11 +2,11 @@ import json
 from math import isclose
 import os
 
+from src.helpers import config
+
 import gmshparser
 from gmshparser import Mesh
 import numpy as np
-
-from . import config
 
 class GlobalData:
     """

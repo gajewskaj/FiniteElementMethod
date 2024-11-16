@@ -4,6 +4,31 @@ import shutil
 
 from . import config
 
+def set_use_gpu(force_cpu: bool = False) -> None:
+    """
+    Set the use_gpu flag based on the availability of CUDA and the force_cpu flag.
+
+    Args:
+        force_cpu (bool, optional): Defaults to False.
+    """
+    if force_cpu:
+        config.use_gpu = False
+        config.logger.warning("Forcing CPU usage instead of GPU.")
+        return
+
+    try:
+        import cupy
+        import numba
+    except ImportError:
+        config.logger.warning("CuPy or Numba is not installed. Using CPU instead.")
+    else:
+        if not cupy.cuda.is_available():
+            config.use_gpu = False
+            config.logger.warning("CUDA is not available. Using CPU instead.")
+        else:
+            config.use_gpu = True
+            config.logger.info("CUDA is available. Using GPU.")
+
 class NoTracebackFilter(logging.Filter):
     """Logging filter to remove traceback information from log records."""
     def filter(self, record):
