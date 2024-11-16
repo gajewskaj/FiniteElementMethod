@@ -16,7 +16,7 @@ class LocalMatricesCalculation:
         Raises an exception since this is an abstract class.
         """
         err_msg: str = f"{type(self).__name__} is an abstract class. You cannot create an instance of this class."
-        #config.logger.error(err_msg)
+        config.logger.error(err_msg)
         raise RuntimeError(err_msg)
 
     @staticmethod
@@ -29,12 +29,11 @@ class LocalMatricesCalculation:
             n (int): Number of integration points.
             grid (Grid): The grid containing elements and nodes.
         """
-        #config.logger.info(f"Calculating local matrices for {len(grid.elements)} elements.")
+        config.logger.info(f"Calculating local matrices for {len(grid.elements)} elements.")
         u_el = UniversalElement(n)
         for element in grid.elements:
             element: Element
-            #config.logger.debug(f"Element {element.id}.")
-            element.H, element.C = LocalMatricesCalculation._calculate_for_element(
+            element.H, element.C, element.Hbc, element.P = LocalMatricesCalculation._calculate_for_element(
                 [grid.nodes[element.node_ids[0] - 1],
                  grid.nodes[element.node_ids[1] - 1],
                  grid.nodes[element.node_ids[2] - 1],
@@ -71,27 +70,27 @@ class LocalMatricesCalculation:
         #config.logger.debug(f"C matrices: {ip_c_matrices}")
         H = np.zeros((4, 4))
         C = np.zeros((4, 4))
-        # Hbc = np.zeros((4, 4))
-        # P = np.zeros((4, 1))
+        Hbc = np.zeros((4, 4))
+        P = np.zeros((4, 1))
 
         for i in range(0, u_el.n*u_el.n):
             H += ip_h_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
             C += ip_c_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
 
-        # tempList = []
-        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[0], (nodes[0], nodes[1]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[1], (nodes[1], nodes[2]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[2], (nodes[2], nodes[3]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        # tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[3], (nodes[3], nodes[0]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-        # for surfaceHbc, surfaceP in tempList:
-        #     Hbc+=surfaceHbc
-        #     P+=surfaceP
+        tempList = []
+        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[0], (nodes[0], nodes[1]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[1], (nodes[1], nodes[2]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[2], (nodes[2], nodes[3]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        tempList.append(LocalMatricesCalculation._calculate_for_surface(u_el.surfaces[3], (nodes[3], nodes[0]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
+        for surfaceHbc, surfaceP in tempList:
+            Hbc+=surfaceHbc
+            P+=surfaceP
 
         #config.logger.debug(f"H matrix: {H}")
         #config.logger.debug(f"C matrix: {C}")
         #config.logger.debug(f"Hbc matrix: {Hbc}")
         #config.logger.debug(f"P vector: {P}")
-        return H, C
+        return H, C, Hbc, P
 
     @staticmethod
     def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:

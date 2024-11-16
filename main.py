@@ -53,18 +53,20 @@ def run() -> None:
             grid = Grid.create_from_txt(mesh_filepath)
         # Calculate matrices stored in elements
         start: float = time.time() # Start measuring time
-        # LocalMatricesCalculation.calculate(2, grid)
-        calculate_local_matrices(2, grid)
+        if config.force_cpu:
+            LocalMatricesCalculation.calculate(5, grid)
+        else:
+            calculate_local_matrices(5, grid)
         end: float = time.time() # Stop measuring time
         config.logger.info(f"Local matrices calculated in {end-start} seconds.")
         # Simulate temperatures in the grid for given timeframes
-        # from src.system_of_equations import simulate
-        # times, temperatures = simulate(grid)
-        # config.logger.debug(f"Time        Min temp    Max temp")
-        # for i in range(len(temperatures)):
-        #     config.logger.debug(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
-        # # Generate .vtk files for ParaView
-        # generate_vtk_files(output_dir_path, grid, temperatures)
+        from src.system_of_equations import simulate
+        times, temperatures = simulate(grid)
+        config.logger.debug(f"Time        Min temp    Max temp")
+        for i in range(len(temperatures)):
+            config.logger.debug(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
+        # Generate .vtk files for ParaView
+        generate_vtk_files(output_dir_path, grid, temperatures)
     except Exception:
         config.logger.error(f"Script execution failed due to an exception. Check log file for details.", exc_info=True)
 
