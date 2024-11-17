@@ -19,7 +19,7 @@ def measure_time(func):
         start: float = time.time()
         result = func(*args, **kwargs)
         end: float = time.time()
-        config.logger.info(f"'{func.__name__}' executed in {end  - start} seconds.")
+        config.logger.debug(f"Function '{func.__name__}' executed in {end  - start} seconds.")
         return result
 
     return wrapper
@@ -42,12 +42,15 @@ def set_use_gpu(force_cpu: bool = False) -> None:
     except ImportError:
         config.logger.warning("CuPy or Numba is not installed. Using CPU instead.")
     else:
-        if not cupy.cuda.is_available():
-            config.use_gpu = False
+        try:
+            if not cupy.cuda.is_available():
+                config.use_gpu = False
+                config.logger.warning("CUDA is not available. Using CPU instead.")
+            else:
+                config.use_gpu = True
+                config.logger.info("CUDA is available. Using GPU.")
+        except:
             config.logger.warning("CUDA is not available. Using CPU instead.")
-        else:
-            config.use_gpu = True
-            config.logger.info("CUDA is available. Using GPU.")
 
 class NoTracebackFilter(logging.Filter):
     """Logging filter to remove traceback information from log records."""

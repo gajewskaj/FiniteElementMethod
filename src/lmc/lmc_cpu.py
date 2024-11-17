@@ -1,7 +1,6 @@
 from math import sqrt
 import numpy as np
 
-from src.helpers import config
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, GlobalData, Element, Node
 from src.lmc.universal_element import UniversalElement, Surface

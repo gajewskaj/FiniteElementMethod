@@ -64,9 +64,9 @@ def run() -> None:
         calculate_local_matrices(np.int8(5), grid)
         times, temperatures = simulate(grid)
 
-        config.logger.debug(f"Time        Min temp    Max temp")
+        config.logger.info(f"Time        Min temp    Max temp")
         for i in range(len(temperatures)):
-            config.logger.debug(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
+            config.logger.info(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
 
         # Generate .vtk files for ParaView
         generate_vtk_files(output_dir_path, grid, temperatures)

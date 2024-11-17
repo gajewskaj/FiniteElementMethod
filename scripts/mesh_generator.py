@@ -4,7 +4,7 @@ import sys
 import gmsh
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src import config
+from src.helpers import config
 
 def parse_arguments() -> tuple[int, int, str]:
     parser = argparse.ArgumentParser(description="Mesh generator")
@@ -12,13 +12,12 @@ def parse_arguments() -> tuple[int, int, str]:
                         help="Number of x elements")
     parser.add_argument("--y-elem", type=int, default=100,
                         help="Number of y elements")
-    parser.add_argument("--output", type=str, default="quadrilateral_mesh.msh",
-                        help="Name of the output file")
     args = parser.parse_args()
-    return args.x_elem, args.y_elem, args.output
+    return args.x_elem, args.y_elem
 
 # Define the size of the mesh
-num_elements_x, num_elements_y, filename = parse_arguments()
+num_elements_x, num_elements_y = parse_arguments()
+filename = f"{num_elements_x}x{num_elements_y}.msh"
 
 min_x = 0
 max_x = 0.100000001

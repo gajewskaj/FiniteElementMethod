@@ -2,8 +2,6 @@ import logging
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 project_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 input_path: str = os.path.join(project_path, "input")
 output_path: str = os.path.join(project_path, "output")
