@@ -50,7 +50,7 @@ def parse_log_file(filename: str):
                 case_data[i].add_time(function_name, float(exec_time))
 
 def interpret_data():
-    print("Function execution time on average:")
+    print("Execution time on average:")
     table = prettytable.PrettyTable()
     table.header = True
     names = ["Elements", "Nodes"]

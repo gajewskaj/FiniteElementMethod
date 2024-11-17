@@ -5,6 +5,38 @@ from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, GlobalData, Element, Node
 from src.lmc.universal_element import UniversalElement, Surface
 
+NODES_PER_ELEMENT = 4
+
+def _calculate_H_C_for_element(u_el: UniversalElement, H, C,
+                           x_coords, y_coords,
+                           c, d, sh):
+    dx_dksi_tab = np.empty(u_el.n*u_el.n)
+    dx_deta_tab = np.empty(u_el.n*u_el.n)
+    dy_dksi_tab = np.empty(u_el.n*u_el.n)
+    dy_deta_tab = np.empty(u_el.n*u_el.n)
+    det_tab = np.empty(u_el.n*u_el.n)
+    dn_dx_tab = np.empty((u_el.n*u_el.n, NODES_PER_ELEMENT))
+    dn_dy_tab = np.empty((u_el.n*u_el.n, NODES_PER_ELEMENT))
+    for i in range(u_el.n*u_el.n):
+        _fill_x_y_ksi_eta_tabs(i, x_coords, y_coords,
+                            u_el.dn_dksi_tab, u_el.dn_deta_tab,
+                            dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab)
+        _dn_dx_dn_dy(i, dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab,
+                                                     u_el.dn_dksi_tab, u_el.dn_deta_tab,
+                                                     det_tab, dn_dx_tab, dn_dy_tab)
+        _calculate_H_C(i, H, C,
+                       u_el.n, u_el.weights, u_el.n_tab,
+                       det_tab, dn_dx_tab, dn_dy_tab,
+                       c, d, sh)
+
+def _calculate_Hbc_P_for_element(u_el: UniversalElement, Hbc, P,
+                                 nodes,
+                                 alfa, tot):
+    _calculate_for_surface(Hbc, P, u_el.n, u_el.weights, u_el.surfaces[0], (nodes[0], nodes[1]), alfa, tot)
+    _calculate_for_surface(Hbc, P, u_el.n, u_el.weights, u_el.surfaces[1], (nodes[1], nodes[2]), alfa, tot)
+    _calculate_for_surface(Hbc, P, u_el.n, u_el.weights, u_el.surfaces[2], (nodes[2], nodes[3]), alfa, tot)
+    _calculate_for_surface(Hbc, P, u_el.n, u_el.weights, u_el.surfaces[3], (nodes[3], nodes[0]), alfa, tot)
+
 @measure_time
 def calculate_local_matrices(n: int, grid: Grid) -> None:
     """
@@ -18,48 +50,17 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     u_el = UniversalElement(n)
     for element in grid.elements:
         element: Element
-        element.H, element.C, element.Hbc, element.P = _calculate_for_element(
-            [grid.nodes[element.node_ids[0] - 1],
+        nodes = [grid.nodes[element.node_ids[0] - 1],
                 grid.nodes[element.node_ids[1] - 1],
                 grid.nodes[element.node_ids[2] - 1],
-                grid.nodes[element.node_ids[3] - 1]],
-            u_el, grid.global_data)
-
-def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_data: GlobalData) -> tuple:
-    """
-    Calculates H, C, Hbc matrices and P vector for the element.
-
-    Args:
-        nodes (np.ndarray[Node]): Array of nodes for the element.
-        u_el (UniversalElement): Universal element containing shape functions and derivatives.
-        gl_data (GlobalData): Global data containing material properties.
-
-    Returns:
-        tuple: H, C, Hbc matrices and P vector.
-    """
-    x_coords, y_coords = _fill_x_y_coords(nodes)
-    dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab = _fill_x_y_ksi_eta_tabs(x_coords, y_coords, u_el)
-    dn_dx_tab, dn_dy_tab, det_tab = _dn_dx_dn_dy(dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab, u_el)
-    ip_h_matrices, ip_c_matrices = _calculate_for_integration_points(dn_dx_tab, dn_dy_tab, u_el.n_tab, det_tab, u_el.n, gl_data.conductivity, gl_data.density, gl_data.specific_heat)
-    H = np.zeros((4, 4))
-    C = np.zeros((4, 4))
-    Hbc = np.zeros((4, 4))
-    P = np.zeros((4, 1))
-
-    for i in range(0, u_el.n*u_el.n):
-        H += ip_h_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
-        C += ip_c_matrices[i]*(u_el.weights[i//u_el.n])*(u_el.weights[i%u_el.n])
-
-    tempList = []
-    tempList.append(_calculate_for_surface(u_el.surfaces[0], (nodes[0], nodes[1]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-    tempList.append(_calculate_for_surface(u_el.surfaces[1], (nodes[1], nodes[2]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-    tempList.append(_calculate_for_surface(u_el.surfaces[2], (nodes[2], nodes[3]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-    tempList.append(_calculate_for_surface(u_el.surfaces[3], (nodes[3], nodes[0]), u_el.weights, u_el.n, gl_data.alfa, gl_data.tot))
-    for surfaceHbc, surfaceP in tempList:
-        Hbc+=surfaceHbc
-        P+=surfaceP
-
-    return H, C, Hbc, P
+                grid.nodes[element.node_ids[3] - 1]]
+        x_coords, y_coords = _fill_x_y_coords(nodes)
+        _calculate_H_C_for_element(u_el, element.H, element.C,
+                                    x_coords, y_coords,
+                                    grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat)
+        _calculate_Hbc_P_for_element(u_el, element.Hbc, element.P,
+                                 nodes,
+                                 grid.global_data.alfa, grid.global_data.tot)
 
 def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:
     """
@@ -77,7 +78,9 @@ def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:
         y_coords.append(nodes[i].y)
     return x_coords, y_coords
 
-def _fill_x_y_ksi_eta_tabs(x_coords: list[float], y_coords: list[float], u_el: UniversalElement) -> tuple[list[float]]:
+def _fill_x_y_ksi_eta_tabs(i, x_coords: list[float], y_coords: list[float],
+                           dn_dksi_tab, dn_deta_tab,
+                           dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab):
     """
     Calculates dx/dksi, dx/deta, dy/dksi, dy/deta for every integration point and returns 4 tables with output.
 
@@ -89,15 +92,14 @@ def _fill_x_y_ksi_eta_tabs(x_coords: list[float], y_coords: list[float], u_el: U
     Returns:
         tuple: Lists of dx/dksi, dx/deta, dy/dksi, dy/deta.
     """
-    dx_dksi_tab = []; dx_deta_tab = []; dy_dksi_tab = []; dy_deta_tab = []
-    for i in range(0, u_el.n*u_el.n):
-        dx_dksi_tab.append(_interpolate(u_el.dn_dksi_tab[i][0], u_el.dn_dksi_tab[i][1], u_el.dn_dksi_tab[i][2], u_el.dn_dksi_tab[i][3], x_coords))
-        dx_deta_tab.append(_interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], x_coords))
-        dy_dksi_tab.append(_interpolate(u_el.dn_dksi_tab[i][0], u_el.dn_dksi_tab[i][1], u_el.dn_dksi_tab[i][2], u_el.dn_dksi_tab[i][3], y_coords))
-        dy_deta_tab.append(_interpolate(u_el.dn_deta_tab[i][0], u_el.dn_deta_tab[i][1], u_el.dn_deta_tab[i][2], u_el.dn_deta_tab[i][3], y_coords))
-    return dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab
+    dx_dksi_tab[i] = _interpolate(dn_dksi_tab[i][0], dn_dksi_tab[i][1], dn_dksi_tab[i][2], dn_dksi_tab[i][3], x_coords)
+    dx_deta_tab[i] = _interpolate(dn_deta_tab[i][0], dn_deta_tab[i][1], dn_deta_tab[i][2], dn_deta_tab[i][3], x_coords)
+    dy_dksi_tab[i] = _interpolate(dn_dksi_tab[i][0], dn_dksi_tab[i][1], dn_dksi_tab[i][2], dn_dksi_tab[i][3], y_coords)
+    dy_deta_tab[i] = _interpolate(dn_deta_tab[i][0], dn_deta_tab[i][1], dn_deta_tab[i][2], dn_deta_tab[i][3], y_coords)
 
-def _dn_dx_dn_dy(dx_dksi_tab: list, dx_deta_tab: list, dy_dksi_tab: list, dy_deta_tab: list, u_el: UniversalElement) -> tuple[list[float]]:
+def _dn_dx_dn_dy(i, dx_dksi_tab: list, dx_deta_tab: list, dy_dksi_tab: list, dy_deta_tab: list,
+                 dn_dksi_tab, dn_deta_tab,
+                 det_tab, dn_dx_tab, dn_dy_tab):
     """
     Fills dN/dx and dN/dy tables and calculates Jacobian and det[J].
 
@@ -111,25 +113,23 @@ def _dn_dx_dn_dy(dx_dksi_tab: list, dx_deta_tab: list, dy_dksi_tab: list, dy_det
     Returns:
         tuple: Lists of dN/dx, dN/dy and det[J] values.
     """
-    dn_dx_tab = np.zeros((u_el.n*u_el.n, 4))
-    dn_dy_tab = np.zeros((u_el.n*u_el.n, 4))
-    det_tab = []
-    for j in range(u_el.n*u_el.n):
-        mxJ = np.array([[dx_dksi_tab[j], dy_dksi_tab[j]],
-                            [dx_deta_tab[j], dy_deta_tab[j]]])
-        detJ = np.linalg.det(mxJ)
-        det_tab.append(detJ)
-        mx1 = np.array([[dy_deta_tab[j], -dy_dksi_tab[j]],
-                            [-dx_deta_tab[j], dx_dksi_tab[j]]])
-        for i in range (0, 4):
-            mx2 = np.array([[u_el.dn_dksi_tab[j][i]],[u_el.dn_deta_tab[j][i]]])
-            # (1/detJ)*mx1 = mxJ^(-1)
-            mxOutput = np.matmul(((1/detJ)*mx1), mx2)
-            dn_dx_tab[j][i] = mxOutput[0][0]
-            dn_dy_tab[j][i] = mxOutput[1][0]
-    return dn_dx_tab, dn_dy_tab, det_tab
+    mxJ = np.array([[dx_dksi_tab[i], dy_dksi_tab[i]],
+                        [dx_deta_tab[i], dy_deta_tab[i]]])
+    detJ = np.linalg.det(mxJ)
+    det_tab[i] = detJ
+    mx1 = np.array([[dy_deta_tab[i], -dy_dksi_tab[i]],
+                        [-dx_deta_tab[i], dx_dksi_tab[i]]])
+    for k in range (0, NODES_PER_ELEMENT):
+        mx2 = np.array([[dn_dksi_tab[i][k]],[dn_deta_tab[i][k]]])
+        # (1/detJ)*mx1 = mxJ^(-1)
+        mxOutput = np.matmul(((1/detJ)*mx1), mx2)
+        dn_dx_tab[i][k] = mxOutput[0][0]
+        dn_dy_tab[i][k] = mxOutput[1][0]
 
-def _calculate_for_integration_points(dn_dx_tab: list, dn_dy_tab: list, NTab: list, det_tab: list, n: int, c: int, d: int, sH: int) -> tuple[np.ndarray]:
+def _calculate_H_C(i, H, C,
+                   n, weights, n_tab,
+                   det_tab, dn_dx_tab, dn_dy_tab,
+                   c, d, sh):
     """
     Calculates H, C matrices for each integration point. Returns list of matrices.
 
@@ -146,28 +146,28 @@ def _calculate_for_integration_points(dn_dx_tab: list, dn_dy_tab: list, NTab: li
     Returns:
         tuple: Lists of H and C matrices for each integration point.
     """
-    mxHTab = []
-    mxCTab = []
-    for i in range(0, n*n):
-        mxDNdX = np.array([[dn_dx_tab[i][0]],
-                            [dn_dx_tab[i][1]],
-                            [dn_dx_tab[i][2]],
-                            [dn_dx_tab[i][3]]])
-        mxDNdY = np.array([[dn_dy_tab[i][0]],
-                            [dn_dy_tab[i][1]],
-                            [dn_dy_tab[i][2]],
-                            [dn_dy_tab[i][3]]])
-        mxN = np.array([[NTab[i][0]],
-                            [NTab[i][1]],
-                            [NTab[i][2]],
-                            [NTab[i][3]]])
-        ipMxH = c*(np.matmul(mxDNdX, mxDNdX.transpose()) + np.matmul(mxDNdY, mxDNdY.transpose()))*det_tab[i]
-        ipMxC = sH*d*(np.matmul(mxN, mxN.transpose()))*det_tab[i]
-        mxHTab.append(ipMxH)
-        mxCTab.append(ipMxC)
-    return mxHTab, mxCTab
+    mxDNdX = np.array([[dn_dx_tab[i][0]],
+                        [dn_dx_tab[i][1]],
+                        [dn_dx_tab[i][2]],
+                        [dn_dx_tab[i][3]]])
+    mxDNdY = np.array([[dn_dy_tab[i][0]],
+                        [dn_dy_tab[i][1]],
+                        [dn_dy_tab[i][2]],
+                        [dn_dy_tab[i][3]]])
+    mxN = np.array([[n_tab[i][0]],
+                        [n_tab[i][1]],
+                        [n_tab[i][2]],
+                        [n_tab[i][3]]])
+    ipMxH = c*(np.matmul(mxDNdX, mxDNdX.transpose()) + np.matmul(mxDNdY, mxDNdY.transpose()))*det_tab[i]
+    ipMxC = sh*d*(np.matmul(mxN, mxN.transpose()))*det_tab[i]
 
-def _calculate_for_surface(surface: Surface, nodes: tuple[Node], weights: np.ndarray[float], n: int, alfa: int, tot: int) -> tuple:
+    H += ipMxH*(weights[i//n])*(weights[i%n])
+    C += ipMxC*(weights[i//n])*(weights[i%n])
+
+def _calculate_for_surface(Hbc, P,
+                           n, weights, surface: Surface,
+                           nodes,
+                           alfa, tot) -> tuple:
     """
     Calculates Hbc matrix and P vector for the given surface of the element.
 
@@ -182,22 +182,21 @@ def _calculate_for_surface(surface: Surface, nodes: tuple[Node], weights: np.nda
     Returns:
         tuple: Hbc matrix and P vector.
     """
-    Hbc = np.zeros((4, 4))
-    P = np.zeros((4, 1))
+    Hbc_surf = np.zeros((4, 4))
+    P_surf = np.zeros((4, 1))
     if nodes[0].BC == 0 or nodes[1].BC == 0:
-        return Hbc, P
+        return
     L = sqrt(pow(nodes[0].x-nodes[1].x, 2)+pow(nodes[0].y-nodes[1].y, 2))
     detJ = L/2
-    for i in range(0, n):
+    for i in range(n):
         mx = np.array([[surface.N[i][0]],
                         [surface.N[i][1]],
                         [surface.N[i][2]],
                         [surface.N[i][3]]])
-        Hbc += np.matmul(mx, mx.transpose())*weights[i]
-        P += mx*weights[i]
-    Hbc = Hbc*alfa*detJ
-    P = P*alfa*tot*detJ
-    return Hbc, P
+        Hbc_surf += np.matmul(mx, mx.transpose())*weights[i]
+        P_surf += mx*weights[i]
+    Hbc += Hbc_surf*alfa*detJ
+    P += P_surf*alfa*tot*detJ
 
 def _interpolate(dN1: float, dN2: float, dN3: float, dN4: float, var: list[float]) -> float:
     """

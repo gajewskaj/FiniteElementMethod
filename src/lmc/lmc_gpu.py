@@ -21,7 +21,7 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     suraces_N_tab = np.empty((NODES_PER_ELEMENT, n, NODES_PER_ELEMENT), dtype=np.float32)
     for i, surface in enumerate(u_el.surfaces):
         suraces_N_tab[i] = np.array(surface.N, dtype=np.float32)
-    suraces_N_tab_cuda = cuda.to_device(suraces_N_tab)
+    surfaces_N_tab_cuda = cuda.to_device(suraces_N_tab)
     # Temporary arrays
     dx_dksi_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
     dx_deta_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
@@ -57,7 +57,7 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     blocks_per_grid = (len(grid.elements) + threads_per_block - 1) // threads_per_block
     stream_Hbc_P = cuda.stream()
     stream_H_C = cuda.stream()
-    _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](n, weights, suraces_N_tab_cuda,
+    _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](n, weights, surfaces_N_tab_cuda,
                                                                      node_x_coords_cuda, node_y_coords_cuda, node_bc_cuda,
                                                                      Hbc_matrices_cuda, P_vectors_cuda,
                                                                      grid.global_data.alfa, grid.global_data.tot)
