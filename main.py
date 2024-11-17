@@ -61,7 +61,7 @@ def run() -> None:
         from src.lmc.lmc import calculate_local_matrices
         from src.soe.soe import simulate
 
-        calculate_local_matrices(5, grid)
+        calculate_local_matrices(np.int8(5), grid)
         times, temperatures = simulate(grid)
 
         config.logger.debug(f"Time        Min temp    Max temp")

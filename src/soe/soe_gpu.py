@@ -55,12 +55,12 @@ class SystemOfEquationsGPU(SystemOfEquations):
                         row_C.append(element.node_ids[i] - 1)
                         col_C.append(element.node_ids[j] - 1)
 
-        data_H = cp.array(data_H)
-        row_H = cp.array(row_H)
-        col_H = cp.array(col_H)
-        data_C = cp.array(data_C)
-        row_C = cp.array(row_C)
-        col_C = cp.array(col_C)
+        data_H = cp.array(data_H, dtype=cp.float32)
+        row_H = cp.array(row_H, dtype=cp.float32)
+        col_H = cp.array(col_H, dtype=cp.float32)
+        data_C = cp.array(data_C, dtype=cp.float32)
+        row_C = cp.array(row_C, dtype=cp.float32)
+        col_C = cp.array(col_C, dtype=cp.float32)
 
         H: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsc()
         C: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsc()
@@ -75,12 +75,12 @@ class SystemOfEquationsGPU(SystemOfEquations):
         Returns:
             cp.ndarray: The global P vector.
         """
-        P = cp.zeros((self.dim, 1))
+        P = np.zeros((self.dim, 1))
 
         for element in self.elements:
             for i in range(0, 4):
-                P[element.node_ids[i] - 1] += cp.asarray(element.P[i])
-        return P
+                P[element.node_ids[i] - 1] += element.P[i]
+        return cp.array(P, dtype=cp.float32)
 
     @measure_time
     def solve(self) -> cp.ndarray:

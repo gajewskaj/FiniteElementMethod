@@ -12,7 +12,7 @@ class UniversalElement(GaussianQuadrature):
         NTab (np.ndarray): Table of N(ksi, eta) values for N1, N2, N3, N4 in integration points (nx4).
         surfaces (list[Surface]): List of Surface type elements, necessary for calculations that take border conditions into account.
     """
-    def __init__(self, n):
+    def __init__(self, n: int):
         """
         Initializes the UniversalElement with the given number of integration points.
 
@@ -20,9 +20,9 @@ class UniversalElement(GaussianQuadrature):
             n (int): Number of integration points.
         """
         super().__init__(n)
-        self.dn_dksi_tab = np.empty((self.n*self.n, 4), dtype=float)
-        self.dn_deta_tab = np.empty((self.n*self.n, 4), dtype=float)
-        self.n_tab = np.empty((self.n*self.n, 4), dtype=float)
+        self.dn_dksi_tab = np.empty((self.n*self.n, 4), dtype=np.float32)
+        self.dn_deta_tab = np.empty((self.n*self.n, 4), dtype=np.float32)
+        self.n_tab = np.empty((self.n*self.n, 4), dtype=np.float32)
         self.surfaces: list[Surface] = [
             Surface(n), # down
             Surface(n), # right
@@ -32,7 +32,7 @@ class UniversalElement(GaussianQuadrature):
         self._fill_dn_dksi_dn_deta_tabs()
         self._fill_surface_tab()
 
-    def _fill_dn_dksi_dn_deta_tabs(self):
+    def _fill_dn_dksi_dn_deta_tabs(self) -> None:
         """
         Calculates dN/dKsi and dN/dEta for N1, N2, N3, N4 in integration points.
         Results are stored in tables.
@@ -74,9 +74,9 @@ class Surface():
             n (int): Number of integration points.
         """
         self.n = n
-        self.N = np.zeros((self.n, 4))
+        self.N = np.zeros((self.n, 4), dtype=np.float32)
 
-    def fill_N(self, ksi_list: np.ndarray[float], eta_list: np.ndarray[float]):
+    def fill_N(self, ksi_list: np.ndarray[np.float32], eta_list: np.ndarray[np.float32]):
         """
         Calculates N(ksi, eta) for N1, N2, N3, N4 and for each integration point on the surface.
         Results are stored in the table.
@@ -89,7 +89,7 @@ class Surface():
             for i in range(0, 4):
                 self.N[j][i] = n_fun_tab[i](ksi_list[j], eta_list[j])
 
-def N1(ksi: float, eta: float) -> float:
+def N1(ksi: np.float32, eta: np.float32) -> np.float32:
     """
     Shape function N1.
 
@@ -100,9 +100,9 @@ def N1(ksi: float, eta: float) -> float:
     Returns:
         float: Value of N1 at (ksi, eta).
     """
-    return (1/4) * (1-ksi) * (1-eta)
+    return np.float32((1/4) * (1-ksi) * (1-eta))
 
-def N2(ksi: float, eta: float) -> float:
+def N2(ksi: np.float32, eta: np.float32) -> np.float32:
     """
     Shape function N2.
 
@@ -113,9 +113,9 @@ def N2(ksi: float, eta: float) -> float:
     Returns:
         float: Value of N2 at (ksi, eta).
     """
-    return (1/4) * (1+ksi) * (1-eta)
+    return np.float32((1/4) * (1+ksi) * (1-eta))
 
-def N3(ksi: float, eta: float) -> float:
+def N3(ksi: np.float32, eta: np.float32) -> np.float32:
     """
     Shape function N3.
 
@@ -126,9 +126,9 @@ def N3(ksi: float, eta: float) -> float:
     Returns:
         float: Value of N3 at (ksi, eta).
     """
-    return (1/4) * (1+ksi) * (1+eta)
+    return np.float32((1/4) * (1+ksi) * (1+eta))
 
-def N4(ksi: float, eta: float) -> float:
+def N4(ksi: np.float32, eta: np.float32) -> np.float32:
     """
     Shape function N4.
 
@@ -139,9 +139,9 @@ def N4(ksi: float, eta: float) -> float:
     Returns:
         float: Value of N4 at (ksi, eta).
     """
-    return (1/4) * (1-ksi) * (1+eta)
+    return np.float32((1/4) * (1-ksi) * (1+eta))
 
-def dN1Ksi(eta: float) -> float:
+def dN1Ksi(eta: np.float32) -> np.float32:
     """
     Derivative of N1 with respect to Ksi.
 
@@ -151,9 +151,9 @@ def dN1Ksi(eta: float) -> float:
     Returns:
         float: Value of dN1/dKsi at (eta).
     """
-    return -(1/4) * (1-eta)
+    return np.float32(-(1/4) * (1-eta))
 
-def dN2Ksi(eta: float) -> float:
+def dN2Ksi(eta: np.float32) -> np.float32:
     """
     Derivative of N2 with respect to Ksi.
 
@@ -163,9 +163,9 @@ def dN2Ksi(eta: float) -> float:
     Returns:
         float: Value of dN2/dKsi at (eta).
     """
-    return (1/4) * (1-eta)
+    return np.float32((1/4) * (1-eta))
 
-def dN3Ksi(eta: float) -> float:
+def dN3Ksi(eta: np.float32) -> np.float32:
     """
     Derivative of N3 with respect to Ksi.
 
@@ -175,9 +175,9 @@ def dN3Ksi(eta: float) -> float:
     Returns:
         float: Value of dN3/dKsi at (eta).
     """
-    return (1/4) * (1+eta)
+    return np.float32((1/4) * (1+eta))
 
-def dN4Ksi(eta: float) -> float:
+def dN4Ksi(eta: np.float32) -> np.float32:
     """
     Derivative of N4 with respect to Ksi.
 
@@ -187,9 +187,9 @@ def dN4Ksi(eta: float) -> float:
     Returns:
         float: Value of dN4/dKsi at (eta).
     """
-    return -(1/4) * (1+eta)
+    return np.float32(-(1/4) * (1+eta))
 
-def dN1Eta(ksi: float) -> float:
+def dN1Eta(ksi: np.float32) -> np.float32:
     """
     Derivative of N1 with respect to Eta.
 
@@ -199,9 +199,9 @@ def dN1Eta(ksi: float) -> float:
     Returns:
         float: Value of dN1/dEta at (ksi).
     """
-    return -(1/4) * (1-ksi)
+    return np.float32(-(1/4) * (1-ksi))
 
-def dN2Eta(ksi: float) -> float:
+def dN2Eta(ksi: np.float32) -> np.float32:
     """
     Derivative of N2 with respect to Eta.
 
@@ -211,9 +211,9 @@ def dN2Eta(ksi: float) -> float:
     Returns:
         float: Value of dN2/dEta at (ksi).
     """
-    return -(1/4) * (1+ksi)
+    return np.float32(-(1/4) * (1+ksi))
 
-def dN3Eta(ksi: float) -> float:
+def dN3Eta(ksi: np.float32) -> np.float32:
     """
     Derivative of N3 with respect to Eta.
 
@@ -223,9 +223,9 @@ def dN3Eta(ksi: float) -> float:
     Returns:
         float: Value of dN3/dEta at (ksi).
     """
-    return (1/4) * (1+ksi)
+    return np.float32((1/4) * (1+ksi))
 
-def dN4Eta(ksi: float) -> float:
+def dN4Eta(ksi: np.float32) -> np.float32:
     """
     Derivative of N4 with respect to Eta.
 
@@ -235,7 +235,7 @@ def dN4Eta(ksi: float) -> float:
     Returns:
         float: Value of dN4/dEta at (ksi).
     """
-    return (1/4) * (1-ksi)
+    return np.float32((1/4) * (1-ksi))
 
 dn_dksi_fun_tab = [
     dN1Ksi,

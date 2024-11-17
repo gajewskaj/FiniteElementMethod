@@ -39,20 +39,9 @@ def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_d
         tuple: H, C, Hbc matrices and P vector.
     """
     x_coords, y_coords = _fill_x_y_coords(nodes)
-    #config.logger.debug(f"X coordinates: {x_coords}")
-    #config.logger.debug(f"Y coordinates: {y_coords}")
     dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab = _fill_x_y_ksi_eta_tabs(x_coords, y_coords, u_el)
-    #config.logger.debug(f"dx/dksi: {dx_dksi_tab}")
-    #config.logger.debug(f"dx/deta: {dx_deta_tab}")
-    #config.logger.debug(f"dy/dksi: {dy_dksi_tab}")
-    #config.logger.debug(f"dy/deta: {dy_deta_tab}")
     dn_dx_tab, dn_dy_tab, det_tab = _dn_dx_dn_dy(dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab, u_el)
-    #config.logger.debug(f"dN/dx: {dn_dx_tab}")
-    #config.logger.debug(f"dN/dy: {dn_dy_tab}")
-    #config.logger.debug(f"det[J]: {det_tab}")
     ip_h_matrices, ip_c_matrices = _calculate_for_integration_points(dn_dx_tab, dn_dy_tab, u_el.n_tab, det_tab, u_el.n, gl_data.conductivity, gl_data.density, gl_data.specific_heat)
-    #config.logger.debug(f"H matrices: {ip_h_matrices}")
-    #config.logger.debug(f"C matrices: {ip_c_matrices}")
     H = np.zeros((4, 4))
     C = np.zeros((4, 4))
     Hbc = np.zeros((4, 4))
@@ -71,10 +60,6 @@ def _calculate_for_element(nodes: np.ndarray[Node], u_el: UniversalElement, gl_d
         Hbc+=surfaceHbc
         P+=surfaceP
 
-    #config.logger.debug(f"H matrix: {H}")
-    #config.logger.debug(f"C matrix: {C}")
-    #config.logger.debug(f"Hbc matrix: {Hbc}")
-    #config.logger.debug(f"P vector: {P}")
     return H, C, Hbc, P
 
 def _fill_x_y_coords(nodes: np.ndarray[Node]) -> tuple[list[float]]:
@@ -127,26 +112,8 @@ def _dn_dx_dn_dy(dx_dksi_tab: list, dx_deta_tab: list, dy_dksi_tab: list, dy_det
     Returns:
         tuple: Lists of dN/dx, dN/dy and det[J] values.
     """
-    def initialize_dNdXdNdY(n: int) -> tuple[list[list]]:
-        """
-        Initializes empty tables for dN/dx and dN/dy calculations.
-
-        Args:
-            n (int): Number of integration points.
-
-        Returns:
-            tuple: Empty tables for dN/dx and dN/dy.
-        """
-        dn_dx_tab = []; dn_dy_tab = []
-        for j in range(n*n):
-            dn_dx_tab.append([])
-            dn_dy_tab.append([])
-            for i in range (0, 4):
-                dn_dx_tab[j].append(0)
-                dn_dy_tab[j].append(0)
-        return dn_dx_tab, dn_dy_tab
-
-    dn_dx_tab, dn_dy_tab = initialize_dNdXdNdY(u_el.n)
+    dn_dx_tab = np.zeros((u_el.n*u_el.n, 4))
+    dn_dy_tab = np.zeros((u_el.n*u_el.n, 4))
     det_tab = []
     for j in range(u_el.n*u_el.n):
         mxJ = np.array([[dx_dksi_tab[j], dy_dksi_tab[j]],
