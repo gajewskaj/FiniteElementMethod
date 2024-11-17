@@ -6,4 +6,5 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
         from src.lmc.lmc_gpu import calculate_local_matrices
     else:
         from src.lmc.lmc_cpu import calculate_local_matrices
+    config.logger.info(f"Calculating local matrices for every element of the grid.")
     calculate_local_matrices(n, grid)

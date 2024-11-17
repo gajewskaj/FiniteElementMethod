@@ -5,13 +5,14 @@ from numba import cuda
 import numpy as np
 
 from src.helpers import config
+from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
 from src.lmc.universal_element import UniversalElement
 
 NODES_PER_ELEMENT = 4
 
+@measure_time
 def calculate_local_matrices(n: int, grid: Grid) -> None:
-    config.logger.info(f"Calculating local matrices for {len(grid.elements)} elements.")
     u_el = UniversalElement(n)
     # Allocate memory on GPU
     # Universal element properties
@@ -31,10 +32,6 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     dn_dx_tab = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT), dtype=cp.float32)
     dn_dy_tab = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT), dtype=cp.float32)
     det_tab = cp.empty((len(grid.elements), u_el.n*u_el.n), dtype=cp.float32)
-    H_ip_matrices = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT, NODES_PER_ELEMENT), dtype=cp.float32)
-    Hbc_ip_matrices = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT, NODES_PER_ELEMENT), dtype=cp.float32)
-    P_ip_vectors = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT), dtype=cp.float32)
-    C_ip_matrices = cp.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT, NODES_PER_ELEMENT), dtype=cp.float32)
     # Grid elements
     element_ids = cp.empty(len(grid.elements), dtype=cp.int32)
     node_x_coords = cp.empty((len(grid.elements), NODES_PER_ELEMENT), dtype=cp.float32)
@@ -74,7 +71,6 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
                                                                H_matrices, Hbc_matrices, P_vectors, C_matrices,
                                                                dx_dksi_tabs, dx_deta_tabs, dy_dksi_tabs, dy_deta_tabs,
                                                                dn_dx_tab, dn_dy_tab, det_tab,
-                                                               H_ip_matrices, Hbc_ip_matrices, P_ip_vectors, C_ip_matrices,
                                                                c, d, sh, alfa, tot)
     cuda.synchronize()
     # Retrieve results from GPU
@@ -94,10 +90,6 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     # config.logger.debug(f"dn/dx:\n{dn_dx_tab[0]}")
     # config.logger.debug(f"dn/dy:\n{dn_dy_tab[0]}")
     # config.logger.debug(f"det:\n{det_tab[0]}")
-    # H_ip_matrices = H_ip_matrices.get()
-    # C_ip_matrices = C_ip_matrices.get()
-    # config.logger.debug(f"H_ip:\n{H_ip_matrices[0]}")
-    # config.logger.debug(f"C_ip:\n{C_ip_matrices[0]}")
     H_matrices = H_matrices.get()
     C_matrices = C_matrices.get()
     Hbc_matrices = Hbc_matrices.get()
@@ -124,7 +116,6 @@ def _calculate_for_element(n: cp.int32, weights: cp.ndarray, n_tab: cp.ndarray, 
                            H_matrices: cp.ndarray, Hbc_matrices: cp.ndarray, P_vectors: cp.ndarray, C_matrices: cp.ndarray,
                            dx_dksi_tabs: cp.ndarray, dx_deta_tabs: cp.ndarray, dy_dksi_tabs: cp.ndarray, dy_deta_tabs: cp.ndarray,
                            dn_dx_tab: cp.ndarray, dn_dy_tab: cp.ndarray, det_tab: cp.ndarray,
-                           H_ip_matrices: cp.ndarray, Hbc_ip_matrices: cp.ndarray, P_ip_vectors: cp.ndarray, C_ip_matrices: cp.ndarray,
                            c: cp.float32, d: cp.float32, sh: cp.float32, alfa: cp.float32, tot: cp.float32) -> None:
     i = cuda.grid(1)
     if i < element_ids.size:
@@ -134,15 +125,10 @@ def _calculate_for_element(n: cp.int32, weights: cp.ndarray, n_tab: cp.ndarray, 
         _dn_dx_dn_dy(n, dn_dksi_tab, dn_deta_tab,
                      dx_dksi_tabs[i], dx_deta_tabs[i], dy_dksi_tabs[i], dy_deta_tabs[i],
                      dn_dx_tab[i], dn_dy_tab[i], det_tab[i])
-        _calculate_for_integration_points(n, n_tab,
-                                          dn_dx_tab[i], dn_dy_tab[i], det_tab[i],
-                                          H_ip_matrices[i], C_ip_matrices[i],
-                                          c, d, sh)
-        for j in range(n*n):
-            _multiply_matrix_by_scalar(H_ip_matrices[i][j], weights[j//n]*weights[j%n])
-            _add_matrices(H_matrices[i], H_ip_matrices[i][j]) # Stores result in H_matrices[i]
-            _multiply_matrix_by_scalar(C_ip_matrices[i][j], weights[j//n]*weights[j%n])
-            _add_matrices(C_matrices[i], C_ip_matrices[i][j]) # Stores result in C_matrices[i]
+        _calculate_H_C(n, weights, n_tab,
+                       dn_dx_tab[i], dn_dy_tab[i], det_tab[i],
+                       H_matrices[i], C_matrices[i],
+                       c, d, sh)
 
         _calculate_for_surface(n, weights, surfaces_N_tab[0],
                                node_x_coords[i][0], node_y_coords[i][0], node_bc[i][0],
@@ -189,11 +175,13 @@ def _calculate_for_surface(n: cp.int32, weights: cp.ndarray, surface_N_tab: cp.n
         _add_cuda_local_arrays(mx_H, Hbc_matrix, Hbc_matrix)
 
 @cuda.jit(device=True)
-def _calculate_for_integration_points(n: cp.int32, n_tab: cp.ndarray,
+def _calculate_H_C(n: cp.int32, weights: cp.ndarray, n_tab: cp.ndarray,
                                       dn_dx_tab: cp.ndarray, dn_dy_tab: cp.ndarray, det_tab: cp.ndarray,
-                                      H_ip_matrix: cp.ndarray, C_ip_matrix: cp.ndarray,
+                                      H_matrix: cp.ndarray, C_matrix: cp.ndarray,
                                       c: cp.float32, d: cp.float32, sh: cp.float32) -> None:
     for j in range(n*n):
+        H_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), cp.float32)
+        C_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), cp.float32)
         dN_dx_vc = cuda.local.array(NODES_PER_ELEMENT, cp.float32)
         dN_dx_vc_multiplied = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), cp.float32)
         dN_dy_vc = cuda.local.array(NODES_PER_ELEMENT, cp.float32)
@@ -205,11 +193,16 @@ def _calculate_for_integration_points(n: cp.int32, n_tab: cp.ndarray,
             N_vc[k] = n_tab[j][k]
         _multiply_cuda_local_arrays(dN_dx_vc, dN_dx_vc, dN_dx_vc_multiplied)
         _multiply_cuda_local_arrays(dN_dy_vc, dN_dy_vc, dN_dy_vc_multiplied)
-        _add_cuda_local_arrays(dN_dx_vc_multiplied, dN_dy_vc_multiplied, H_ip_matrix[j])
-        _multiply_matrix_by_scalar(H_ip_matrix[j], c*det_tab[j])
+        _add_cuda_local_arrays(dN_dx_vc_multiplied, dN_dy_vc_multiplied, H_ip_matrix)
+        _multiply_matrix_by_scalar(H_ip_matrix, c*det_tab[j])
 
-        _multiply_cuda_local_arrays(N_vc, N_vc, C_ip_matrix[j])
-        _multiply_matrix_by_scalar(C_ip_matrix[j], sh*d*det_tab[j])
+        _multiply_cuda_local_arrays(N_vc, N_vc, C_ip_matrix)
+        _multiply_matrix_by_scalar(C_ip_matrix, sh*d*det_tab[j])
+
+        _multiply_matrix_by_scalar(H_ip_matrix, weights[j//n]*weights[j%n])
+        _add_matrices(H_matrix, H_ip_matrix)
+        _multiply_matrix_by_scalar(C_ip_matrix, weights[j//n]*weights[j%n])
+        _add_matrices(C_matrix, C_ip_matrix)
 
 @cuda.jit(device=True)
 def _multiply_cuda_local_arrays(A: cuda.local.array, B: cuda.local.array, C: cuda.local.array) -> None:

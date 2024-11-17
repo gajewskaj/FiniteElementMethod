@@ -1,10 +1,9 @@
-import time
-
 import numpy as np
 import scipy.sparse as cpu_sparse
 import scipy.sparse.linalg as cpu_linalg
 
 from src.helpers import config
+from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
 from src.soe.system_of_equations import SystemOfEquations
 
@@ -30,6 +29,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
         self.H, self.C = self._aggregate_H_C()
         self.cpu_solve_factorized = cpu_linalg.factorized(self.H + self.C/self.step)
 
+    @measure_time
     def _aggregate_H_C(self) -> tuple[cpu_sparse.csc_matrix, cpu_sparse.csc_matrix]:
         """
         Creates global H and C matrices using CPU.
@@ -59,6 +59,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
 
         return H, C
 
+    @measure_time
     def _aggregate_P(self) -> np.ndarray:
         """
         Creates global P vector using CPU.
@@ -74,6 +75,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
 
         return P
 
+    @measure_time
     def solve(self) -> np.ndarray:
         """
         Solves the system of equations using CPU.
@@ -103,12 +105,9 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     tauk: float = grid.global_data.simulation_time
     dtau: float = soe.step
     config.logger.info("Calculating temperatures for every timestamp on CPU.")
-    start: float = time.time() # Start measuring time
     while dtau <= tauk:
         result: np.ndarray = soe.solve()
         times.append(dtau)
         temperatures.append(result)
         dtau += soe.step
-    end: float = time.time() # Stop measuring time
-    config.logger.info(f"Temperatures calculated in {end-start} seconds.")
     return times, temperatures

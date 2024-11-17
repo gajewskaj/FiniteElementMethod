@@ -61,14 +61,9 @@ def run() -> None:
         from src.lmc.lmc import calculate_local_matrices
         from src.soe.soe import simulate
 
-        # Calculate matrices stored in elements
-        start: float = time.time() # Start measuring time
         calculate_local_matrices(5, grid)
-        end: float = time.time() # Stop measuring time
-        config.logger.info(f"Local matrices calculated in {end-start} seconds.")
-
-        # Simulate temperatures in the grid for given timeframes
         times, temperatures = simulate(grid)
+
         config.logger.debug(f"Time        Min temp    Max temp")
         for i in range(len(temperatures)):
             config.logger.debug(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")

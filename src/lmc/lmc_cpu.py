@@ -2,9 +2,11 @@ from math import sqrt
 import numpy as np
 
 from src.helpers import config
+from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, GlobalData, Element, Node
 from src.lmc.universal_element import UniversalElement, Surface
 
+@measure_time
 def calculate_local_matrices(n: int, grid: Grid) -> None:
     """
     Calculates H, C, Hbc matrices and P vector for each element in the grid.
@@ -14,7 +16,6 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
         n (int): Number of integration points.
         grid (Grid): The grid containing elements and nodes.
     """
-    config.logger.info(f"Calculating local matrices for {len(grid.elements)} elements.")
     u_el = UniversalElement(n)
     for element in grid.elements:
         element: Element

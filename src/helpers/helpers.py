@@ -1,8 +1,28 @@
 import logging
 import os
 import shutil
+import time
 
 from . import config
+
+def measure_time(func):
+    """
+    Decorator for measuring the execution time of a function.
+
+    Args:
+        func (function): The function to measure the execution time of.
+
+    Returns:
+        function: The decorated function.
+    """
+    def wrapper(*args, **kwargs):
+        start: float = time.time()
+        result = func(*args, **kwargs)
+        end: float = time.time()
+        config.logger.info(f"'{func.__name__}' executed in {end  - start} seconds.")
+        return result
+
+    return wrapper
 
 def set_use_gpu(force_cpu: bool = False) -> None:
     """

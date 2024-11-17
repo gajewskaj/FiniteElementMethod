@@ -1,11 +1,10 @@
-import time
-
 import cupy as cp
 import cupyx.scipy.sparse as gpu_sparse
 import cupyx.scipy.sparse.linalg as gpu_linalg
 import numpy as np
 
 from src.helpers import config
+from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
 from src.soe.system_of_equations import SystemOfEquations
 
@@ -31,6 +30,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
         self.H, self.C = self._aggregate_H_C()
         self.gpu_solve_factorized = gpu_linalg.factorized(self.H + self.C/self.step)
 
+    @measure_time
     def _aggregate_H_C(self) -> tuple[gpu_sparse.csc_matrix, gpu_sparse.csc_matrix]:
         """
         Creates global H and C matrices using GPU.
@@ -67,6 +67,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
 
         return H, C
 
+    @measure_time
     def _aggregate_P(self) -> cp.ndarray:
         """
         Creates global P vector using GPU.
@@ -81,6 +82,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
                 P[element.node_ids[i] - 1] += cp.asarray(element.P[i])
         return P
 
+    @measure_time
     def solve(self) -> cp.ndarray:
         """
         Solves the system of equations using GPU.
@@ -110,14 +112,11 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     tauk = cp.float32(grid.global_data.simulation_time)
     dtau: cp.float32 = soe.step
     config.logger.info("Calculating temperatures for every timestamp on GPU.")
-    start: float = time.time() # Start measuring time
     while dtau <= tauk:
         result: np.ndarray = soe.solve()
         times.append(dtau)
         temperatures.append(result)
         dtau += soe.step
-    end: float = time.time() # Stop measuring time
-    config.logger.info(f"Temperatures calculated in {end-start} seconds.")
     if config.use_gpu:
         return cp.asnumpy(times), [temp.get() for temp in temperatures]
     return times, temperatures
