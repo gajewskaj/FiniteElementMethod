@@ -25,7 +25,7 @@ case_data: list[CaseData] = []
 def parse_log_file(filename: str):
     pattern_num_elements = re.compile(r"Number of elements: (\d+)")
     pattern_num_nodes = re.compile(r"Number of nodes: (\d+)")
-    pattern_func_time = re.compile(r"Function '(\w+)' executed in (\d+(\.\d+)?) seconds.")
+    pattern_func_time = re.compile(r"Function '(\w+)' executed in (.+) seconds.")
     with open(filename, "r") as f:
         lines = f.readlines()
         num_elements = None
@@ -40,14 +40,14 @@ def parse_log_file(filename: str):
                 num_nodes = int(match_num_nodes.group(1))
             if match_func_time:
                 function_name = match_func_time.group(1)
-                exec_time = match_func_time.group(2)
+                exec_time = float(match_func_time.group(2))
                 try:
                     i = [case.num_elements for case in case_data].index(num_elements)
                 except ValueError:
                     i = -1
                 if i == -1:
                     case_data.append(CaseData(num_elements, num_nodes))
-                case_data[i].add_time(function_name, float(exec_time))
+                case_data[i].add_time(function_name, exec_time)
 
 def interpret_data():
     print("Execution time on average:")
@@ -61,9 +61,9 @@ def interpret_data():
         row = [case.num_elements, case.num_nodes]
         total_time: float = 0
         for times in case.functions.values():
-            time = sum(times)
-            total_time += time
-            row.append(time/len(times))
+            avg_time = sum(times)/len(times)
+            total_time += avg_time
+            row.append(avg_time)
         row.append(total_time)
         table.add_row(row, divider=True)
     print(table)
