@@ -19,7 +19,7 @@ def measure_time(func):
         start: float = time.time()
         result = func(*args, **kwargs)
         end: float = time.time()
-        config.logger.debug(f"Function '{func.__name__}' executed in {round(end  - start), 9} seconds.")
+        config.logger.debug(f"Function '{func.__name__}' executed in {round((end  - start), 9)} seconds.")
         return result
 
     return wrapper
