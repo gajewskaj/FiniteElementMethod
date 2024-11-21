@@ -146,9 +146,9 @@ def _interpolate(dN1: np.float32,
 
 @cuda.jit(device=True)
 def _calculate_H_C(j: int, n: int, weights, n_tab,
-                                      det_tab, dn_dx_tab, dn_dy_tab,
-                                      H_matrix, C_matrix,
-                                      c: np.float32, d: np.float32, sh: np.float32) -> None:
+                   det_tab, dn_dx_tab, dn_dy_tab,
+                   H_matrix, C_matrix,
+                   c: np.float32, d: np.float32, sh: np.float32) -> None:
     H_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), np.float32)
     C_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), np.float32)
     dN_dx_vc = cuda.local.array(NODES_PER_ELEMENT, np.float32)

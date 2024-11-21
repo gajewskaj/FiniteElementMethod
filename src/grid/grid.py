@@ -158,10 +158,10 @@ class Element:
         """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
-        self.H: np.ndarray = np.zeros((4, 4), dtype=float)
-        self.Hbc: np.ndarray = np.zeros((4, 4), dtype=float)
-        self.P: np.ndarray = np.zeros((4, 1), dtype=float)
-        self.C: np.ndarray = np.zeros((4, 4), dtype=float)
+        self.H: np.ndarray = np.zeros((4, 4), dtype=np.float32)
+        self.Hbc: np.ndarray = np.zeros((4, 4), dtype=np.float32)
+        self.P: np.ndarray = np.zeros((4, 1), dtype=np.float32)
+        self.C: np.ndarray = np.zeros((4, 4), dtype=np.float32)
 
     def __eq__(self, other: 'Element') -> bool:
         """
