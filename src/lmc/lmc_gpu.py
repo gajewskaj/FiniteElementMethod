@@ -22,14 +22,6 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
     for i, surface in enumerate(u_el.surfaces):
         suraces_N_tab[i] = np.array(surface.N, dtype=np.float32)
     surfaces_N_tab_cuda = cuda.to_device(suraces_N_tab)
-    # Temporary arrays
-    dx_dksi_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
-    dx_deta_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
-    dy_dksi_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
-    dy_deta_tabs_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
-    det_tab_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n), dtype=np.float32))
-    dn_dx_tab_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT), dtype=np.float32))
-    dn_dy_tab_cuda = cuda.to_device(np.empty((len(grid.elements), u_el.n*u_el.n, NODES_PER_ELEMENT), dtype=np.float32))
     # Grid elements
     node_x_coords = np.empty((len(grid.elements), NODES_PER_ELEMENT), dtype=np.float32)
     node_y_coords = np.empty((len(grid.elements), NODES_PER_ELEMENT), dtype=np.float32)
@@ -62,10 +54,8 @@ def calculate_local_matrices(n: int, grid: Grid) -> None:
                                                                      Hbc_matrices_cuda, P_vectors_cuda,
                                                                      grid.global_data.alfa, grid.global_data.tot)
     _calculate_H_C_for_element[blocks_per_grid, threads_per_block, stream_H_C](n, weights, n_tab,
-                                                                   dn_dksi_tab, dn_deta_tab,
+                                                                               dn_dksi_tab, dn_deta_tab,
                                                                    node_x_coords_cuda, node_y_coords_cuda,
-                                                                   dx_dksi_tabs_cuda, dx_deta_tabs_cuda, dy_dksi_tabs_cuda, dy_deta_tabs_cuda,
-                                                                   det_tab_cuda, dn_dx_tab_cuda, dn_dy_tab_cuda,
                                                                    H_matrices_cuda, C_matrices_cuda,
                                                                    grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat)
     # Retrieve results from GPU
@@ -89,52 +79,49 @@ def _save_to_elements(grid, H_matrices, C_matrices, Hbc_matrices, P_vectors):
 
 @cuda.jit
 def _calculate_H_C_for_element(n: int, weights, n_tab,
-                               dn_dksi_tab, dn_deta_tab,
+                               dn_dksi_tabs, dn_deta_tabs,
                                node_x_coords, node_y_coords,
-                               dx_dksi_tabs, dx_deta_tabs, dy_dksi_tabs, dy_deta_tabs,
-                               det_tab, dn_dx_tab, dn_dy_tab,
                                H_matrices, C_matrices,
                                c: np.float32, d: np.float32, sh: np.float32) -> None:
     i = cuda.grid(1)
     if i < H_matrices.shape[0]:
+        _x_coords = node_x_coords[i]
+        _y_coords = node_y_coords[i]
+        H = H_matrices[i]
+        C = C_matrices[i]
+
         for j in range(n*n):
-            _fill_x_y_ksi_eta_tabs(j, dn_dksi_tab, dn_deta_tab,
-                                node_x_coords[i], node_y_coords[i],
-                                dx_dksi_tabs[i], dx_deta_tabs[i], dy_dksi_tabs[i], dy_deta_tabs[i])
-            _dn_dx_dn_dy(j, dn_dksi_tab, dn_deta_tab,
-                        dx_dksi_tabs[i], dx_deta_tabs[i], dy_dksi_tabs[i], dy_deta_tabs[i],
-                        det_tab[i], dn_dx_tab[i], dn_dy_tab[i])
-            _calculate_H_C(j, n, weights, n_tab,
-                        det_tab[i], dn_dx_tab[i], dn_dy_tab[i],
-                        H_matrices[i], C_matrices[i],
-                        c, d, sh)
+            dn_dx_tab = cuda.local.array(NODES_PER_ELEMENT, np.float32)
+            dn_dy_tab = cuda.local.array(NODES_PER_ELEMENT, np.float32)
+            dx_dksi = _interpolate(dn_dksi_tabs[j][0], dn_dksi_tabs[j][1], dn_dksi_tabs[j][2], dn_dksi_tabs[j][3], _x_coords)
+            dx_deta = _interpolate(dn_deta_tabs[j][0], dn_deta_tabs[j][1], dn_deta_tabs[j][2], dn_deta_tabs[j][3], _x_coords)
+            dy_dksi = _interpolate(dn_dksi_tabs[j][0], dn_dksi_tabs[j][1], dn_dksi_tabs[j][2], dn_dksi_tabs[j][3], _y_coords)
+            dy_deta = _interpolate(dn_deta_tabs[j][0], dn_deta_tabs[j][1], dn_deta_tabs[j][2], dn_deta_tabs[j][3], _y_coords)
+            detJ = _dn_dx_dn_dy(dn_dksi_tabs[j], dn_deta_tabs[j],
+                        dx_dksi, dx_deta, dy_dksi, dy_deta,
+                        dn_dx_tab, dn_dy_tab)
+            _calculate_H_C(H, C,
+                           weights[j//n], weights[j%n], n_tab[j],
+                           detJ, dn_dx_tab, dn_dy_tab,
+                           c, d, sh)
 
 @cuda.jit(device=True)
-def _dn_dx_dn_dy(j: int, dn_dksi_tab, dn_deta_tab,
-                 dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab,
-                 det_tab, dn_dx_tab, dn_dy_tab) -> None:
-    mxJ_00 = dx_dksi_tab[j]
-    mxJ_01 = dy_dksi_tab[j]
-    mxJ_10 = dx_deta_tab[j]
-    mxJ_11 = dy_deta_tab[j]
+def _dn_dx_dn_dy(dn_dksi_tab, dn_deta_tab,
+                 dx_dksi, dx_deta, dy_dksi, dy_deta,
+                 dn_dx_tab, dn_dy_tab) -> float:
+    mxJ_00 = dx_dksi
+    mxJ_01 = dy_dksi
+    mxJ_10 = dx_deta
+    mxJ_11 = dy_deta
     det_J = mxJ_00 * mxJ_11 - mxJ_01 * mxJ_10
-    det_tab[j] = det_J
     invJ_00 = mxJ_11 / det_J
     invJ_01 = -mxJ_01 / det_J
     invJ_10 = -mxJ_10 / det_J
     invJ_11 = mxJ_00 / det_J
     for k in range(NODES_PER_ELEMENT):
-        dn_dx_tab[j][k] = invJ_00 * dn_dksi_tab[j][k] + invJ_01 * dn_deta_tab[j][k]
-        dn_dy_tab[j][k] = invJ_10 * dn_dksi_tab[j][k] + invJ_11 * dn_deta_tab[j][k]
-
-@cuda.jit(device=True)
-def _fill_x_y_ksi_eta_tabs(j: np.int32, dn_dksi_tab, dn_deta_tab,
-                           node_x_coords, node_y_coords,
-                           dx_dksi_tab, dx_deta_tab, dy_dksi_tab, dy_deta_tab) -> None:
-    dx_dksi_tab[j] = _interpolate(dn_dksi_tab[j][0], dn_dksi_tab[j][1], dn_dksi_tab[j][2], dn_dksi_tab[j][3], node_x_coords)
-    dx_deta_tab[j] = _interpolate(dn_deta_tab[j][0], dn_deta_tab[j][1], dn_deta_tab[j][2], dn_deta_tab[j][3], node_x_coords)
-    dy_dksi_tab[j] = _interpolate(dn_dksi_tab[j][0], dn_dksi_tab[j][1], dn_dksi_tab[j][2], dn_dksi_tab[j][3], node_y_coords)
-    dy_deta_tab[j] = _interpolate(dn_deta_tab[j][0], dn_deta_tab[j][1], dn_deta_tab[j][2], dn_deta_tab[j][3], node_y_coords)
+        dn_dx_tab[k] = invJ_00 * dn_dksi_tab[k] + invJ_01 * dn_deta_tab[k]
+        dn_dy_tab[k] = invJ_10 * dn_dksi_tab[k] + invJ_11 * dn_deta_tab[k]
+    return det_J
 
 @cuda.jit(device=True)
 def _interpolate(dN1: np.float32,
@@ -145,9 +132,9 @@ def _interpolate(dN1: np.float32,
     return np.float32(dN1*var[0] + dN2*var[1] + dN3*var[2] + dN4*var[3])
 
 @cuda.jit(device=True)
-def _calculate_H_C(j: int, n: int, weights, n_tab,
-                   det_tab, dn_dx_tab, dn_dy_tab,
-                   H_matrix, C_matrix,
+def _calculate_H_C(H, C,
+                   weight1, weight2, n_tab,
+                   detJ, dn_dx_tab, dn_dy_tab,
                    c: np.float32, d: np.float32, sh: np.float32) -> None:
     H_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), np.float32)
     C_ip_matrix = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), np.float32)
@@ -157,21 +144,21 @@ def _calculate_H_C(j: int, n: int, weights, n_tab,
     dN_dy_vc_multiplied = cuda.local.array((NODES_PER_ELEMENT, NODES_PER_ELEMENT), np.float32)
     N_vc = cuda.local.array(NODES_PER_ELEMENT, np.float32)
     for k in range(NODES_PER_ELEMENT):
-        dN_dx_vc[k] = dn_dx_tab[j][k]
-        dN_dy_vc[k] = dn_dy_tab[j][k]
-        N_vc[k] = n_tab[j][k]
+        dN_dx_vc[k] = dn_dx_tab[k]
+        dN_dy_vc[k] = dn_dy_tab[k]
+        N_vc[k] = n_tab[k]
     _multiply_matrices(dN_dx_vc, dN_dx_vc, dN_dx_vc_multiplied)
     _multiply_matrices(dN_dy_vc, dN_dy_vc, dN_dy_vc_multiplied)
     _sum_matrices(dN_dx_vc_multiplied, dN_dy_vc_multiplied, H_ip_matrix)
-    _multiply_matrix_by_scalar(H_ip_matrix, c*det_tab[j], H_ip_matrix)
+    _multiply_matrix_by_scalar(H_ip_matrix, c*detJ, H_ip_matrix)
 
     _multiply_matrices(N_vc, N_vc, C_ip_matrix)
-    _multiply_matrix_by_scalar(C_ip_matrix, sh*d*det_tab[j], C_ip_matrix)
+    _multiply_matrix_by_scalar(C_ip_matrix, sh*d*detJ, C_ip_matrix)
 
-    _multiply_matrix_by_scalar(H_ip_matrix, weights[j//n]*weights[j%n], H_ip_matrix)
-    _sum_matrices(H_matrix, H_ip_matrix, H_matrix)
-    _multiply_matrix_by_scalar(C_ip_matrix, weights[j//n]*weights[j%n], C_ip_matrix)
-    _sum_matrices(C_matrix, C_ip_matrix, C_matrix)
+    _multiply_matrix_by_scalar(H_ip_matrix, weight1*weight2, H_ip_matrix)
+    _sum_matrices(H, H_ip_matrix, H)
+    _multiply_matrix_by_scalar(C_ip_matrix, weight1*weight2, C_ip_matrix)
+    _sum_matrices(C, C_ip_matrix, C)
 
 @cuda.jit
 def _calculate_Hbc_P_for_element(n: int, weights, surfaces_N_tab,

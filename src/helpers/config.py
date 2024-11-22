@@ -7,6 +7,7 @@ input_path: str = os.path.join(project_path, "input")
 output_path: str = os.path.join(project_path, "output")
 templates_path: str = os.path.join(project_path, "templates")
 test_path: str = os.path.join(project_path, "test")
+scripts_path: str = os.path.join(project_path, "scripts")
 
 MAIN_LOGGER_NAME = "main_logger"
 TEST_LOGGER_NAME = "test_logger"

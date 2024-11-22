@@ -1,12 +1,21 @@
-import sys
+import argparse
+import csv
 import os
 import re
+import sys
 from glob import glob
 
 import prettytable
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from src.helpers.config import output_path
+from src.helpers.config import output_path, scripts_path
+
+def parse_arguments() -> str:
+    parser = argparse.ArgumentParser(description="Log parser")
+    parser.add_argument("--file", type=str, default="time_stats.csv",
+                        help="Output filename")
+    args = parser.parse_args()
+    return args.file
 
 class CaseData:
     def __init__(self, num_elements: int, num_nodes: int):
@@ -50,25 +59,34 @@ def parse_log_file(filename: str):
                 case_data[i].add_time(function_name, exec_time)
 
 def interpret_data():
-    print("Execution time on average:")
-    table = prettytable.PrettyTable()
-    table.header = True
-    names = ["Elements", "Nodes"]
-    names.extend([f"{function_name} [s]" for function_name in case_data[0].functions.keys()])
-    names.append("Total time [s]")
-    table.field_names = names
+    column_names = ["Elements", "Nodes"]
+    column_names.extend([function_name for function_name in case_data[0].functions.keys()])
+    rows = []
     for case in case_data:
         row = [case.num_elements, case.num_nodes]
-        total_time: float = 0
         for times in case.functions.values():
             avg_time = sum(times)/len(times)
-            total_time += avg_time
             row.append(avg_time)
-        row.append(total_time)
-        table.add_row(row, divider=True)
+        rows.append(row)
+    return column_names, rows
+
+def print_table(column_names: list[str], rows: list[list[str]]) -> None:
+    print("Execution time on average [s]:")
+    table = prettytable.PrettyTable()
+    table.field_names = column_names
+    table.add_rows(rows)
     print(table)
 
+def save_to_csv(file_name: str, column_names: list[str], rows: list[list[str]]) -> None:
+    with open(os.path.join(scripts_path, file_name), "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(column_names)
+        writer.writerows(rows)
+
+file_name = parse_arguments()
 for directory in glob(output_path + "/*"):
     for filename in glob(os.path.join(output_path, directory, "*.log")):
         parse_log_file(filename)
-interpret_data()
+column_names, rows = interpret_data()
+print_table(column_names, rows)
+save_to_csv(file_name, column_names, rows)
