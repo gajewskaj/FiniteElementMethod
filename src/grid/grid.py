@@ -16,8 +16,8 @@ class GlobalData:
         simulation_time (float): Total simulation time.
         simulation_step_time (float): Time step for the simulation.
         conductivity (float): Thermal conductivity.
-        alfa (float): Heat transfer coefficient.
-        tot (float): Ambient temperature.
+        alpha (float): Heat transfer coefficient.
+        ambient_temp (float): Ambient temperature.
         initial_temp (float): Initial temperature.
         density (float): Material density.
         specific_heat (float): Specific heat capacity.
@@ -27,8 +27,8 @@ class GlobalData:
     def __init__(self, simulation_time: float,
                  simulation_step_time: float,
                  conductivity: float,
-                 alfa: float,
-                 tot: float,
+                 alpha: float,
+                 ambient_temp: float,
                  initial_temp: float,
                  density: float,
                  specific_heat: float,
@@ -43,8 +43,8 @@ class GlobalData:
         self.simulation_time: float = simulation_time
         self.simulation_step_time: float = simulation_step_time
         self.conductivity: float = conductivity
-        self.alfa: float = alfa
-        self.tot: float = tot
+        self.alpha: float = alpha
+        self.ambient_temp: float = ambient_temp
         self.initial_temp: float = initial_temp
         self.density: float = density
         self.specific_heat: float = specific_heat
@@ -64,8 +64,8 @@ class GlobalData:
         result: bool = isclose(self.simulation_time, other.simulation_time) and \
                        isclose(self.simulation_step_time, other.simulation_step_time) and \
                        isclose(self.conductivity, other.conductivity) and \
-                       isclose(self.alfa, other.alfa) and \
-                       isclose(self.tot, other.tot) and \
+                       isclose(self.alpha, other.alpha) and \
+                       isclose(self.ambient_temp, other.ambient_temp) and \
                        isclose(self.initial_temp, other.initial_temp) and \
                        isclose(self.density, other.density) and \
                        isclose(self.specific_heat, other.specific_heat) and \
@@ -80,9 +80,9 @@ class GlobalData:
         config.logger.debug(f"Simulation time: \t{self.simulation_time}")
         config.logger.debug(f"Simulation step time: \t{self.simulation_step_time}")
         config.logger.debug(f"Conductivity: \t\t{self.conductivity}")
-        config.logger.debug(f"Alfa: \t\t\t{self.alfa}")
-        config.logger.debug(f"Tot: \t\t\t{self.tot}")
-        config.logger.debug(f"Initial temp: \t\t{self.initial_temp}")
+        config.logger.debug(f"alpha: \t\t\t{self.alpha}")
+        config.logger.debug(f"Ambient temperature: \t\t\t{self.ambient_temp}")
+        config.logger.debug(f"Initial temperature: \t\t{self.initial_temp}")
         config.logger.debug(f"Density: \t\t{self.density}")
         config.logger.debug(f"Specific heat: \t\t{self.specific_heat}")
         config.logger.debug(f"Nodes number: \t\t{self.nodes_number}")
@@ -239,14 +239,14 @@ class Grid:
             simulation_time: float = global_data_dict["SimulationTime"]
             simulation_step_time: float = global_data_dict["SimulationStepTime"]
             conductivity: float = global_data_dict["Conductivity"]
-            alfa: float = global_data_dict["Alfa"]
-            tot: float = global_data_dict["Tot"]
+            alpha: float = global_data_dict["Alfa"]
+            ambient_temp: float = global_data_dict["Tot"]
             initial_temp: float = global_data_dict["InitialTemp"]
             density: float = global_data_dict["Density"]
             specific_heat: float = global_data_dict["SpecificHeat"]
             nodes_number: int = global_data_dict["Nodesnumber"]
             elements_number: int = global_data_dict["Elementsnumber"]
-            return GlobalData(simulation_time, simulation_step_time, conductivity, alfa, tot,
+            return GlobalData(simulation_time, simulation_step_time, conductivity, alpha, ambient_temp,
                               initial_temp, density, specific_heat, nodes_number, elements_number)
 
         def _read_nodes(input: str, nodes_start_line: int, nodes_number: int) -> np.ndarray[Node]:
@@ -316,12 +316,12 @@ class Grid:
             simulation_time: float = global_data_dict["simulation_time"]
             simulation_step_time: float = global_data_dict["simulation_step_time"]
             conductivity: float = global_data_dict["conductivity"]
-            alfa: float = global_data_dict["alfa"]
-            tot: float = global_data_dict["tot"]
+            alpha: float = global_data_dict["alpha"]
+            ambient_temp: float = global_data_dict["ambient_temp"]
             initial_temp: float = global_data_dict["initial_temp"]
             density: float = global_data_dict["density"]
             specific_heat: float = global_data_dict["specific_heat"]
-            return GlobalData(simulation_time, simulation_step_time, conductivity, alfa, tot,
+            return GlobalData(simulation_time, simulation_step_time, conductivity, alpha, ambient_temp,
                               initial_temp, density, specific_heat, nodes_number, elements_number)
 
         def _read_nodes(mesh: Mesh) -> np.ndarray[Node]:

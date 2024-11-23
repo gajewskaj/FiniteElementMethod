@@ -4,24 +4,11 @@ import numpy as np
 from src.helpers import config
 
 class GaussianQuadrature:
-    """
-    A class for numerical integration using Gaussian Quadrature.
-
-    Attributes:
-        fun (callable): Function to integrate.
-        n (int): Number of integration points.
-        points (np.ndarray): List of integration points, xi.
-        weights (np.ndarray): Weights for integration points, wi.
-    """
-    def __init__(self, n: int, fun: callable = None):
-        self.fun: callable = fun
-        self.n: np.int8 = np.int8(n)
+    def __init__(self, n: int):
+        self.n: int = int(n)
         self.points, self.weights = self._init_points_weights()
 
     def _init_points_weights(self) -> tuple[np.ndarray[np.float32], np.ndarray[np.float32]]:
-        """
-        Initializes arrays containing integration points and their weights.
-        """
         match self.n:
             case 1:
                 points = np.array([0], dtype=np.float32)
@@ -61,31 +48,3 @@ class GaussianQuadrature:
                 config.logger.error(err_msg)
                 raise RuntimeError
         return points, weights
-
-    def calculate_1d(self) -> np.float32:
-        """
-        Calculates integral for function of 1 variable f(x).
-
-        Returns:
-            float: The calculated integral.
-        """
-        result = np.float32(0.0)
-        for i in range (0, self.n):
-            x = self.points[i]
-            result += self.weights[i] * self.fun(x)
-        return np.float32(result)
-
-    def calculate_2d(self) -> np.float32:
-        """
-        Calculates integral for function of 2 variables f(x, y).
-
-        Returns:
-            float: The calculated integral.
-        """
-        result = np.float32(0.0)
-        for i in range (0, self.n):
-            x = self.points[i]
-            for j in range (self.n):
-                y = self.points[j]
-                result += self.weights[i] * self.weights[j] * self.fun(x, y)
-        return np.float32(result)

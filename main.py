@@ -27,8 +27,6 @@ def parse_arguments() -> tuple[str, str, bool]:
     args = parser.parse_args()
     return args.mesh, args.data, args.force_cpu
 
-
-
 def run() -> None:
     """
     Runs all the necessary functions to calculate max and min temperature of the element in time.
@@ -61,7 +59,7 @@ def run() -> None:
         from src.lmc.lmc import calculate_local_matrices
         from src.soe.soe import simulate
 
-        calculate_local_matrices(np.int8(5), grid)
+        calculate_local_matrices(4, grid)
         times, temperatures = simulate(grid)
 
         config.logger.info(f"Time        Min temp    Max temp")
