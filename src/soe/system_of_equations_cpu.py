@@ -89,7 +89,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
         self.t0 = result
         return result
 
-def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
+def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray[float]]]:
     """
     Simulates the temperature distribution over time.
 
