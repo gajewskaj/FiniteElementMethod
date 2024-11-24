@@ -3,6 +3,7 @@ from math import isclose
 import os
 
 from src.helpers import config
+from src.universal_element.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 import gmshparser
 from gmshparser import Mesh
@@ -158,10 +159,10 @@ class Element:
         """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
-        self.H: np.ndarray = np.zeros((4, 4), dtype=np.float32)
-        self.Hbc: np.ndarray = np.zeros((4, 4), dtype=np.float32)
-        self.P: np.ndarray = np.zeros((4, 1), dtype=np.float32)
-        self.C: np.ndarray = np.zeros((4, 4), dtype=np.float32)
+        self.H: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
+        self.Hbc: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
+        self.P: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, 1), dtype=np.float32)
+        self.C: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
 
     def __eq__(self, other: 'Element') -> bool:
         """
@@ -341,17 +342,14 @@ class Grid:
             config.logger.info("Reading elements from mesh.")
             elements_list = []
             for entity in mesh.get_element_entities():
-                if entity.get_element_type() == 3:
+                if entity.get_element_type() in [2, 3]:
                     for element in entity.get_elements():
                         el_id = element.get_tag()
                         el_con = np.asarray(element.get_connectivity())
                         elements_list.append(Element(el_id, el_con))
             elements_number = len(elements_list)
             config.logger.info(f"Number of elements: {elements_number}.")
-            elements = np.empty(elements_number, dtype=Element)
-            for i, element in enumerate(elements_list):
-                elements[i] = element
-            return elements
+            return np.asarray(elements_list)
 
         try:
             config.logger.info(f"Creating a grid from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")

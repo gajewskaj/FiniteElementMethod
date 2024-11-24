@@ -6,6 +6,7 @@ from src.helpers import config
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
 from src.soe.system_of_equations import SystemOfEquations
+from src.universal_element.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 class SystemOfEquationsCPU(SystemOfEquations):
     """
@@ -43,8 +44,8 @@ class SystemOfEquationsCPU(SystemOfEquations):
 
         for element in self.elements:
             local_H = element.H + element.Hbc
-            for i in range(4):
-                for j in range(4):
+            for i in range(NUM_OF_SHAPE_FUNCTIONS):
+                for j in range(NUM_OF_SHAPE_FUNCTIONS):
                     if local_H[i][j] != 0:
                         data_H.append(local_H[i][j])
                         row_H.append(element.node_ids[i] - 1)
@@ -70,7 +71,7 @@ class SystemOfEquationsCPU(SystemOfEquations):
         P = np.zeros((self.dim, 1))
 
         for element in self.elements:
-            for i in range(4):
+            for i in range(NUM_OF_SHAPE_FUNCTIONS):
                 P[element.node_ids[i] - 1] += element.P[i]
 
         return P

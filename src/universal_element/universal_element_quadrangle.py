@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from src.lmc.gaussian_quadrature import GaussianQuadrature
+from src.universal_element.gaussian_quadrature import GaussianQuadrature
 
 NUM_OF_SHAPE_FUNCTIONS = 4
 NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
@@ -29,7 +29,7 @@ dN_deta = [
     lambda xi: np.float32(0.25 * (1-xi))   # dN4/deta
 ]
 
-class UniversalElement():
+class UniversalElementQuadrangle():
     def __init__(self, n: int):
         self.n = n if n in [1, 4, 9, 16, 25] else 4
         self.gaussian_quadrature = GaussianQuadrature(sqrt(n))

@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 
 project_path: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 input_path: str = os.path.join(project_path, "input")
@@ -15,4 +14,5 @@ TEST_LOGGER_NAME = "test_logger"
 logger: logging.Logger = logging.Logger(MAIN_LOGGER_NAME)
 
 use_gpu: bool = False
+element_type: str = "quadrangle"
 

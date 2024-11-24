@@ -16,7 +16,7 @@ def parse_arguments() -> tuple[int, int, str]:
     return args.x_elem, args.y_elem
 
 num_elements_x, num_elements_y = parse_arguments()
-filename = f"{num_elements_x}x{num_elements_y}.msh"
+filename = f"{num_elements_x}x{num_elements_y}_quad.msh"
 
 min_x = 0
 max_x = 0.100000001
