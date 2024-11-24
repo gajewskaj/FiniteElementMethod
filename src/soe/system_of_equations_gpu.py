@@ -24,7 +24,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
     """
     def __init__(self, grid: Grid):
         self.dim: cp.int32 = cp.int32(grid.global_data.nodes_number)
-        self.step: cp.float32 = cp.float32(grid.global_data.simulation_step_time)
+        self.step: cp.float64 = cp.float64(grid.global_data.simulation_step_time)
         self.elements: list[Element] = grid.elements
         self.t0: cp.ndarray = cp.full((self.dim, 1), grid.global_data.initial_temp)
         self.P: cp.ndarray = self._aggregate_P()
@@ -56,12 +56,12 @@ class SystemOfEquationsGPU(SystemOfEquations):
                         row_C.append(element.node_ids[i] - 1)
                         col_C.append(element.node_ids[j] - 1)
 
-        data_H = cp.array(data_H, dtype=cp.float32)
-        row_H = cp.array(row_H, dtype=cp.float32)
-        col_H = cp.array(col_H, dtype=cp.float32)
-        data_C = cp.array(data_C, dtype=cp.float32)
-        row_C = cp.array(row_C, dtype=cp.float32)
-        col_C = cp.array(col_C, dtype=cp.float32)
+        data_H = cp.array(data_H)
+        row_H = cp.array(row_H)
+        col_H = cp.array(col_H)
+        data_C = cp.array(data_C)
+        row_C = cp.array(row_C)
+        col_C = cp.array(col_C)
 
         H: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsc()
         C: gpu_sparse.csc_matrix = gpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsc()
@@ -81,7 +81,7 @@ class SystemOfEquationsGPU(SystemOfEquations):
             for i in range(NUM_OF_SHAPE_FUNCTIONS):
                 P[element.node_ids[i] - 1] += element.P[i]
 
-        return cp.array(P, dtype=cp.float32)
+        return cp.array(P)
 
     @measure_time
     def solve(self) -> cp.ndarray:
@@ -106,12 +106,12 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray]]:
     Returns:
         tuple[list[float], list[np.ndarray]]: A tuple containing a list of time steps and a list of temperature values at each node for all time steps.
     """
-    times: list[cp.float32] = []
+    times: list[cp.float64] = []
     temperatures: list[cp.ndarray] = []
     config.logger.info("Initializing system of equations.")
     soe = SystemOfEquationsGPU(grid)
-    tauk = cp.float32(grid.global_data.simulation_time)
-    dtau: cp.float32 = soe.step
+    tauk = cp.float64(grid.global_data.simulation_time)
+    dtau: cp.float64 = soe.step
     config.logger.info("Calculating temperatures for every timestamp on GPU.")
     while dtau <= tauk:
         result: np.ndarray = soe.solve()

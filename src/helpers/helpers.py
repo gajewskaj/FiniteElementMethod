@@ -135,13 +135,3 @@ def create_or_clear_directory(dir_path: str) -> str:
                 raise RuntimeError(err_msg)
     finally:
         return dir_path
-
-def print2dTab(tab: list[list]) -> None:
-    """
-    Print a 2D list to the logger.
-
-    Args:
-        tab (list[list]): The 2D list to print.
-    """
-    for inner_tab in tab:
-        config.logger.debug(inner_tab)

@@ -159,10 +159,10 @@ class Element:
         """
         self.id: int = id
         self.node_ids: np.ndarray[int] = node_ids
-        self.H: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
-        self.Hbc: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
-        self.P: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, 1), dtype=np.float32)
-        self.C: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), dtype=np.float32)
+        self.H: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
+        self.Hbc: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
+        self.P: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, 1))
+        self.C: np.ndarray = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
 
     def __eq__(self, other: 'Element') -> bool:
         """

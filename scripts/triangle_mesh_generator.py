@@ -40,25 +40,17 @@ l4 = gmsh.model.geo.addLine(p4, p1)
 curve_loop = gmsh.model.geo.addCurveLoop([l1, l2, l3, l4])
 surface = gmsh.model.geo.addPlaneSurface([curve_loop])
 
-# Ustawienie liczby elementów wzdłuż każdej krawędzi
 gmsh.model.geo.mesh.setTransfiniteCurve(l1, num_elements_x + 1)
 gmsh.model.geo.mesh.setTransfiniteCurve(l3, num_elements_x + 1)
 gmsh.model.geo.mesh.setTransfiniteCurve(l2, num_elements_y + 1)
 gmsh.model.geo.mesh.setTransfiniteCurve(l4, num_elements_y + 1)
 
-# Ustawienie siatki transfinicznej, ale nie będziemy rekombinować, by uzyskać trójkąty
 gmsh.model.geo.mesh.setTransfiniteSurface(surface)
 
-# Synchronizacja geometrii
 gmsh.model.geo.synchronize()
 
-# Generacja siatki 2D (automatycznie trójkątnej, ponieważ nie stosujemy rekombinacji)
 gmsh.model.mesh.generate(2)
 
-# Zapis do pliku .msh
 gmsh.write(os.path.join(config.input_path, filename))
 
-gmsh.fltk.run()
-
-# Finalizacja
 gmsh.finalize()
