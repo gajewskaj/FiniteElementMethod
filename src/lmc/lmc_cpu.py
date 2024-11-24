@@ -85,13 +85,12 @@ def _calculate_Hbc_P_for_element(Hbc: np.ndarray[np.float32], P: np.ndarray[np.f
                                  alpha: np.float32, ambient_temp: np.float32,
                                  n: int, weights: np.ndarray[np.float32], surfaces: np.ndarray[np.float32]):
     for i in range(NUM_OF_SURFACES):
-        _calculate_for_surface(Hbc, P, n, weights, surfaces[i], (nodes[i], nodes[(i + 1) % NUM_OF_SURFACES]), alpha, ambient_temp, i)
+        _calculate_for_surface(Hbc, P, n, weights, surfaces[i], (nodes[i], nodes[(i + 1) % NUM_OF_SURFACES]), alpha, ambient_temp)
 
 def _calculate_for_surface(Hbc: np.ndarray[np.float32], P: np.ndarray[np.float32],
                            n: int, weights: np.ndarray[np.float32], surface: np.ndarray,
                            nodes: np.ndarray[Node],
-                           alpha, ambient_temp,
-                           surf_num) -> tuple:
+                           alpha, ambient_temp) -> tuple:
     Hbc_surf = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
     P_surf = np.zeros((NUM_OF_SHAPE_FUNCTIONS, 1))
     if nodes[0].BC == 0 or nodes[1].BC == 0:
@@ -100,11 +99,7 @@ def _calculate_for_surface(Hbc: np.ndarray[np.float32], P: np.ndarray[np.float32
     jacobian_det = L/2
     for i in range(n):
         N = np.array(surface[i]).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
-        if config.element_type == "triangle" and surf_num == 1:
-            Hbc_surf += np.matmul(N, N.transpose())*weights[i]*sqrt(2)
-            P_surf += N*weights[i]*sqrt(2)
-        else:
-            Hbc_surf += np.matmul(N, N.transpose())*weights[i]
-            P_surf += N*weights[i]
+        Hbc_surf += np.matmul(N, N.transpose())*weights[i]
+        P_surf += N*weights[i]
     Hbc += Hbc_surf*alpha*jacobian_det
     P += P_surf*alpha*ambient_temp*jacobian_det
