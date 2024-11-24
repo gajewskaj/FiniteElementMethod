@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.universal_element.gaussian_quadrature import GaussianQuadrature
+from src.uel.gaussian_quadrature import GaussianQuadrature
 
 NUM_OF_SHAPE_FUNCTIONS = 3
 NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
@@ -14,7 +14,7 @@ N = [
 
 class UniversalElementTriangle():
     def __init__(self, n: int = 3):
-        self.n = 3
+        self.n = n if n in [3] else 3
         self.gaussian_quadrature = GaussianQuadrature(2)
         self.xi = np.array([-2/3, 1/3, -2/3], dtype=np.float32)
         self.eta = np.array([-2/3, -2/3, 1/3], dtype=np.float32)

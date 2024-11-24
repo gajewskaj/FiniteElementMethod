@@ -3,7 +3,7 @@ from math import isclose
 import os
 
 from src.helpers import config
-from src.universal_element.universal_element import NUM_OF_SHAPE_FUNCTIONS
+from src.uel.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 import gmshparser
 from gmshparser import Mesh

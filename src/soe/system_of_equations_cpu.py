@@ -6,7 +6,7 @@ from src.helpers import config
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
 from src.soe.system_of_equations import SystemOfEquations
-from src.universal_element.universal_element import NUM_OF_SHAPE_FUNCTIONS
+from src.uel.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 class SystemOfEquationsCPU(SystemOfEquations):
     """

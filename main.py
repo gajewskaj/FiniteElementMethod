@@ -57,10 +57,10 @@ def run() -> None:
 
         grid: Grid = _create_grid(mesh_filepath, data_filepath)
 
-        from src.lmc.lmc import calculate_local_matrices
-        from src.soe.soe import simulate
+        from src.lmc.local_matrices_calculation import calculate_local_matrices
+        from src.soe.temperature_simulation import simulate
 
-        calculate_local_matrices(4, grid)
+        calculate_local_matrices(grid)
         times, temperatures = simulate(grid)
 
         config.logger.info(f"Time        Min temp    Max temp")

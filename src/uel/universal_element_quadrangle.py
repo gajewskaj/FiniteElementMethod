@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from src.universal_element.gaussian_quadrature import GaussianQuadrature
+from src.uel.gaussian_quadrature import GaussianQuadrature
 
 NUM_OF_SHAPE_FUNCTIONS = 4
 NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
