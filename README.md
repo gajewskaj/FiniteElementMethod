@@ -16,7 +16,7 @@ The program generates `.vtk` files, which can be used to create simulations, for
 
 ## Example Temperature Simulation
 Check out a ParaView simulation created using the output from this program:
-![ParaViewAnimation](Images/ParaView_example_animation.gif)
+![ParaViewAnimation](img/ParaView_example_animation.gif)
 
 ## How to run
 1. Clone this repository.
