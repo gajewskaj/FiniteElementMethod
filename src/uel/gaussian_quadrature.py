@@ -5,7 +5,7 @@ from src.helpers import config
 
 class GaussianQuadrature:
     def __init__(self, n: int):
-        self.n: int = n
+        self.n: int = int(n)
         self.points, self.weights = self._init_points_weights()
 
     def _init_points_weights(self) -> tuple[np.ndarray[float], np.ndarray[float]]:

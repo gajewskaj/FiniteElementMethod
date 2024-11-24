@@ -25,6 +25,7 @@ class UniversalElementTriangle():
         self.dN_deta = np.array([[-0.5, 0, 0.5] for _ in range(self.n)])
         self.N = np.empty((self.n, NUM_OF_SHAPE_FUNCTIONS))
         self.surfaces = np.empty((NUM_OF_SURFACES, self.quadrature_1d.n, NUM_OF_SHAPE_FUNCTIONS))
+
         self._init_integration_points_and_weights()
         self._fill_shape_functions()
         self._fill_shape_functions_for_surfaces()
