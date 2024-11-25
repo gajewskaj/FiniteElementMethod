@@ -41,19 +41,30 @@ def calculate_local_matrices(grid: Grid) -> None:
     P_vectors_cuda = cuda.to_device(P_vectors)
     C_matrices_cuda = cuda.to_device(C_matrices)
     # Parallel calculations on GPU
-    threads_per_block = 512
-    blocks_per_grid = (len(grid.elements) + threads_per_block - 1) // threads_per_block
-    stream_Hbc_P = cuda.stream()
     stream_H_C = cuda.stream()
-    _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](x_coords_cuda, y_coords_cuda, bc_cuda,
-                                                                                   u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
-                                                                                   grid.global_data.alpha, grid.global_data.ambient_temp,
-                                                                                   Hbc_matrices_cuda, P_vectors_cuda)
-    _calculate_H_C_for_element[blocks_per_grid, threads_per_block, stream_H_C](x_coords_cuda, y_coords_cuda,
-                                                                               u_el.n, weights_cuda, N_cuda,
-                                                                               dN_dxi_cuda, dN_deta_cuda,
-                                                                               grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat,
-                                                                               H_matrices_cuda, C_matrices_cuda)
+    threads_per_block_H_C = (32, 32)
+    blocks_per_grid_x_H_C = (len(grid.elements) + threads_per_block_H_C[0] - 1) // threads_per_block_H_C[0]
+    blocks_per_grid_y_H_C = (u_el.n + threads_per_block_H_C[1] - 1) // threads_per_block_H_C[1]
+    blocks_per_grid_H_C = (blocks_per_grid_x_H_C, blocks_per_grid_y_H_C)
+    _calculate_H_C_for_element[blocks_per_grid_H_C,
+                               threads_per_block_H_C,
+                               stream_H_C](x_coords_cuda, y_coords_cuda,
+                                           u_el.n, weights_cuda, N_cuda,
+                                           dN_dxi_cuda, dN_deta_cuda,
+                                           grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat,
+                                           H_matrices_cuda, C_matrices_cuda)
+
+    stream_Hbc_P = cuda.stream()
+    threads_per_block_Hbc_P = (16, 16)
+    blocks_per_grid_x_Hbc_P = (len(grid.elements) + threads_per_block_Hbc_P[0] - 1) // threads_per_block_Hbc_P[0]
+    blocks_per_grid_y_Hbc_P = (NUM_OF_SURFACES + threads_per_block_Hbc_P[1] - 1) // threads_per_block_Hbc_P[1]
+    blocks_per_grid_Hbc_P = (blocks_per_grid_x_Hbc_P, blocks_per_grid_y_Hbc_P)
+    _calculate_Hbc_P_for_element[blocks_per_grid_Hbc_P,
+                                 threads_per_block_Hbc_P,
+                                 stream_Hbc_P](x_coords_cuda, y_coords_cuda, bc_cuda,
+                                               u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
+                                               grid.global_data.alpha, grid.global_data.ambient_temp,
+                                               Hbc_matrices_cuda, P_vectors_cuda)
     # Retrieve results from GPU
     stream_Hbc_P.synchronize()
     Hbc_matrices = Hbc_matrices_cuda.copy_to_host()
@@ -62,7 +73,6 @@ def calculate_local_matrices(grid: Grid) -> None:
     stream_H_C.synchronize()
     H_matrices = H_matrices_cuda.copy_to_host()
     C_matrices = C_matrices_cuda.copy_to_host()
-
     _save_to_elements(grid, H_matrices, C_matrices, Hbc_matrices, P_vectors)
 
 def _save_to_elements(grid: Grid, H_matrices: np.ndarray, C_matrices: np.ndarray, Hbc_matrices: np.ndarray, P_vectors: np.ndarray) -> None:
@@ -79,26 +89,25 @@ def _calculate_H_C_for_element(x_coords: np.ndarray, y_coords: np.ndarray,
                                dN_dxi: np.ndarray, dN_deta: np.ndarray,
                                c: float, d: float, sh: float,
                                H_matrices: np.ndarray, C_matrices: np.ndarray) -> None:
-    i = cuda.grid(1)
-    if i < H_matrices.shape[0]:
+    i, j = cuda.grid(2)
+    if i < H_matrices.shape[0] and j < n:
         _x_coords = x_coords[i]
         _y_coords = y_coords[i]
         H = H_matrices[i]
         C = C_matrices[i]
-        for j in range(n):
-            dN_dx = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-            dN_dy = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-            dx_dxi = _interpolate(dN_dxi[j], _x_coords)
-            dx_deta = _interpolate(dN_deta[j], _x_coords)
-            dy_dxi = _interpolate(dN_dxi[j], _y_coords)
-            dy_deta = _interpolate(dN_deta[j], _y_coords)
-            jacobian_det = _calculate_jacobian_and_global_shape_derivatives(dN_dxi[j], dN_deta[j],
-                                                                            dx_dxi, dx_deta, dy_dxi, dy_deta,
-                                                                            dN_dx, dN_dy)
-            _calculate_H_C_for_integration_point(weights[j], N[j],
-                                                 jacobian_det, dN_dx, dN_dy,
-                                                 c, d, sh,
-                                                 H, C)
+        dN_dx = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
+        dN_dy = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
+        dx_dxi = _interpolate(dN_dxi[j], _x_coords)
+        dx_deta = _interpolate(dN_deta[j], _x_coords)
+        dy_dxi = _interpolate(dN_dxi[j], _y_coords)
+        dy_deta = _interpolate(dN_deta[j], _y_coords)
+        jacobian_det = _calculate_jacobian_and_global_shape_derivatives(dN_dxi[j], dN_deta[j],
+                                                                        dx_dxi, dx_deta, dy_dxi, dy_deta,
+                                                                        dN_dx, dN_dy)
+        _calculate_H_C_for_integration_point(weights[j], N[j],
+                                                jacobian_det, dN_dx, dN_dy,
+                                                c, d, sh,
+                                                H, C)
 
 @cuda.jit(device=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi: np.ndarray, dN_deta: np.ndarray,
@@ -128,57 +137,56 @@ def _interpolate(dN: np.ndarray, var: np.ndarray) -> float:
 @cuda.jit(device=True)
 def _calculate_H_C_for_integration_point(weight: float, N: np.ndarray,
                                          jacobian_det: float, dN_dx: np.ndarray, dN_dy: np.ndarray,
-                                         c: float, d: float, sh: float, H: np.ndarray, C: np.ndarray) -> None:
+                                         c: float, d: float, sh: float,
+                                         H: np.ndarray, C: np.ndarray) -> None:
     H_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
     C_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
     dN_dx_multiplied = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
     dN_dy_multiplied = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
 
-    _multiply_matrices(dN_dx, dN_dx, dN_dx_multiplied)
-    _multiply_matrices(dN_dy, dN_dy, dN_dy_multiplied)
+    _multiply_vectors(dN_dx, dN_dx, dN_dx_multiplied)
+    _multiply_vectors(dN_dy, dN_dy, dN_dy_multiplied)
     _sum_matrices(dN_dx_multiplied, dN_dy_multiplied, H_ip_matrix)
     _multiply_matrix_by_scalar(H_ip_matrix, c*jacobian_det*weight, H_ip_matrix)
 
-    _multiply_matrices(N, N, C_ip_matrix)
+    _multiply_vectors(N, N, C_ip_matrix)
     _multiply_matrix_by_scalar(C_ip_matrix, sh*d*jacobian_det*weight, C_ip_matrix)
-
-    _sum_matrices(H, H_ip_matrix, H)
-    _sum_matrices(C, C_ip_matrix, C)
+    for i in range(NUM_OF_SHAPE_FUNCTIONS):
+        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+            cuda.atomic.add(H, (i, j), H_ip_matrix[i, j])
+            cuda.atomic.add(C, (i, j), C_ip_matrix[i, j])
 
 @cuda.jit
 def _calculate_Hbc_P_for_element(x_coords: np.ndarray, y_coords: np.ndarray, bc: np.ndarray,
                                  n: int, weights: np.ndarray, surfaces: np.ndarray,
                                  alpha: float, ambient_temp: float,
                                  Hbc_matrices: np.ndarray, P_vectors: np.ndarray) -> None:
-    i = cuda.grid(1)
-    if i < Hbc_matrices.shape[0]:
-        for j in range(NUM_OF_SURFACES):
-            _calculate_for_surface(n, weights, surfaces[j],
-                                   x_coords[i][j], y_coords[i][j], bc[i][j],
-                                   x_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], bc[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS],
-                                   alpha, ambient_temp, Hbc_matrices[i], P_vectors[i])
+    i, j = cuda.grid(2)
+    if i < Hbc_matrices.shape[0] and j < NUM_OF_SURFACES:
+        _calculate_for_surface(n, weights, surfaces[j],
+                                x_coords[i][j], y_coords[i][j], bc[i][j],
+                                x_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], bc[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS],
+                                alpha, ambient_temp, Hbc_matrices[i], P_vectors[i])
 
 @cuda.jit(device=True)
 def _calculate_for_surface(n: int, weights: np.ndarray, surface: np.ndarray,
                            node1_x: float, node1_y: float, node1_bc: int,
                            node2_x: float, node2_y: float, node2_bc: int,
-                           alpha: float, ambient_temp: float, Hbc_matrix: np.ndarray, P_vector: np.ndarray) -> None:
+                           alpha: float, ambient_temp: float,
+                           Hbc: np.ndarray, P: np.ndarray) -> None:
     if node1_bc == 0 or node2_bc == 0:
         return
     L = sqrt((node2_x - node1_x)**2 + (node2_y - node1_y)**2)
     jacobian_det = L / 2
-    for j in range(n):
-        mx = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        mx_P = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        mx_H = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-        for k in range(NUM_OF_SHAPE_FUNCTIONS):
-            mx[k] = surface[j][k]
-            mx_P[k] = mx[k] * weights[j] * alpha * ambient_temp * jacobian_det
-        for k in range(NUM_OF_SHAPE_FUNCTIONS):
-            P_vector[k] += mx_P[k]
-        _multiply_matrices(mx, mx, mx_H)
-        _multiply_matrix_by_scalar(mx_H, weights[j] * alpha * jacobian_det, mx_H)
-        _sum_matrices(mx_H, Hbc_matrix, Hbc_matrix)
+    for i in range(n):
+        Hbc_ip = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
+        N = surface[i]
+        _multiply_vectors(N, N, Hbc_ip)
+        _multiply_matrix_by_scalar(Hbc_ip, weights[i] * alpha * jacobian_det, Hbc_ip)
+        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+            cuda.atomic.add(P, j, N[j] * weights[i] * alpha * ambient_temp * jacobian_det)
+            for k in range(NUM_OF_SHAPE_FUNCTIONS):
+                cuda.atomic.add(Hbc, (j, k), Hbc_ip[j, k])
 
 @cuda.jit(device=True)
 def _sum_matrices(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
@@ -187,10 +195,11 @@ def _sum_matrices(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
             C[i][j] = A[i][j] + B[i][j]
 
 @cuda.jit(device=True)
-def _multiply_matrices(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
+def _multiply_vectors(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
     for i in range(A.shape[0]):
-        for j in range(A.shape[0]):
+        for j in range(B.shape[0]):
             C[i][j] = A[i] * B[j]
+    return C
 
 @cuda.jit(device=True)
 def _multiply_matrix_by_scalar(A: np.ndarray, scalar: float, B: np.ndarray) -> None:
