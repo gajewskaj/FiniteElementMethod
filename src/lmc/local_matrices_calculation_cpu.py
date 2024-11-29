@@ -4,11 +4,10 @@ import numpy as np
 
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid, Element
-from src.uel.universal_element import universal_element, NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SURFACES
+from src.uel.universal_element import u_el, NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SURFACES
 
 @measure_time
 def calculate_local_matrices(grid: Grid) -> None:
-    u_el = universal_element
     x_coords = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS))
     y_coords = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS))
     bc = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS))

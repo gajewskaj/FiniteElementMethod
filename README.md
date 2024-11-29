@@ -5,7 +5,6 @@
   - [Example Temperature Simulation](#example-temperature-simulation)
   - [How to run](#how-to-run)
   - [How it works](#how-it-works)
-  - [How to run unit tests](#how-to-run-unit-tests)
   - [Notes for further development](#notes-for-further-development)
     - [How to update requirements list](#how-to-update-requirements-list)
     - [How to create/update the documentation](#how-to-createupdate-the-documentation)
@@ -47,18 +46,14 @@ $$
 $$
 
 $$
-[C] = \int \limits_S \rho c \{N\}\{N\}^T \mathrm{d}V
+[C] = \int \limits_V \rho c \{N\}\{N\}^T \mathrm{d}V
 $$
-
-## How to run unit tests
-`py test.py -v`
 
 ## Notes for further development
 ### How to update requirements list
 ```ps
 pipreqs . --force
 ```
-Delete cupy_cuda12x from requirements list.
 
 ### How to create/update the documentation
 If you want to start from scratch:
