@@ -41,14 +41,14 @@ class GlobalData:
         Args:
             global_data_dict (dict): dictionary containing global data.
         """
-        self.simulation_time: float = simulation_time
-        self.simulation_step_time: float = simulation_step_time
-        self.conductivity: float = conductivity
-        self.alpha: float = alpha
-        self.ambient_temp: float = ambient_temp
-        self.initial_temp: float = initial_temp
-        self.density: float = density
-        self.specific_heat: float = specific_heat
+        self.simulation_time = float(simulation_time)
+        self.simulation_step_time = float(simulation_step_time)
+        self.conductivity = float(conductivity)
+        self.alpha = float(alpha)
+        self.ambient_temp = float(ambient_temp)
+        self.initial_temp = float(initial_temp)
+        self.density = float(density)
+        self.specific_heat = float(specific_heat)
         self.nodes_number: int = nodes_number
         self.elements_number: int = elements_number
 
@@ -99,7 +99,7 @@ class Node:
         y (float): y coordinate.
         BC (float): Border condition (0 or 1).
     """
-    def __init__(self, id: int, x: float, y: float, z: float = 0, BC: float = 0):
+    def __init__(self, id: int, x: float, y: float, z: float = 0, BC: int = 0):
         """
         Initializes a Node instance.
 
@@ -113,7 +113,7 @@ class Node:
         self.x: float = x
         self.y: float = y
         self.z: float = z
-        self.BC: float = BC
+        self.BC = int(BC)
 
     def __eq__(self, other: 'Node') -> bool:
         """
@@ -278,7 +278,7 @@ class Grid:
 
         def _add_bc_to_node(nodes: np.ndarray[Node], BC: list[int]) -> None:
             for node_id in BC:
-                nodes[node_id - 1].BC = 1
+                nodes[node_id - 1].BC = int(1)
 
         try:
             config.logger.info(f"Creating a grid from input file: '{os.path.basename(mesh_path)}'.")
@@ -331,11 +331,11 @@ class Grid:
             config.logger.info(f"Number of nodes: {nodes_number}.")
             nodes = np.empty(nodes_number, dtype=Node)
             for entity in mesh.get_node_entities():
-                entity_dim = 1 if entity.get_dimension() in [0, 1] else 0
+                bc = int(1) if entity.get_dimension() in [0, 1] else int(0)
                 for node in entity.get_nodes():
                     n_id = node.get_tag()
                     n_coords = node.get_coordinates()
-                    nodes[n_id - 1] = Node(n_id, n_coords[0], n_coords[1], n_coords[2], entity_dim)
+                    nodes[n_id - 1] = Node(n_id, n_coords[0], n_coords[1], n_coords[2], bc)
             return nodes
 
         def _read_elements(mesh: Mesh) -> np.ndarray[Element]:
@@ -360,11 +360,11 @@ class Grid:
                 data = json.load(data_file)
             global_data: GlobalData = _read_global_data(data, len(nodes), len(elements))
             return cls(global_data, elements, nodes)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             err_msg: str = f"File not found while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
             config.logger.error(err_msg, exc_info=True)
             raise FileNotFoundError(err_msg)
-        except Exception as e:
+        except Exception:
             err_msg: str = f"Unknown exception while creating a Grid instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
             config.logger.error(err_msg, exc_info=True)
             raise RuntimeError(err_msg)

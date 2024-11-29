@@ -21,8 +21,8 @@ class UniversalElementTriangle():
         self.eta = np.empty(n)
         self.weights = np.empty(n)
 
-        self.dN_dxi = np.array([[-0.5, 0.5, 0] for _ in range(self.n)])
-        self.dN_deta = np.array([[-0.5, 0, 0.5] for _ in range(self.n)])
+        self.dN_dxi = np.array([[-0.5, 0.5, 0] for _ in range(self.n)], dtype=float)
+        self.dN_deta = np.array([[-0.5, 0, 0.5] for _ in range(self.n)], dtype=float)
         self.N = np.empty((self.n, NUM_OF_SHAPE_FUNCTIONS))
         self.surfaces = np.empty((NUM_OF_SURFACES, self.quadrature_1d.n, NUM_OF_SHAPE_FUNCTIONS))
 
@@ -33,32 +33,32 @@ class UniversalElementTriangle():
     def _init_integration_points_and_weights(self) -> None:
         match self.n:
             case 1:
-                self.xi = np.array([-1/3])
-                self.eta = np.array([-1/3])
-                self.weights = np.array([2])
+                self.xi = np.array([-1/3], dtype=float)
+                self.eta = np.array([-1/3], dtype=float)
+                self.weights = np.array([2], dtype=float)
             case 3:
-                self.xi = np.array([-2/3, 1/3, -2/3])
-                self.eta = np.array([-2/3, -2/3, 1/3])
-                self.weights = np.array([2/3, 2/3, 2/3])
+                self.xi = np.array([-2/3, 1/3, -2/3], dtype=float)
+                self.eta = np.array([-2/3, -2/3, 1/3], dtype=float)
+                self.weights = np.array([2/3, 2/3, 2/3], dtype=float)
             case 6:
                 self.xi = np.array([-0.108103018168070,
                                     -0.108103018168070,
                                     -0.783793963663860,
                                     -0.816847572980458,
                                     -0.816847572980458,
-                                    0.633695145960918])
+                                    0.633695145960918], dtype=float)
                 self.eta = np.array([-0.108103018168070,
                                     -0.78379396363860,
                                     -0.108103018168070,
                                     -0.816847572980458,
                                     0.633695145960918,
-                                    -0.816847572980458])
+                                    -0.816847572980458], dtype=float)
                 self.weights = np.array([0.446763179356022,
                                          0.446763179356022,
                                          0.446763179356022,
                                          0.219903487310644,
                                          0.219903487310644,
-                                         0.219903487310644])
+                                         0.219903487310644], dtype=float)
             case 7:
                 self.xi = np.array([-1/3,
                                     -0.059715871789770,
@@ -66,21 +66,21 @@ class UniversalElementTriangle():
                                     -0.880568256420460,
                                     -0.797426985353088,
                                     -0.797426985353088,
-                                    0.594853970706174])
+                                    0.594853970706174], dtype=float)
                 self.eta = np.array([-1/3,
                                     -0.059715871789770,
                                     -0.880568256420460,
                                     -0.059715871789770,
                                     -0.797426985353088,
                                     0.594853970706174,
-                                    -0.797426985353088])
+                                    -0.797426985353088], dtype=float)
                 self.weights = np.array([0.45,
                                          0.264788305577012,
                                          0.264788305577012,
                                          0.264788305577012,
                                          0.251878361089654,
                                          0.251878361089654,
-                                         0.251878361089654])
+                                         0.251878361089654], dtype=float)
             case _:
                 err_msg: str = "Number of integration points for a triangle element must be 1, 3, 6 or 7."
                 config.logger.error(err_msg)
