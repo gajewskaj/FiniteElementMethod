@@ -41,21 +41,7 @@ def run() -> None:
         config.element_type = element_type
 
         from src.grid.grid import Grid
-
-        def _create_grid(mesh_filepath: str, data_filepath: str) -> Grid:
-            mesh_filepath_ext: str = pathlib.Path(mesh_filepath).suffix
-            data_filepath_ext: str = pathlib.Path(data_filepath).suffix if data_filepath is not None else None
-            if mesh_filepath_ext == ".msh":
-                if data_filepath_ext != ".json":
-                    config.logger.error("Data file path in .json format is required for .msh files.")
-                    raise Exception
-                return Grid.create_from_msh_and_json(mesh_filepath, data_filepath)
-            elif mesh_filepath_ext == ".txt":
-                if data_filepath_ext is not None:
-                    config.logger.warning(f"Data file path is not required for .txt files. Data from {data_filepath} will be ignored.")
-                return Grid.create_from_txt(mesh_filepath)
-
-        grid: Grid = _create_grid(mesh_filepath, data_filepath)
+        grid = Grid(mesh_filepath, data_filepath)
 
         from src.lmc.local_matrices_calculation import calculate_local_matrices
         from src.soe.temperature_simulation import simulate

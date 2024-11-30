@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-def plot_outline(ax):
+def plot_outline(ax: Axes3D):
     xi_outline = [-1, 1, 1, -1, -1]
     eta_outline = [-1, -1, 1, 1, -1]
 
@@ -15,23 +16,15 @@ N2 = lambda xi, eta: 0.25 * (1+xi) * (1-eta)
 N3 = lambda xi, eta: 0.25 * (1+xi) * (1+eta)
 N4 = lambda xi, eta: 0.25 * (1-xi) * (1+eta)
 
-xi = np.linspace(-1, 1, 50)
-eta = np.linspace(-1, 1, 50)
-xi, eta = np.meshgrid(xi, eta)
-
-N1_vals = N1(xi, eta)
-N2_vals = N2(xi, eta)
-N3_vals = N3(xi, eta)
-N4_vals = N4(xi, eta)
-
 fig = plt.figure()
+ax: Axes3D = fig.add_subplot(projection='3d')
 
-ax = fig.add_subplot(projection='3d')
-ax.plot_surface(xi, eta, N3_vals, cmap='plasma', alpha=0.8)
+xi, eta = np.meshgrid(np.linspace(-1, 1, 50), np.linspace(-1, 1, 50))
+ax.plot_surface(xi, eta, N3(xi, eta), cmap='plasma', alpha=0.8)
 plot_outline(ax)
 ax.set_xlabel('ξ')
 ax.set_ylabel('η')
-ax.set_zlabel('N3(ξ, η)')
+ax.set_zlabel('N\u2083(ξ, η)')
 
 plt.tight_layout()
 plt.show()

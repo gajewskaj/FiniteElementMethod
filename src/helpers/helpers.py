@@ -6,15 +6,6 @@ import time
 from . import config
 
 def measure_time(func):
-    """
-    Decorator for measuring the execution time of a function.
-
-    Args:
-        func (function): The function to measure the execution time of.
-
-    Returns:
-        function: The decorated function.
-    """
     def wrapper(*args, **kwargs):
         start: float = time.time()
         result = func(*args, **kwargs)
@@ -25,12 +16,6 @@ def measure_time(func):
     return wrapper
 
 def set_use_gpu(force_cpu: bool = False) -> None:
-    """
-    Set the use_gpu flag based on the availability of CUDA and the force_cpu flag.
-
-    Args:
-        force_cpu (bool, optional): Defaults to False.
-    """
     if force_cpu:
         config.use_gpu = False
         config.logger.warning("Forcing CPU usage instead of GPU.")
@@ -53,7 +38,6 @@ def set_use_gpu(force_cpu: bool = False) -> None:
             config.logger.warning("CUDA is not available. Using CPU instead.")
 
 class NoTracebackFilter(logging.Filter):
-    """Logging filter to remove traceback information from log records."""
     def filter(self, record):
         if record.exc_info:
             record.exc_info = None
@@ -62,58 +46,27 @@ class NoTracebackFilter(logging.Filter):
 
 def init_logging(logger_name: str = config.MAIN_LOGGER_NAME,
                  log_dirpath: str = config.output_path) -> logging.Logger:
-    """
-    Initialize and configure the logging system.
+    logger = logging.getLogger(logger_name)
+    logger = logging.getLogger(config.MAIN_LOGGER_NAME)
+    log_filepath = os.path.join(log_dirpath, "log.log")
+    logger.setLevel(logging.DEBUG)
 
-    Args:
-        logger_name (str): The name of the logger to initialize.
+    file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    file_handler = logging.FileHandler(log_filepath)
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
 
-    Returns:
-        logging.Logger: Configured logger instance.
-    """
-    match(logger_name):
-        case "main_logger":
-            logger = logging.getLogger(logger_name)
-            logger = logging.getLogger(config.MAIN_LOGGER_NAME)
-            log_filepath = os.path.join(log_dirpath, "log.log")
-            logger.setLevel(logging.DEBUG)
-
-            file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-            file_handler = logging.FileHandler(log_filepath)
-            file_handler.setFormatter(file_formatter)
-            file_handler.setLevel(logging.DEBUG)
-            logger.addHandler(file_handler)
-
-            console_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(console_formatter)
-            console_handler.setLevel(logging.INFO)
-            console_handler.addFilter(NoTracebackFilter())
-            logger.addHandler(console_handler)
-
-        case "test_logger":
-            logger = logging.getLogger(logger_name)
-            logger = logging.getLogger(config.TEST_LOGGER_NAME)
-            log_filepath = os.path.join(log_dirpath, "test_log.log")
-            logger.setLevel(logging.DEBUG)
-
-            file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-            file_handler = logging.FileHandler(log_filepath)
-            file_handler.setFormatter(file_formatter)
-            logger.addHandler(file_handler)
+    console_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.INFO)
+    console_handler.addFilter(NoTracebackFilter())
+    logger.addHandler(console_handler)
 
     return logger
 
 def create_or_clear_directory(dir_path: str) -> str:
-    """
-    Create a directory or clear its contents if it already exists.
-
-    Args:
-        dir_path (str): The path of the directory to create or clear.
-
-    Returns:
-        str: The path of the created or cleared directory.
-    """
     try:
         os.mkdir(config.output_path)
     except FileExistsError:

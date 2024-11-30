@@ -10,26 +10,28 @@ from src.uel.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 class SystemOfEquationsCPU(SystemOfEquations):
     def __init__(self, grid: Grid):
-        self.dim: int = grid.global_data.nodes_number
+        self.dim: int = len(grid.nodes)
         self.step: float = grid.global_data.simulation_step_time
         self.elements: list[Element] = grid.elements
         self.t0: np.ndarray = np.full((self.dim, 1), grid.global_data.initial_temp)
-        self.P: np.ndarray = self._aggregate_P()
-        self.H, self.C = self._aggregate_H_C()
+        self.H_g, self.C_g, self.P_g = self._assemble()
+        self.A = self.H_g + self.C_g/self.step
         self.cpu_solve_factorized = self._factorize()
 
     @measure_time
     def _factorize(self) -> cpu_linalg.factorized:
-        return cpu_linalg.factorized(self.H + self.C/self.step)
+        return cpu_linalg.factorized(self.A)
 
     @measure_time
-    def _aggregate_H_C(self) -> tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix]:
+    def _assemble(self) -> tuple[cpu_sparse.csr_matrix, cpu_sparse.csr_matrix]:
         data_H, row_H, col_H = [], [], []
         data_C, row_C, col_C = [], [], []
+        P = np.zeros((self.dim, 1))
 
         for element in self.elements:
             local_H = element.H + element.Hbc
             for i in range(NUM_OF_SHAPE_FUNCTIONS):
+                P[element.node_ids[i] - 1] += element.P[i]
                 for j in range(NUM_OF_SHAPE_FUNCTIONS):
                         data_H.append(local_H[i][j])
                         row_H.append(element.node_ids[i] - 1)
@@ -40,21 +42,12 @@ class SystemOfEquationsCPU(SystemOfEquations):
 
         H: cpu_sparse.csr_matrix = cpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsr()
         C: cpu_sparse.csr_matrix = cpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsr()
-
-        return H, C
-
-    @measure_time
-    def _aggregate_P(self) -> np.ndarray:
-        P = np.zeros((self.dim, 1))
-        for element in self.elements:
-            for i in range(NUM_OF_SHAPE_FUNCTIONS):
-                P[element.node_ids[i] - 1] += element.P[i]
-        return P
+        return H, C, P
 
     @measure_time
     def solve(self) -> np.ndarray:
-        P = self.P + self.C.dot(self.t0)/self.step
-        result: np.ndarray = self.cpu_solve_factorized(P)
+        B = self.P_g + self.C_g.dot(self.t0)/self.step
+        result: np.ndarray = self.cpu_solve_factorized(B)
         self.t0 = result
         return result
 

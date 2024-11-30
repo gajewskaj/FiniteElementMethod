@@ -50,12 +50,12 @@ def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.n
         element_nodes_number.append(len(element.node_ids))
 
     data: dict = {}
-    data["nodes_number"] = grid.global_data.nodes_number
+    data["nodes_number"] = len(grid.nodes)
     data["nodes"] = grid.nodes
-    data["elements_number"] = grid.global_data.elements_number
+    data["elements_number"] = len(grid.elements)
     data["elements"] = grid.elements
     data["element_nodes_number"] = element_nodes_number
-    data["sum_elements_data"] = grid.global_data.elements_number + sum(element_nodes_number)
+    data["sum_elements_data"] = len(grid.elements) + sum(element_nodes_number)
 
     template: Template = initialize_jinja_environment("temperatures.vtk.jinja")
     for i in range(0, num_files):

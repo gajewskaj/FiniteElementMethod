@@ -9,31 +9,30 @@ from src.grid.grid import Grid, Element
 from src.soe.system_of_equations import SystemOfEquations
 from src.uel.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
-import time
-from cupyx.profiler import benchmark
-
 class SystemOfEquationsGPU(SystemOfEquations):
     def __init__(self, grid: Grid):
-        self.dim: int = grid.global_data.nodes_number
+        self.dim: int = len(grid.nodes)
         self.step: float = grid.global_data.simulation_step_time
         self.elements: list[Element] = grid.elements
         self.t0: cp.ndarray = cp.full((self.dim, 1), grid.global_data.initial_temp)
-        self.P: cp.ndarray = self._aggregate_P()
-        self.H, self.C = self._aggregate_H_C()
+        self.H_g, self.C_g, self.P_g = self._assemble()
+        self.A = self.H_g + self.C_g/self.step
         self.gpu_solve_factorized = self._factorize()
 
     @measure_time
     def _factorize(self) -> gpu_linalg.factorized:
-        return gpu_linalg.factorized(self.H + self.C/self.step)
+        return gpu_linalg.factorized(self.A)
 
     @measure_time
-    def _aggregate_H_C(self) -> tuple[gpu_sparse.csr_matrix, gpu_sparse.csr_matrix]:
+    def _assemble(self) -> tuple[gpu_sparse.csr_matrix, gpu_sparse.csr_matrix]:
         data_H, row_H, col_H = [], [], []
         data_C, row_C, col_C = [], [], []
+        P = np.zeros((self.dim, 1))
 
         for element in self.elements:
             local_H = element.H + element.Hbc
             for i in range(NUM_OF_SHAPE_FUNCTIONS):
+                P[element.node_ids[i] - 1] += element.P[i]
                 for j in range(NUM_OF_SHAPE_FUNCTIONS):
                         data_H.append(local_H[i][j])
                         row_H.append(element.node_ids[i] - 1)
@@ -50,20 +49,12 @@ class SystemOfEquationsGPU(SystemOfEquations):
 
         H: gpu_sparse.csr_matrix = gpu_sparse.coo_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim)).tocsr()
         C: gpu_sparse.csr_matrix = gpu_sparse.coo_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim)).tocsr()
-        return H, C
-
-    @measure_time
-    def _aggregate_P(self) -> cp.ndarray:
-        P = np.zeros((self.dim, 1))
-        for element in self.elements:
-            for i in range(NUM_OF_SHAPE_FUNCTIONS):
-                P[element.node_ids[i] - 1] += element.P[i]
-        return cp.array(P)
+        return H, C, cp.array(P)
 
     @measure_time
     def solve(self) -> cp.ndarray:
-        P = self.P + self.C.dot(self.t0)/self.step
-        result: cp.ndarray = self.gpu_solve_factorized(P)
+        B = self.P_g + self.C_g.dot(self.t0)/self.step
+        result: cp.ndarray = self.gpu_solve_factorized(B)
         self.t0 = result
         return result
 
@@ -77,8 +68,6 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray[float]]]:
     config.logger.info("Calculating temperatures for every timestamp on GPU.")
     while dtau <= tauk:
         result: np.ndarray = soe.solve()
-        # b = benchmark(soe.solve, n_repeat=3)
-        # print(b)
         times.append(dtau)
         temperatures.append(result)
         dtau += soe.step
