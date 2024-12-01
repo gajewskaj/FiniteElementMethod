@@ -74,27 +74,27 @@ def _save_to_elements(grid: Grid, H_matrices: np.ndarray, C_matrices: np.ndarray
         element.P = P_vectors[i]
 
 @cuda.jit('void(float64[:,:], float64[:,:], float64[:,:])', device=True)
-def _sum_matrices(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
+def _sum_matrices(A, B, C):
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             C[i][j] = A[i][j] + B[i][j]
 
 @cuda.jit('void(float64[:], float64[:], float64[:,:])', device=True)
-def _multiply_vectors(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> None:
+def _multiply_vectors(A, B, C):
     for i in range(len(A)):
         for j in range(len(B)):
             C[i][j] = A[i] * B[j]
 
 @cuda.jit('void(float64[:,:], float64, float64[:,:])', device=True)
-def _multiply_matrix_by_scalar(A: np.ndarray, scalar: float, B: np.ndarray) -> None:
+def _multiply_matrix_by_scalar(A, scalar, B):
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             B[i][j] = A[i][j] * scalar
 
 @cuda.jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', device=True)
-def _calculate_jacobian_and_global_shape_derivatives(dN_dxi: np.ndarray, dN_deta: np.ndarray,
-                                                     dx_dxi: float, dx_deta: float, dy_dxi: float, dy_deta: float,
-                                                     dN_dx: np.ndarray, dN_dy: np.ndarray) -> float:
+def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
+                                                     dx_dxi, dx_deta, dy_dxi, dy_deta,
+                                                     dN_dx, dN_dy):
     jacobian_00 = dx_dxi
     jacobian_01 = dy_dxi
     jacobian_10 = dx_deta
@@ -110,17 +110,17 @@ def _calculate_jacobian_and_global_shape_derivatives(dN_dxi: np.ndarray, dN_deta
     return jacobian_det
 
 @cuda.jit('float64(float64[:], float64[:])', device=True)
-def _interpolate(dN: np.ndarray, var: np.ndarray) -> float:
+def _interpolate(dN, var):
     result = 0.0
     for i in range(NUM_OF_SHAPE_FUNCTIONS):
         result += dN[i] * var[i]
     return result
 
 @cuda.jit('void(float64, float64[:], float64, float64[:], float64[:], float64, float64, float64, float64[:,:], float64[:,:])', device=True)
-def _calculate_H_C_for_integration_point(weight: float, N: np.ndarray,
-                                         jacobian_det: float, dN_dx: np.ndarray, dN_dy: np.ndarray,
-                                         c: float, d: float, sh: float,
-                                         H: np.ndarray, C: np.ndarray) -> None:
+def _calculate_H_C_for_integration_point(weight, N,
+                                         jacobian_det, dN_dx, dN_dy,
+                                         c, d, sh,
+                                         H, C):
     H_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
     C_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
     dN_dx_multiplied = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
@@ -138,11 +138,11 @@ def _calculate_H_C_for_integration_point(weight: float, N: np.ndarray,
     _sum_matrices(C, C_ip_matrix, C)
 
 @cuda.jit('void(float64[:,:], float64[:,:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64, float64, float64, float64[:,:,:], float64[:,:,:])')
-def _calculate_H_C_for_element(x_coords: np.ndarray, y_coords: np.ndarray,
-                               n: int, weights: np.ndarray, N: np.ndarray,
-                               dN_dxi: np.ndarray, dN_deta: np.ndarray,
-                               c: float, d: float, sh: float,
-                               H_matrices: np.ndarray, C_matrices: np.ndarray) -> None:
+def _calculate_H_C_for_element(x_coords, y_coords,
+                               n, weights, N,
+                               dN_dxi, dN_deta,
+                               c, d, sh,
+                               H_matrices, C_matrices):
     i = cuda.grid(1)
     if i < H_matrices.shape[0]:
         _x_coords = x_coords[i]
@@ -165,11 +165,11 @@ def _calculate_H_C_for_element(x_coords: np.ndarray, y_coords: np.ndarray,
                                                  H, C)
 
 @cuda.jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', device=True)
-def _calculate_for_surface(n: int, weights: np.ndarray, surface: np.ndarray,
-                           node1_x: float, node1_y: float, node1_bc: int,
-                           node2_x: float, node2_y: float, node2_bc: int,
-                           alpha: float, ambient_temp: float,
-                           Hbc: np.ndarray, P: np.ndarray) -> None:
+def _calculate_for_surface(n, weights, surface,
+                           node1_x, node1_y, node1_bc,
+                           node2_x, node2_y, node2_bc,
+                           alpha, ambient_temp,
+                           Hbc, P):
     if node1_bc == 0 or node2_bc == 0:
         return
     L = sqrt((node2_x - node1_x)**2 + (node2_y - node1_y)**2)
@@ -184,10 +184,10 @@ def _calculate_for_surface(n: int, weights: np.ndarray, surface: np.ndarray,
         _sum_matrices(Hbc_ip, Hbc, Hbc)
 
 @cuda.jit('void(float64[:,:], float64[:,:], int64[:,:], int64, float64[:], float64[:,:,:], float64, float64, float64[:,:,:], float64[:,:])')
-def _calculate_Hbc_P_for_element(x_coords: np.ndarray, y_coords: np.ndarray, bc: np.ndarray,
-                                 n: int, weights: np.ndarray, surfaces: np.ndarray,
-                                 alpha: float, ambient_temp: float,
-                                 Hbc_matrices: np.ndarray, P_vectors: np.ndarray) -> None:
+def _calculate_Hbc_P_for_element(x_coords, y_coords, bc,
+                                 n, weights, surfaces,
+                                 alpha, ambient_temp,
+                                 Hbc_matrices, P_vectors):
     i = cuda.grid(1)
     if i < Hbc_matrices.shape[0]:
         for j in range(NUM_OF_SURFACES):

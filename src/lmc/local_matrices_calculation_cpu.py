@@ -18,8 +18,6 @@ def calculate_local_matrices(grid: Grid) -> None:
             x_coords[i][j] = grid.nodes[element.node_ids[j] - 1].x
             y_coords[i][j] = grid.nodes[element.node_ids[j] - 1].y
             bc[i][j] = grid.nodes[element.node_ids[j] - 1].BC
-    for i, element in enumerate(grid.elements):
-        element: Element
         _calculate_H_C_for_element(x_coords[i], y_coords[i],
                                    u_el.n, u_el.weights, u_el.N,
                                    u_el.dN_dxi, u_el.dN_deta,
@@ -31,26 +29,27 @@ def calculate_local_matrices(grid: Grid) -> None:
                                      element.Hbc, element.P)
 
 @jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', nopython=True)
-def _calculate_jacobian_and_global_shape_derivatives(dN_dxi: np.ndarray, dN_deta: np.ndarray,
-                                                     dx_dxi: float, dx_deta: float, dy_dxi: float, dy_deta: float,
-                                                     dN_dx: np.ndarray, dN_dy: np.ndarray) -> float:
+def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
+                                                     dx_dxi, dx_deta, dy_dxi, dy_deta,
+                                                     dN_dx, dN_dy):
     jacobian = np.array([[dx_dxi, dy_dxi], [dx_deta, dy_deta]])
     jacobian_det = np.linalg.det(jacobian)
     jacobian_inv = np.linalg.inv(jacobian)
     for k in range(NUM_OF_SHAPE_FUNCTIONS):
-        dN_dx[k] = jacobian_inv[0][0] * dN_dxi[k] + jacobian_inv[0][1] * dN_deta[k]
-        dN_dy[k] = jacobian_inv[1][0] * dN_dxi[k] + jacobian_inv[1][1] * dN_deta[k]
+        global_shape_function_derivatives = np.dot(jacobian_inv, np.array([dN_dxi[k], dN_deta[k]]))
+        dN_dx[k] = global_shape_function_derivatives[0]
+        dN_dy[k] = global_shape_function_derivatives[1]
     return jacobian_det
 
 @jit('float64(float64[:], float64[:])')
-def _interpolate(dN: np.ndarray, var: np.ndarray) -> float:
-    return sum([dN*var[i] for i, dN in enumerate(dN)])
+def _interpolate(dN, var):
+    return sum([dN[i]*var[i] for i in range(len(dN))])
 
 @jit('void(float64, float64[:], float64, float64[:], float64[:], float64, float64, float64, float64[:,:], float64[:,:])', nopython=True)
-def _calculate_H_C_for_integration_point(weight: float, N: np.ndarray,
-                                         jacobian_det: float, dN_dx: np.ndarray, dN_dy: np.ndarray,
-                                         c: float, d: float, sh: float,
-                                         H: np.ndarray, C: np.ndarray) -> None:
+def _calculate_H_C_for_integration_point(weight, N,
+                                         jacobian_det, dN_dx, dN_dy,
+                                         c, d, sh,
+                                         H, C):
     dN_dx = np.ascontiguousarray(dN_dx).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
     dN_dy = np.ascontiguousarray(dN_dy).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
     N = np.ascontiguousarray(N).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
@@ -58,11 +57,11 @@ def _calculate_H_C_for_integration_point(weight: float, N: np.ndarray,
     C += sh*d*(np.dot(N, N.transpose()))*jacobian_det*weight
 
 @jit('void(float64[:], float64[:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64, float64, float64, float64[:,:], float64[:,:])', nopython=True)
-def _calculate_H_C_for_element(x_coords: np.ndarray, y_coords: np.ndarray,
-                               n: int, weights: np.ndarray, N: np.ndarray,
-                               dN_dxi: np.ndarray, dN_deta: np.ndarray,
-                               c: float, d: float, sh: float,
-                               H: np.ndarray, C: np.ndarray) -> None:
+def _calculate_H_C_for_element(x_coords, y_coords,
+                               n, weights, N,
+                               dN_dxi, dN_deta,
+                               c, d, sh,
+                               H, C):
     for i in range(n):
         dN_dx = np.empty(NUM_OF_SHAPE_FUNCTIONS)
         dN_dy = np.empty(NUM_OF_SHAPE_FUNCTIONS)
@@ -78,11 +77,11 @@ def _calculate_H_C_for_element(x_coords: np.ndarray, y_coords: np.ndarray,
                                              c, d, sh, H, C)
 
 @jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:,:])', nopython=True)
-def _calculate_for_surface(n: int, weights: np.ndarray, surface: np.ndarray,
-                           node1_x: float, node1_y: float, node1_bc: int,
-                           node2_x: float, node2_y: float, node2_bc: int,
-                           alpha: float, ambient_temp: float,
-                           Hbc: np.ndarray, P: np.ndarray) -> None:
+def _calculate_for_surface(n, weights, surface,
+                           node1_x, node1_y, node1_bc,
+                           node2_x, node2_y, node2_bc,
+                           alpha, ambient_temp,
+                           Hbc, P):
     if node1_bc == 0 or node2_bc == 0:
         return
     L = sqrt((node2_x - node1_x)**2 + (node2_y - node1_y)**2)
@@ -93,10 +92,10 @@ def _calculate_for_surface(n: int, weights: np.ndarray, surface: np.ndarray,
         P += N*weights[i]*alpha*ambient_temp*jacobian_det
 
 @jit('void(float64[:], float64[:], int64[:], int64, float64[:], float64[:,:,:], float64, float64, float64[:,:], float64[:,:])', nopython=True)
-def _calculate_Hbc_P_for_element(x_coords: np.ndarray, y_coords: np.ndarray, bc: np.ndarray,
-                                 n: int, weights: np.ndarray, surfaces: np.ndarray,
-                                 alpha: float, ambient_temp: float,
-                                 Hbc: np.ndarray, P: np.ndarray) -> None:
+def _calculate_Hbc_P_for_element(x_coords, y_coords, bc,
+                                 n, weights, surfaces,
+                                 alpha, ambient_temp,
+                                 Hbc, P):
     for i in range(NUM_OF_SURFACES):
         _calculate_for_surface(n, weights, surfaces[i],
                                x_coords[i], y_coords[i], bc[i],
