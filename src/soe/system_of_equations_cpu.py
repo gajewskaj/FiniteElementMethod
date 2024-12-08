@@ -30,15 +30,13 @@ class SystemOfEquationsCPU(SystemOfEquations):
 
         for i in range(len(self.grid.elements_id)):
             local_H = self.grid.elements_H[i] + self.grid.elements_Hbc[i]
-            local_C = self.grid.elements_C[i]
-            local_P = self.grid.elements_P[i]
             for j in range(NUM_OF_SHAPE_FUNCTIONS):
-                P[self.grid.elements_node_ids[i, j] - 1] += local_P[j]
+                P[self.grid.elements_node_ids[i, j] - 1] += self.grid.elements_P[i, j]
                 for k in range(NUM_OF_SHAPE_FUNCTIONS):
                         data_H.append(local_H[j, k])
                         row_H.append(self.grid.elements_node_ids[i, j] - 1)
                         col_H.append(self.grid.elements_node_ids[i, k] - 1)
-                        data_C.append(local_C[j, k])
+                        data_C.append(self.grid.elements_C[i, j, k])
                         row_C.append(self.grid.elements_node_ids[i, j] - 1)
                         col_C.append(self.grid.elements_node_ids[i, k] - 1)
 

@@ -75,7 +75,7 @@ def _calculate_H_C_for_element(x_coords, y_coords,
                                              jacobian_det, dN_dx, dN_dy,
                                              c, d, sh, H, C)
 
-@jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:,:])', nopython=True)
+@jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', nopython=True)
 def _calculate_for_surface(n, weights, surface,
                            node1_x, node1_y, node1_bc,
                            node2_x, node2_y, node2_bc,
@@ -90,7 +90,7 @@ def _calculate_for_surface(n, weights, surface,
         Hbc += np.dot(N, N.transpose())*weights[i]*alpha*jacobian_det
         P += N*weights[i]*alpha*ambient_temp*jacobian_det
 
-@jit('void(float64[:], float64[:], int64[:], int64, float64[:], float64[:,:,:], float64, float64, float64[:,:], float64[:,:])', nopython=True)
+@jit('void(float64[:], float64[:], int64[:], int64, float64[:], float64[:,:,:], float64, float64, float64[:,:], float64[:])', nopython=True)
 def _calculate_Hbc_P_for_element(x_coords, y_coords, bc,
                                  n, weights, surfaces,
                                  alpha, ambient_temp,

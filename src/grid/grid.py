@@ -1,5 +1,4 @@
 import json
-from math import isclose
 import os
 
 from src.helpers import config
@@ -53,7 +52,7 @@ class Grid:
             self.elements_H = np.zeros((len(self.elements_id), NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
             self.elements_C = np.zeros((len(self.elements_id), NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
             self.elements_Hbc = np.zeros((len(self.elements_id), NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
-            self.elements_P = np.zeros((len(self.elements_id), NUM_OF_SHAPE_FUNCTIONS, 1))
+            self.elements_P = np.zeros((len(self.elements_id), NUM_OF_SHAPE_FUNCTIONS))
         except FileNotFoundError:
             err_msg: str = f"File not found while creating a {self.__class__.__name__} instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
             config.logger.error(err_msg, exc_info=True)
