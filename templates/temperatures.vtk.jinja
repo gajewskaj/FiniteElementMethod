@@ -4,13 +4,13 @@ ASCII
 DATASET UNSTRUCTURED_GRID
 
 POINTS {{nodes_number}} float
-{% for node in nodes %}{{node.x}} {{node.y}} 0.0
+{% for i in range(nodes_number) %}{{nodes_x[i]}} {{nodes_y[i]}} 0.0
 {% endfor %}
 CELLS {{elements_number}} {{sum_elements_data}}
-{% for i in range(elements_number) %}{{element_nodes_number[i]}}{% for id in elements[i].node_ids %} {{id - 1}}{% endfor %}
+{% for i in range(elements_number) %}{{element_nodes_number[i]}}{% for j in range(element_nodes_number[i]) %} {{elements_node_ids[i, j] - 1}}{% endfor %}
 {% endfor %}
 CELL_TYPES {{elements_number}}
-{% for element in elements %}9
+{% for i in range(elements_number) %}9
 {% endfor %}
 POINT_DATA {{nodes_number}}
 SCALARS Temp float 1

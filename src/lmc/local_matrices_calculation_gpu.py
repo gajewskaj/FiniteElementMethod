@@ -28,9 +28,9 @@ def calculate_local_matrices(grid: Grid) -> None:
     for i, element in enumerate(grid.elements):
         element: Element
         for j in range(NUM_OF_SHAPE_FUNCTIONS):
-            x_coords[i][j] = grid.nodes[element.node_ids[j] - 1].x
-            y_coords[i][j] = grid.nodes[element.node_ids[j] - 1].y
-            bc[i][j] = grid.nodes[element.node_ids[j] - 1].BC
+            x_coords[i, j] = grid.nodes[element.node_ids[j] - 1].x
+            y_coords[i, j] = grid.nodes[element.node_ids[j] - 1].y
+            bc[i, j] = grid.nodes[element.node_ids[j] - 1].BC
     x_coords_cuda = cuda.to_device(x_coords)
     y_coords_cuda = cuda.to_device(y_coords)
     bc_cuda = cuda.to_device(bc, stream=stream_Hbc_P)
@@ -77,19 +77,19 @@ def _save_to_elements(grid: Grid, H_matrices: np.ndarray, C_matrices: np.ndarray
 def _sum_matrices(A, B, C):
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
-            C[i][j] = A[i][j] + B[i][j]
+            C[i, j] = A[i, j] + B[i, j]
 
 @cuda.jit('void(float64[:], float64[:], float64[:,:])', device=True)
 def _multiply_vectors(A, B, C):
     for i in range(len(A)):
         for j in range(len(B)):
-            C[i][j] = A[i] * B[j]
+            C[i, j] = A[i] * B[j]
 
 @cuda.jit('void(float64[:,:], float64, float64[:,:])', device=True)
 def _multiply_matrix_by_scalar(A, scalar, B):
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
-            B[i][j] = A[i][j] * scalar
+            B[i, j] = A[i, j] * scalar
 
 @cuda.jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', device=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
@@ -192,7 +192,7 @@ def _calculate_Hbc_P_for_element(x_coords, y_coords, bc,
     if i < Hbc_matrices.shape[0]:
         for j in range(NUM_OF_SURFACES):
             _calculate_for_surface(n, weights, surfaces[j],
-                                   x_coords[i][j], y_coords[i][j], bc[i][j],
-                                   x_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS], bc[i][(j+1)%NUM_OF_SHAPE_FUNCTIONS],
+                                   x_coords[i, j], y_coords[i, j], bc[i, j],
+                                   x_coords[i, (j+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[i, (j+1)%NUM_OF_SHAPE_FUNCTIONS], bc[i, (j+1)%NUM_OF_SHAPE_FUNCTIONS],
                                    alpha, ambient_temp,
                                    Hbc_matrices[i], P_vectors[i])

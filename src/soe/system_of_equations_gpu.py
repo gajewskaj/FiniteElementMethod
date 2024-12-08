@@ -34,10 +34,10 @@ class SystemOfEquationsGPU(SystemOfEquations):
             for i in range(NUM_OF_SHAPE_FUNCTIONS):
                 P[element.node_ids[i] - 1] += element.P[i]
                 for j in range(NUM_OF_SHAPE_FUNCTIONS):
-                        data_H.append(local_H[i][j])
+                        data_H.append(local_H[i, j])
                         row_H.append(element.node_ids[i] - 1)
                         col_H.append(element.node_ids[j] - 1)
-                        data_C.append(element.C[i][j])
+                        data_C.append(element.C[i, j])
                         row_C.append(element.node_ids[i] - 1)
                         col_C.append(element.node_ids[j] - 1)
         data_H = cp.array(data_H)

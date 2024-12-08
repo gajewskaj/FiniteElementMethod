@@ -4,29 +4,28 @@ from numba import jit
 import numpy as np
 
 from src.helpers.helpers import measure_time
-from src.grid.grid import Grid, Element
+from src.grid.grid import Grid
 from src.uel.universal_element import u_el, NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SURFACES
 
 @measure_time
 def calculate_local_matrices(grid: Grid) -> None:
-    x_coords = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS))
-    y_coords = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS))
-    bc = np.empty((len(grid.elements), NUM_OF_SHAPE_FUNCTIONS), dtype=np.int64)
-    for i, element in enumerate(grid.elements):
-        element: Element
+    x_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
+    y_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
+    bc = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS), dtype=np.int64)
+    for i in range(len(grid.elements_id)):
         for j in range(NUM_OF_SHAPE_FUNCTIONS):
-            x_coords[i][j] = grid.nodes[element.node_ids[j] - 1].x
-            y_coords[i][j] = grid.nodes[element.node_ids[j] - 1].y
-            bc[i][j] = grid.nodes[element.node_ids[j] - 1].BC
+            x_coords[i, j] = grid.nodes_x[grid.elements_node_ids[i, j] - 1]
+            y_coords[i, j] = grid.nodes_y[grid.elements_node_ids[i, j] - 1]
+            bc[i, j] = grid.nodes_bc[grid.elements_node_ids[i, j] - 1]
         _calculate_H_C_for_element(x_coords[i], y_coords[i],
                                    u_el.n, u_el.weights, u_el.N,
                                    u_el.dN_dxi, u_el.dN_deta,
                                    grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat,
-                                   element.H, element.C)
+                                   grid.elements_H[i], grid.elements_C[i])
         _calculate_Hbc_P_for_element(x_coords[i], y_coords[i], bc[i],
                                      u_el.quadrature_1d.n, u_el.quadrature_1d.weights, u_el.surfaces,
                                      grid.global_data.alpha, grid.global_data.ambient_temp,
-                                     element.Hbc, element.P)
+                                     grid.elements_Hbc[i], grid.elements_P[i])
 
 @jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', nopython=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,

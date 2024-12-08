@@ -89,7 +89,7 @@ class UniversalElementTriangle():
     def _fill_shape_functions(self) -> None:
         for i in range(self.n):
             for j in range(len(N)):
-                self.N[i][j] = N[j](self.xi[i], self.eta[i])
+                self.N[i, j] = N[j](self.xi[i], self.eta[i])
 
     def _fill_shape_functions_for_surfaces(self) -> None:
         for i in range(NUM_OF_SURFACES):
@@ -104,4 +104,4 @@ class UniversalElementTriangle():
                 eta_list = np.array(self.quadrature_1d.points)
             for j in range(self.quadrature_1d.n):
                 for k in range(NUM_OF_SHAPE_FUNCTIONS):
-                    self.surfaces[i][j][k] = N[k](xi_list[j], eta_list[j])
+                    self.surfaces[i, j, k] = N[k](xi_list[j], eta_list[j])
