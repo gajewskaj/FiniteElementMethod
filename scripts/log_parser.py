@@ -14,8 +14,10 @@ def parse_arguments() -> str:
     parser = argparse.ArgumentParser(description="Log parser")
     parser.add_argument("--file", type=str, default="time_stats.csv",
                         help="Output filename")
+    parser.add_argument("--log-dir-template", type=str, default="*", choices=["*", "*_cpu*", "*_gpu*"],
+                        help="Output directory name template")
     args = parser.parse_args()
-    return args.file
+    return args.file, args.log_dir_template
 
 class CaseData:
     def __init__(self, num_elements: int, num_nodes: int):
@@ -83,8 +85,8 @@ def save_to_csv(file_name: str, column_names: list[str], rows: list[list[str]]) 
         writer.writerow(column_names)
         writer.writerows(rows)
 
-file_name = parse_arguments()
-for directory in glob(output_path + "/*"):
+file_name, log_dir_template = parse_arguments()
+for directory in glob(output_path + f"/{log_dir_template}"):
     for filename in glob(os.path.join(output_path, directory, "*.log")):
         parse_log_file(filename)
 column_names, rows = interpret_data()
