@@ -15,6 +15,21 @@ NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
 def calculate_and_assemble_matrices(grid: Grid) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
+    data_H_C, data_Hbc_P = _send_to_GPU(stream_H_C, stream_Hbc_P, grid)
+    threads_per_block = 512
+    blocks_per_grid = (len(grid.elements_id) + threads_per_block - 1) // threads_per_block
+    _calculate(data_H_C, data_Hbc_P, stream_H_C, stream_Hbc_P, threads_per_block, blocks_per_grid)
+    _retrieve_from_GPU(data_H_C, data_Hbc_P, grid)
+
+@measure_time
+def _calculate(data_H_C: tuple, data_Hbc_P: tuple, stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, threads_per_block: int, blocks_per_grid: int) -> tuple:
+    _calculate_H_C_for_element[blocks_per_grid, threads_per_block, stream_H_C](*data_H_C)
+    _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](*data_Hbc_P)
+    stream_H_C.synchronize()
+    stream_Hbc_P.synchronize()
+
+@measure_time
+def _send_to_GPU(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid) -> tuple:
     # Universal element properties
     weights_cuda = cuda.to_device(u_el.weights, stream=stream_H_C)
     surface_weights_cuda = cuda.to_device(u_el.quadrature_1d.weights, stream=stream_Hbc_P)
@@ -38,33 +53,36 @@ def calculate_and_assemble_matrices(grid: Grid) -> None:
     global_Hbc_row_cuda = cuda.to_device(grid.global_Hbc_row, stream=stream_Hbc_P)
     global_Hbc_col_cuda = cuda.to_device(grid.global_Hbc_col, stream=stream_Hbc_P)
     global_P_cuda = cuda.to_device(grid.global_P, stream=stream_Hbc_P)
-    # Parallel calculations on GPU
-    threads_per_block = 128
-    blocks_per_grid = (len(grid.elements_id) + threads_per_block - 1) // threads_per_block
-    _calculate_H_C_for_element[blocks_per_grid, threads_per_block, stream_H_C](nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda,
-                                                                               u_el.n, weights_cuda, N_cuda,
-                                                                               dN_dxi_cuda, dN_deta_cuda,
-                                                                               grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat,
-                                                                               global_H_values_cuda, global_H_row_cuda, global_H_col_cuda,
-                                                                               global_C_values_cuda, global_C_row_cuda, global_C_col_cuda)
-    _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](nodes_x_cuda, nodes_y_cuda, nodes_bc_cuda, elements_node_ids_cuda,
-                                                                                   u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
-                                                                                   grid.global_data.alpha, grid.global_data.ambient_temp,
-                                                                                   global_Hbc_values_cuda, global_Hbc_row_cuda, global_Hbc_col_cuda,
-                                                                                   global_P_cuda)
-    stream_H_C.synchronize()
-    stream_Hbc_P.synchronize()
-    # Retrieve results from GPU
-    grid.global_H_values = global_H_values_cuda.copy_to_host().astype(np.float64)
-    grid.global_H_row = global_H_row_cuda.copy_to_host()
-    grid.global_H_col = global_H_col_cuda.copy_to_host()
-    grid.global_C_values = global_C_values_cuda.copy_to_host().astype(np.float64)
-    grid.global_C_row = global_C_row_cuda.copy_to_host()
-    grid.global_C_col = global_C_col_cuda.copy_to_host()
-    grid.global_Hbc_values = global_Hbc_values_cuda.copy_to_host().astype(np.float64)
-    grid.global_Hbc_row = global_Hbc_row_cuda.copy_to_host()
-    grid.global_Hbc_col = global_Hbc_col_cuda.copy_to_host()
-    grid.global_P = global_P_cuda.copy_to_host().reshape(-1, 1)
+    return (
+        nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda,
+        u_el.n, weights_cuda, N_cuda,
+        dN_dxi_cuda, dN_deta_cuda,
+        grid.global_data.conductivity,
+        grid.global_data.density,
+        grid.global_data.specific_heat,
+        global_H_values_cuda, global_H_row_cuda, global_H_col_cuda,
+        global_C_values_cuda, global_C_row_cuda, global_C_col_cuda
+        ), (
+        nodes_x_cuda, nodes_y_cuda, nodes_bc_cuda, elements_node_ids_cuda,
+        u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
+        grid.global_data.alpha,
+        grid.global_data.ambient_temp,
+        global_Hbc_values_cuda, global_Hbc_row_cuda, global_Hbc_col_cuda,
+        global_P_cuda
+        )
+
+@measure_time
+def _retrieve_from_GPU(data_H_C: tuple, data_Hbc_P: tuple, grid: Grid) -> None:
+    grid.global_H_values = data_H_C[-6].copy_to_host().astype(np.float64)
+    grid.global_H_row = data_H_C[-5].copy_to_host()
+    grid.global_H_col = data_H_C[-4].copy_to_host()
+    grid.global_C_values = data_H_C[-3].copy_to_host().astype(np.float64)
+    grid.global_C_row = data_H_C[-2].copy_to_host()
+    grid.global_C_col = data_H_C[-1].copy_to_host()
+    grid.global_Hbc_values = data_Hbc_P[-4].copy_to_host().astype(np.float64)
+    grid.global_Hbc_row = data_Hbc_P[-3].copy_to_host()
+    grid.global_Hbc_col = data_Hbc_P[-2].copy_to_host()
+    grid.global_P = data_Hbc_P[-1].copy_to_host().reshape(-1, 1)
 
 @cuda.jit('void(float64[:,:], float64[:,:], float64[:,:])', device=True)
 def _sum_matrices(A, B, C):

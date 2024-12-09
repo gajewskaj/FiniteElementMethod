@@ -29,7 +29,7 @@ def run() -> None:
         from src.grid.grid import Grid
         grid = Grid(mesh_filepath, data_filepath)
 
-        from src.lmc.matrices_calculation import calculate_and_assemble_matrices
+        from src.mc.matrices_calculation import calculate_and_assemble_matrices
         from src.soe.temperature_simulation import simulate
 
         calculate_and_assemble_matrices(grid)
