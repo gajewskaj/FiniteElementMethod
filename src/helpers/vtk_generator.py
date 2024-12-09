@@ -5,7 +5,6 @@ import numpy as np
 
 from src.helpers import config
 from src.grid.grid import Grid
-from src.uel.universal_element import NUM_OF_SHAPE_FUNCTIONS
 
 def initialize_jinja_environment(template_filepath: str) -> Template:
     environment = Environment(loader=FileSystemLoader(config.templates_path))
@@ -20,7 +19,7 @@ def generate_file(data: dict, template: Template, dest_dir: str, output_fileame:
 
 def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
     num_files: int = len(temperatures)
-    element_nodes_number: list[int] = [NUM_OF_SHAPE_FUNCTIONS] * len(grid.elements_id)
+    element_nodes_number: list[int] = [config.num_of_shape_functions] * len(grid.elements_id)
 
     data: dict = {}
     data["nodes_number"] = len(grid.nodes_id)

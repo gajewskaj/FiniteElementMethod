@@ -1,6 +1,5 @@
 import argparse
 import os
-import pathlib
 
 import numpy as np
 
@@ -8,45 +7,32 @@ from src.helpers.helpers import set_use_gpu, create_or_clear_directory, init_log
 from src.helpers import config
 
 def parse_arguments() -> tuple[str, str, bool]:
-    """
-    Parses command line arguments.
-
-    Returns:
-        Settings: Parsed arguments as a Settings object.
-    """
-
     parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
     parser.add_argument("--mesh", type=str, default=os.path.join(config.input_path, "50x50_quad.msh"),
                         help="Path to the input grid file")
     parser.add_argument("--data", type=str, default=None,
                         help="Path to the input data file")
-    parser.add_argument("--element-type", type=str, default="quadrangle", choices=["triangle", "quadrangle"],
-                        help="Type of the element (triangle or quadrangle)")
     parser.add_argument("--force-cpu", action="store_true",
                         help="Force the simulation to run on CPU")
     args = parser.parse_args()
-    return args.mesh, args.data, args.element_type, args.force_cpu
+    return args.mesh, args.data, args.force_cpu
 
 def run() -> None:
-    """
-    Runs all the necessary functions to calculate max and min temperature of the element in time.
-    """
     try:
-        mesh_filepath, data_filepath, element_type, force_cpu = parse_arguments()
+        mesh_filepath, data_filepath, force_cpu = parse_arguments()
         # In output directory, create a subdirectory with the name of the input mesh file
         output_dir_path = create_or_clear_directory(os.path.join(config.output_path,
                                                                  os.path.basename(mesh_filepath).split(".")[0]))
         config.logger = init_logging(logger_name=config.MAIN_LOGGER_NAME, log_dirpath=output_dir_path)
         set_use_gpu(force_cpu)
-        config.element_type = element_type
 
         from src.grid.grid import Grid
         grid = Grid(mesh_filepath, data_filepath)
 
-        from src.lmc.local_matrices_calculation import calculate_local_matrices
+        from src.lmc.matrices_calculation import calculate_and_assemble_matrices
         from src.soe.temperature_simulation import simulate
 
-        calculate_local_matrices(grid)
+        calculate_and_assemble_matrices(grid)
         times, temperatures = simulate(grid)
 
         config.logger.info(f"Time        Min temp    Max temp")

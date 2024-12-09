@@ -3,16 +3,24 @@ from math import sqrt
 from numba import jit
 import numpy as np
 
+from src.helpers import config
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid
-from src.uel.universal_element import u_el, NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SURFACES
+from src.uel.universal_element import u_el
+
+NUM_OF_SHAPE_FUNCTIONS = config.num_of_shape_functions
+NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
 
 @measure_time
-def calculate_local_matrices(grid: Grid) -> None:
+def calculate_and_assemble_matrices(grid: Grid) -> None:
     x_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
     y_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
     bc = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS), dtype=np.int64)
     for i in range(len(grid.elements_id)):
+        H = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
+        C = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
+        Hbc = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
+        P = np.zeros(NUM_OF_SHAPE_FUNCTIONS)
         for j in range(NUM_OF_SHAPE_FUNCTIONS):
             x_coords[i, j] = grid.nodes_x[grid.elements_node_ids[i, j] - 1]
             y_coords[i, j] = grid.nodes_y[grid.elements_node_ids[i, j] - 1]
@@ -21,11 +29,25 @@ def calculate_local_matrices(grid: Grid) -> None:
                                    u_el.n, u_el.weights, u_el.N,
                                    u_el.dN_dxi, u_el.dN_deta,
                                    grid.global_data.conductivity, grid.global_data.density, grid.global_data.specific_heat,
-                                   grid.elements_H[i], grid.elements_C[i])
+                                   H, C)
         _calculate_Hbc_P_for_element(x_coords[i], y_coords[i], bc[i],
                                      u_el.quadrature_1d.n, u_el.quadrature_1d.weights, u_el.surfaces,
                                      grid.global_data.alpha, grid.global_data.ambient_temp,
-                                     grid.elements_Hbc[i], grid.elements_P[i])
+                                     Hbc, P)
+        # Assembly
+        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+            grid.global_P[grid.elements_node_ids[i, j] - 1] += P[j]
+            for k in range(NUM_OF_SHAPE_FUNCTIONS):
+                grid.global_H_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = H[j, k]
+                grid.global_H_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
+                grid.global_H_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
+                grid.global_C_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = C[j, k]
+                grid.global_C_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
+                grid.global_C_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
+                grid.global_Hbc_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = Hbc[j, k]
+                grid.global_Hbc_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
+                grid.global_Hbc_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
+    grid.global_P = grid.global_P.reshape(-1, 1)
 
 @jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', nopython=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
