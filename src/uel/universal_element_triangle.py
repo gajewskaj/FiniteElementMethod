@@ -40,6 +40,19 @@ class UniversalElementTriangle():
                 self.xi = np.array([-2/3, 1/3, -2/3], dtype=float)
                 self.eta = np.array([-2/3, -2/3, 1/3], dtype=float)
                 self.weights = np.array([2/3, 2/3, 2/3], dtype=float)
+            case 4:
+                self.xi = np.array([-1/3,
+                                    -0.6,
+                                    -0.6,
+                                    0.2], dtype=float)
+                self.eta = np.array([-1/3,
+                                    -0.6,
+                                    0.2,
+                                    -0.6], dtype=float)
+                self.weights = np.array([-1.125,
+                                         1.041666666666667,
+                                         1.041666666666667,
+                                         1.041666666666667], dtype=float)
             case 6:
                 self.xi = np.array([-0.108103018168070,
                                     -0.108103018168070,
@@ -82,7 +95,7 @@ class UniversalElementTriangle():
                                          0.251878361089654,
                                          0.251878361089654], dtype=float)
             case _:
-                err_msg: str = "Number of integration points for a triangle element must be 1, 3, 6 or 7."
+                err_msg: str = "Number of integration points for a triangle element must be 1, 3, 4, 6 or 7."
                 config.logger.error(err_msg)
                 raise RuntimeError(err_msg)
 
