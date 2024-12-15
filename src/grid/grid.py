@@ -56,16 +56,16 @@ class Grid:
             self._read_global_data(data)
             config.num_of_shape_functions = len(self.elements_node_ids[0])
             config.logger.info(f"Number of shape functions per element: {config.num_of_shape_functions}")
-            self.P = np.zeros(len(self.nodes_id), dtype=float)
+            self.P = np.zeros(len(self.nodes_id), dtype=np.float64)
             self.H_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.H_row = np.zeros((len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions), dtype=int)
-            self.H_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.H_row = np.zeros((len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions), dtype=np.int64)
+            self.H_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
             self.C_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.C_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.C_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.C_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
+            self.C_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
             self.Hbc_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.Hbc_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.Hbc_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.Hbc_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
+            self.Hbc_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
         except FileNotFoundError:
             err_msg: str = f"File not found while creating a {self.__class__.__name__} instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
             config.logger.error(err_msg, exc_info=True)
@@ -91,10 +91,10 @@ class Grid:
     def _read_nodes(self, mesh: Mesh):
         config.logger.info("Reading nodes from mesh.")
         nodes_number: int = mesh.get_number_of_nodes()
-        self.nodes_id = np.empty(nodes_number, dtype=int)
-        self.nodes_x = np.empty(nodes_number)
-        self.nodes_y = np.empty(nodes_number)
-        self.nodes_bc = np.empty(nodes_number, dtype=int)
+        self.nodes_id = np.empty(nodes_number, dtype=np.int64)
+        self.nodes_x = np.empty(nodes_number, dtype=np.float64)
+        self.nodes_y = np.empty(nodes_number, dtype=np.float64)
+        self.nodes_bc = np.empty(nodes_number, dtype=np.int64)
         for entity in mesh.get_node_entities():
             bc = 1 if entity.get_dimension() in [0, 1] else 0
             for node in entity.get_nodes():
@@ -119,5 +119,5 @@ class Grid:
                     element_node_ids_list.append(el_con)
         elements_number = len(element_ids_list)
         self.elements_id = np.asarray(element_ids_list)
-        self.elements_node_ids = np.asarray(element_node_ids_list)
+        self.elements_node_ids = np.asarray(element_node_ids_list, dtype=np.int64)
         config.logger.info(f"Number of elements: {elements_number}.")
