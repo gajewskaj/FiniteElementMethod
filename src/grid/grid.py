@@ -24,7 +24,6 @@ class GlobalData:
         self.initial_temp = float(initial_temp)
         self.density = float(density)
         self.specific_heat = float(specific_heat)
-
 class Grid:
     def __init__(self, mesh_path: str, data_path: str):
         self.global_data: GlobalData
@@ -36,15 +35,17 @@ class Grid:
         # Elements
         self.elements_id: np.ndarray[int]
         self.elements_node_ids: np.ndarray[int]
-        self.elements_H: np.ndarray[float]
-        self.elements_C: np.ndarray[float]
-        self.elements_Hbc: np.ndarray[float]
-        self.elements_P: np.ndarray[float]
         # Assembled
-        self.global_H: np.ndarray[float]
-        self.global_C: np.ndarray[float]
-        self.global_Hbc: np.ndarray[float]
-        self.global_P: np.ndarray[float]
+        self.P: np.ndarray[float]
+        self.H_val: np.ndarray[float]
+        self.H_row: np.ndarray[int]
+        self.H_col: np.ndarray[int]
+        self.C_val: np.ndarray[float]
+        self.C_row: np.ndarray[int]
+        self.C_col: np.ndarray[int]
+        self.global_Hbc_value: np.ndarray[float]
+        self.Hbc_row: np.ndarray[int]
+        self.Hbc_col: np.ndarray[int]
         try:
             config.logger.info(f"Creating a {self.__class__.__name__} from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
             mesh: Mesh = gmshparser.parse(mesh_path)
@@ -55,16 +56,16 @@ class Grid:
             self._read_global_data(data)
             config.num_of_shape_functions = len(self.elements_node_ids[0])
             config.logger.info(f"Number of shape functions per element: {config.num_of_shape_functions}")
-            self.global_P = np.zeros(len(self.nodes_id), dtype=float)
-            self.global_H_values = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.global_H_row = np.zeros((len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions), dtype=int)
-            self.global_H_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.global_C_values = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.global_C_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.global_C_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.global_Hbc_values = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.global_Hbc_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
-            self.global_Hbc_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.P = np.zeros(len(self.nodes_id), dtype=float)
+            self.H_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
+            self.H_row = np.zeros((len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions), dtype=int)
+            self.H_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.C_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
+            self.C_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.C_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.Hbc_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
+            self.Hbc_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
+            self.Hbc_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=int)
         except FileNotFoundError:
             err_msg: str = f"File not found while creating a {self.__class__.__name__} instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
             config.logger.error(err_msg, exc_info=True)

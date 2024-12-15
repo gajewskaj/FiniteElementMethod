@@ -8,28 +8,30 @@ from src.helpers.helpers import measure_time
 from src.grid.grid import Grid
 from src.uel.universal_element import u_el
 
-NUM_OF_SHAPE_FUNCTIONS = config.num_of_shape_functions
-NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
+NUM_DOF = config.num_of_shape_functions
+NUM_SURFACES = NUM_DOF
 
 @measure_time
 def calculate_and_assemble_matrices(grid: Grid) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
-    data_H_C, data_Hbc_P = _send_to_GPU(stream_H_C, stream_Hbc_P, grid)
+    data_H_C, data_Hbc_P = _send_to_gpu(stream_H_C, stream_Hbc_P, grid)
     threads_per_block = 512
     blocks_per_grid = (len(grid.elements_id) + threads_per_block - 1) // threads_per_block
     _calculate(data_H_C, data_Hbc_P, stream_H_C, stream_Hbc_P, threads_per_block, blocks_per_grid)
-    _retrieve_from_GPU(data_H_C, data_Hbc_P, grid)
+    _retrieve_from_gpu(data_H_C, data_Hbc_P, grid)
 
 @measure_time
-def _calculate(data_H_C: tuple, data_Hbc_P: tuple, stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, threads_per_block: int, blocks_per_grid: int) -> tuple:
+def _calculate(data_H_C: tuple, data_Hbc_P: tuple,
+               stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream,
+               threads_per_block: int, blocks_per_grid: int) -> tuple:
     _calculate_H_C_for_element[blocks_per_grid, threads_per_block, stream_H_C](*data_H_C)
     _calculate_Hbc_P_for_element[blocks_per_grid, threads_per_block, stream_Hbc_P](*data_Hbc_P)
     stream_H_C.synchronize()
     stream_Hbc_P.synchronize()
 
 @measure_time
-def _send_to_GPU(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid) -> tuple:
+def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid) -> tuple:
     # Universal element properties
     weights_cuda = cuda.to_device(u_el.weights, stream=stream_H_C)
     surface_weights_cuda = cuda.to_device(u_el.quadrature_1d.weights, stream=stream_Hbc_P)
@@ -43,16 +45,16 @@ def _send_to_GPU(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid)
     nodes_bc_cuda = cuda.to_device(grid.nodes_bc)
     elements_node_ids_cuda = cuda.to_device(grid.elements_node_ids)
     # Local matrices
-    global_H_values_cuda = cuda.to_device(grid.global_H_values, stream=stream_H_C)
-    global_H_row_cuda = cuda.to_device(grid.global_H_row, stream=stream_H_C)
-    global_H_col_cuda = cuda.to_device(grid.global_H_col, stream=stream_H_C)
-    global_C_values_cuda = cuda.to_device(grid.global_C_values, stream=stream_H_C)
-    global_C_row_cuda = cuda.to_device(grid.global_C_row, stream=stream_H_C)
-    global_C_col_cuda = cuda.to_device(grid.global_C_col, stream=stream_H_C)
-    global_Hbc_values_cuda = cuda.to_device(grid.global_Hbc_values, stream=stream_Hbc_P)
-    global_Hbc_row_cuda = cuda.to_device(grid.global_Hbc_row, stream=stream_Hbc_P)
-    global_Hbc_col_cuda = cuda.to_device(grid.global_Hbc_col, stream=stream_Hbc_P)
-    global_P_cuda = cuda.to_device(grid.global_P, stream=stream_Hbc_P)
+    global_H_values_cuda = cuda.to_device(grid.H_val, stream=stream_H_C)
+    global_H_row_cuda = cuda.to_device(grid.H_row, stream=stream_H_C)
+    global_H_col_cuda = cuda.to_device(grid.H_col, stream=stream_H_C)
+    global_C_values_cuda = cuda.to_device(grid.C_val, stream=stream_H_C)
+    global_C_row_cuda = cuda.to_device(grid.C_row, stream=stream_H_C)
+    global_C_col_cuda = cuda.to_device(grid.C_col, stream=stream_H_C)
+    global_Hbc_values_cuda = cuda.to_device(grid.Hbc_val, stream=stream_Hbc_P)
+    global_Hbc_row_cuda = cuda.to_device(grid.Hbc_row, stream=stream_Hbc_P)
+    global_Hbc_col_cuda = cuda.to_device(grid.Hbc_col, stream=stream_Hbc_P)
+    global_P_cuda = cuda.to_device(grid.P, stream=stream_Hbc_P)
     return (
         nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda,
         u_el.n, weights_cuda, N_cuda,
@@ -72,17 +74,17 @@ def _send_to_GPU(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid)
         )
 
 @measure_time
-def _retrieve_from_GPU(data_H_C: tuple, data_Hbc_P: tuple, grid: Grid) -> None:
-    grid.global_H_values = data_H_C[-6].copy_to_host().astype(np.float64)
-    grid.global_H_row = data_H_C[-5].copy_to_host()
-    grid.global_H_col = data_H_C[-4].copy_to_host()
-    grid.global_C_values = data_H_C[-3].copy_to_host().astype(np.float64)
-    grid.global_C_row = data_H_C[-2].copy_to_host()
-    grid.global_C_col = data_H_C[-1].copy_to_host()
-    grid.global_Hbc_values = data_Hbc_P[-4].copy_to_host().astype(np.float64)
-    grid.global_Hbc_row = data_Hbc_P[-3].copy_to_host()
-    grid.global_Hbc_col = data_Hbc_P[-2].copy_to_host()
-    grid.global_P = data_Hbc_P[-1].copy_to_host().reshape(-1, 1)
+def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, grid: Grid) -> None:
+    grid.H_val = data_H_C[-6].copy_to_host().astype(np.float64)
+    grid.H_row = data_H_C[-5].copy_to_host()
+    grid.H_col = data_H_C[-4].copy_to_host()
+    grid.C_val = data_H_C[-3].copy_to_host().astype(np.float64)
+    grid.C_row = data_H_C[-2].copy_to_host()
+    grid.C_col = data_H_C[-1].copy_to_host()
+    grid.Hbc_val = data_Hbc_P[-4].copy_to_host().astype(np.float64)
+    grid.Hbc_row = data_Hbc_P[-3].copy_to_host()
+    grid.Hbc_col = data_Hbc_P[-2].copy_to_host()
+    grid.P = data_Hbc_P[-1].copy_to_host().reshape(-1, 1)
 
 @cuda.jit('void(float64[:,:], float64[:,:], float64[:,:])', device=True)
 def _sum_matrices(A, B, C):
@@ -115,15 +117,15 @@ def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
     jacobian_inv_01 = -jacobian_01 / jacobian_det
     jacobian_inv_10 = -jacobian_10 / jacobian_det
     jacobian_inv_11 = jacobian_00 / jacobian_det
-    for k in range(NUM_OF_SHAPE_FUNCTIONS):
-        dN_dx[k] = jacobian_inv_00 * dN_dxi[k] + jacobian_inv_01 * dN_deta[k]
-        dN_dy[k] = jacobian_inv_10 * dN_dxi[k] + jacobian_inv_11 * dN_deta[k]
+    for i in range(NUM_DOF):
+        dN_dx[i] = jacobian_inv_00 * dN_dxi[i] + jacobian_inv_01 * dN_deta[i]
+        dN_dy[i] = jacobian_inv_10 * dN_dxi[i] + jacobian_inv_11 * dN_deta[i]
     return jacobian_det
 
 @cuda.jit('float64(float64[:], float64[:])', device=True)
 def _interpolate(dN, var):
     result = 0.0
-    for i in range(NUM_OF_SHAPE_FUNCTIONS):
+    for i in range(NUM_DOF):
         result += dN[i] * var[i]
     return result
 
@@ -132,10 +134,10 @@ def _calculate_H_C_for_integration_point(weight, N,
                                          jacobian_det, dN_dx, dN_dy,
                                          c, d, sh,
                                          H, C):
-    H_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-    C_ip_matrix = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-    dN_dx_multiplied = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-    dN_dy_multiplied = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
+    H_ip_matrix = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+    C_ip_matrix = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+    dN_dx_multiplied = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+    dN_dy_multiplied = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
 
     _multiply_vectors(dN_dx, dN_dx, dN_dx_multiplied)
     _multiply_vectors(dN_dy, dN_dy, dN_dy_multiplied)
@@ -156,17 +158,17 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
                                global_H_values, global_H_row, global_H_col,
                                global_C_values, global_C_row, global_C_col):
     i = cuda.grid(1)
-    if i < len(global_H_values)//NUM_OF_SHAPE_FUNCTIONS//NUM_OF_SHAPE_FUNCTIONS:
-        x_coords = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        y_coords = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        H = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-        C = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+    if i < len(global_H_values)//NUM_DOF//NUM_DOF:
+        x_coords = cuda.local.array(NUM_DOF, np.float64)
+        y_coords = cuda.local.array(NUM_DOF, np.float64)
+        H = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+        C = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+        for j in range(NUM_DOF):
             x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
             y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
         for j in range(n):
-            dN_dx = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-            dN_dy = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
+            dN_dx = cuda.local.array(NUM_DOF, np.float64)
+            dN_dy = cuda.local.array(NUM_DOF, np.float64)
             dx_dxi = _interpolate(dN_dxi[j], x_coords)
             dx_deta = _interpolate(dN_deta[j], x_coords)
             dy_dxi = _interpolate(dN_dxi[j], y_coords)
@@ -179,14 +181,14 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
                                                  c, d, sh,
                                                  H, C)
         # Assembly
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
-            for k in range(NUM_OF_SHAPE_FUNCTIONS):
-                cuda.atomic.add(global_H_values, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, H[j, k])
-                cuda.atomic.add(global_H_row, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_H_col, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, k] - 1)
-                cuda.atomic.add(global_C_values, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, C[j, k])
-                cuda.atomic.add(global_C_row, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_C_col, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, k] - 1)
+        for j in range(NUM_DOF):
+            for k in range(NUM_DOF):
+                cuda.atomic.add(global_H_values, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, H[j, k])
+                cuda.atomic.add(global_H_row, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, j] - 1)
+                cuda.atomic.add(global_H_col, i*NUM_DOF*NUM_DOF+ j*NUM_DOF+k, elements_node_ids[i, k] - 1)
+                cuda.atomic.add(global_C_values, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, C[j, k])
+                cuda.atomic.add(global_C_row, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, j] - 1)
+                cuda.atomic.add(global_C_col, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, k] - 1)
 
 @cuda.jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', device=True)
 def _calculate_for_surface(n, weights, surface,
@@ -199,9 +201,9 @@ def _calculate_for_surface(n, weights, surface,
     L = sqrt((node2_x - node1_x)**2 + (node2_y - node1_y)**2)
     jacobian_det = L / 2
     for i in range(n):
-        Hbc_ip = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
+        Hbc_ip = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
         N = surface[i]
-        for k in range(NUM_OF_SHAPE_FUNCTIONS):
+        for k in range(NUM_DOF):
             P[k] += N[k] * weights[i] * alpha * ambient_temp * jacobian_det
         _multiply_vectors(N, N, Hbc_ip)
         _multiply_matrix_by_scalar(Hbc_ip, weights[i] * alpha * jacobian_det, Hbc_ip)
@@ -214,26 +216,26 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids,
                                  global_Hbc_values, global_Hbc_row, global_Hbc_col,
                                  global_P):
     i = cuda.grid(1)
-    if i < len(global_Hbc_values)//NUM_OF_SHAPE_FUNCTIONS//NUM_OF_SHAPE_FUNCTIONS:
-        x_coords = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        y_coords = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        bc = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.int64)
-        P = cuda.local.array(NUM_OF_SHAPE_FUNCTIONS, np.float64)
-        Hbc = cuda.local.array((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS), np.float64)
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+    if i < len(global_Hbc_values)//NUM_DOF//NUM_DOF:
+        x_coords = cuda.local.array(NUM_DOF, np.float64)
+        y_coords = cuda.local.array(NUM_DOF, np.float64)
+        bc = cuda.local.array(NUM_DOF, np.int64)
+        P = cuda.local.array(NUM_DOF, np.float64)
+        Hbc = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+        for j in range(NUM_DOF):
             x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
             y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
             bc[j] = nodes_bc[elements_node_ids[i, j] - 1]
-        for j in range(NUM_OF_SURFACES):
+        for j in range(NUM_SURFACES):
             _calculate_for_surface(n, weights, surfaces[j],
                                    x_coords[j], y_coords[j], bc[j],
-                                   x_coords[(j+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[(j+1)%NUM_OF_SHAPE_FUNCTIONS], bc[(j+1)%NUM_OF_SHAPE_FUNCTIONS],
+                                   x_coords[(j+1)%NUM_DOF], y_coords[(j+1)%NUM_DOF], bc[(j+1)%NUM_DOF],
                                    alpha, ambient_temp,
                                    Hbc, P)
         # Assembly
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+        for j in range(NUM_DOF):
             cuda.atomic.add(global_P, elements_node_ids[i, j] - 1, P[j])
-            for k in range(NUM_OF_SHAPE_FUNCTIONS):
-                cuda.atomic.add(global_Hbc_values, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, Hbc[j, k])
-                cuda.atomic.add(global_Hbc_row, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_Hbc_col, i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k, elements_node_ids[i, k] - 1)
+            for k in range(NUM_DOF):
+                cuda.atomic.add(global_Hbc_values, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, Hbc[j, k])
+                cuda.atomic.add(global_Hbc_row, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, elements_node_ids[i, j] - 1)
+                cuda.atomic.add(global_Hbc_col, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, elements_node_ids[i, k] - 1)

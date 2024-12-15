@@ -3,8 +3,8 @@ import numpy as np
 from src.helpers import config
 from src.uel.gaussian_quadrature import GaussianQuadrature
 
-NUM_OF_SHAPE_FUNCTIONS = 3
-NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
+NUM_DOF = 3
+NUM_SURFACES = NUM_DOF
 
 # Shape functions
 N = [
@@ -23,8 +23,8 @@ class UniversalElementTriangle():
 
         self.dN_dxi = np.array([[-0.5, 0.5, 0] for _ in range(self.n)], dtype=float)
         self.dN_deta = np.array([[-0.5, 0, 0.5] for _ in range(self.n)], dtype=float)
-        self.N = np.empty((self.n, NUM_OF_SHAPE_FUNCTIONS))
-        self.surfaces = np.empty((NUM_OF_SURFACES, self.quadrature_1d.n, NUM_OF_SHAPE_FUNCTIONS))
+        self.N = np.empty((self.n, NUM_DOF))
+        self.surfaces = np.empty((NUM_SURFACES, self.quadrature_1d.n, NUM_DOF))
 
         self._init_integration_points_and_weights()
         self._fill_shape_functions()
@@ -92,7 +92,7 @@ class UniversalElementTriangle():
                 self.N[i, j] = N[j](self.xi[i], self.eta[i])
 
     def _fill_shape_functions_for_surfaces(self) -> None:
-        for i in range(NUM_OF_SURFACES):
+        for i in range(NUM_SURFACES):
             if i == 0:
                 xi_list = np.array(self.quadrature_1d.points)
                 eta_list = np.full(self.quadrature_1d.n, -1)
@@ -103,5 +103,5 @@ class UniversalElementTriangle():
                 xi_list = np.full(self.quadrature_1d.n, -1)
                 eta_list = np.array(self.quadrature_1d.points)
             for j in range(self.quadrature_1d.n):
-                for k in range(NUM_OF_SHAPE_FUNCTIONS):
+                for k in range(NUM_DOF):
                     self.surfaces[i, j, k] = N[k](xi_list[j], eta_list[j])

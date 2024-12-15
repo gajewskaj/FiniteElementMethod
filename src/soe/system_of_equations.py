@@ -17,10 +17,10 @@ class SystemOfEquations(ABC):
 
     @abstractmethod
     def _prepare_data(self) -> tuple:
-        data_H, row_H, col_H = self.grid.global_H_values, self.grid.global_H_row, self.grid.global_H_col
-        data_Hbc, row_Hbc, col_Hbc = self.grid.global_Hbc_values, self.grid.global_Hbc_row, self.grid.global_Hbc_col
-        data_C, row_C, col_C = self.grid.global_C_values, self.grid.global_C_row, self.grid.global_C_col
-        P = self.grid.global_P
+        data_H, row_H, col_H = self.grid.H_val, self.grid.H_row, self.grid.H_col
+        data_Hbc, row_Hbc, col_Hbc = self.grid.Hbc_val, self.grid.Hbc_row, self.grid.Hbc_col
+        data_C, row_C, col_C = self.grid.C_val, self.grid.C_row, self.grid.C_col
+        P = self.grid.P
         data_H = np.concatenate((data_H, data_Hbc))
         row_H = np.concatenate((row_H, row_Hbc))
         col_H = np.concatenate((col_H, col_Hbc))

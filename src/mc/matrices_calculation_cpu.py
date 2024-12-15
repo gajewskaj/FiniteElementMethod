@@ -8,20 +8,20 @@ from src.helpers.helpers import measure_time
 from src.grid.grid import Grid
 from src.uel.universal_element import u_el
 
-NUM_OF_SHAPE_FUNCTIONS = config.num_of_shape_functions
-NUM_OF_SURFACES = NUM_OF_SHAPE_FUNCTIONS
+NUM_DOF = config.num_of_shape_functions
+NUM_SURFACES = NUM_DOF
 
 @measure_time
 def calculate_and_assemble_matrices(grid: Grid) -> None:
-    x_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
-    y_coords = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS))
-    bc = np.empty((len(grid.elements_id), NUM_OF_SHAPE_FUNCTIONS), dtype=np.int64)
+    x_coords = np.empty((len(grid.elements_id), NUM_DOF))
+    y_coords = np.empty((len(grid.elements_id), NUM_DOF))
+    bc = np.empty((len(grid.elements_id), NUM_DOF), dtype=np.int64)
     for i in range(len(grid.elements_id)):
-        H = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
-        C = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
-        Hbc = np.zeros((NUM_OF_SHAPE_FUNCTIONS, NUM_OF_SHAPE_FUNCTIONS))
-        P = np.zeros(NUM_OF_SHAPE_FUNCTIONS)
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
+        H = np.zeros((NUM_DOF, NUM_DOF))
+        C = np.zeros((NUM_DOF, NUM_DOF))
+        Hbc = np.zeros((NUM_DOF, NUM_DOF))
+        P = np.zeros(NUM_DOF)
+        for j in range(NUM_DOF):
             x_coords[i, j] = grid.nodes_x[grid.elements_node_ids[i, j] - 1]
             y_coords[i, j] = grid.nodes_y[grid.elements_node_ids[i, j] - 1]
             bc[i, j] = grid.nodes_bc[grid.elements_node_ids[i, j] - 1]
@@ -35,31 +35,33 @@ def calculate_and_assemble_matrices(grid: Grid) -> None:
                                      grid.global_data.alpha, grid.global_data.ambient_temp,
                                      Hbc, P)
         # Assembly
-        for j in range(NUM_OF_SHAPE_FUNCTIONS):
-            grid.global_P[grid.elements_node_ids[i, j] - 1] += P[j]
-            for k in range(NUM_OF_SHAPE_FUNCTIONS):
-                grid.global_H_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = H[j, k]
-                grid.global_H_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
-                grid.global_H_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
-                grid.global_C_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = C[j, k]
-                grid.global_C_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
-                grid.global_C_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
-                grid.global_Hbc_values[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = Hbc[j, k]
-                grid.global_Hbc_row[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, j] - 1
-                grid.global_Hbc_col[i*NUM_OF_SHAPE_FUNCTIONS*NUM_OF_SHAPE_FUNCTIONS + j*NUM_OF_SHAPE_FUNCTIONS + k] = grid.elements_node_ids[i, k] - 1
-    grid.global_P = grid.global_P.reshape(-1, 1)
+        for j in range(NUM_DOF):
+            grid.P[grid.elements_node_ids[i, j] - 1] += P[j]
+            for k in range(NUM_DOF):
+                grid.H_val[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = H[j, k]
+                grid.H_row[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = grid.elements_node_ids[i, j] - 1
+                grid.H_col[i*NUM_DOF*NUM_DOF+j*NUM_DOF+ k] = grid.elements_node_ids[i, k] - 1
+                grid.C_val[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = C[j, k]
+                grid.C_row[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = grid.elements_node_ids[i, j] - 1
+                grid.C_col[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = grid.elements_node_ids[i, k] - 1
+                grid.Hbc_val[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = Hbc[j, k]
+                grid.Hbc_row[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = grid.elements_node_ids[i, j] - 1
+                grid.Hbc_col[i*NUM_DOF*NUM_DOF+j*NUM_DOF+k] = grid.elements_node_ids[i, k] - 1
+    grid.P = grid.P.reshape(-1, 1)
 
 @jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', nopython=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,
-                                                     dx_dxi, dx_deta, dy_dxi, dy_deta,
+                                                     dx_dxi, dx_deta,
+                                                     dy_dxi, dy_deta,
                                                      dN_dx, dN_dy):
     jacobian = np.array([[dx_dxi, dy_dxi], [dx_deta, dy_deta]])
     jacobian_det = np.linalg.det(jacobian)
     jacobian_inv = np.linalg.inv(jacobian)
-    for k in range(NUM_OF_SHAPE_FUNCTIONS):
-        global_shape_function_derivatives = np.dot(jacobian_inv, np.array([dN_dxi[k], dN_deta[k]]))
-        dN_dx[k] = global_shape_function_derivatives[0]
-        dN_dy[k] = global_shape_function_derivatives[1]
+    for i in range(NUM_DOF):
+        global_shape_function_derivatives = np.dot(jacobian_inv,
+            np.array([dN_dxi[i], dN_deta[i]]))
+        dN_dx[i] = global_shape_function_derivatives[0]
+        dN_dy[i] = global_shape_function_derivatives[1]
     return jacobian_det
 
 @jit('float64(float64[:], float64[:])')
@@ -71,10 +73,11 @@ def _calculate_H_C_for_integration_point(weight, N,
                                          jacobian_det, dN_dx, dN_dy,
                                          c, d, sh,
                                          H, C):
-    dN_dx = np.ascontiguousarray(dN_dx).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
-    dN_dy = np.ascontiguousarray(dN_dy).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
-    N = np.ascontiguousarray(N).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
-    H += c*(np.dot(dN_dx, dN_dx.transpose()) + np.dot(dN_dy, dN_dy.transpose()))*jacobian_det*weight
+    dN_dx = np.ascontiguousarray(dN_dx).reshape(NUM_DOF, 1)
+    dN_dy = np.ascontiguousarray(dN_dy).reshape(NUM_DOF, 1)
+    N = np.ascontiguousarray(N).reshape(NUM_DOF, 1)
+    H += c*(np.dot(dN_dx, dN_dx.transpose()) +
+            np.dot(dN_dy, dN_dy.transpose()))*jacobian_det*weight
     C += sh*d*(np.dot(N, N.transpose()))*jacobian_det*weight
 
 @jit('void(float64[:], float64[:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64, float64, float64, float64[:,:], float64[:,:])', nopython=True)
@@ -84,8 +87,8 @@ def _calculate_H_C_for_element(x_coords, y_coords,
                                c, d, sh,
                                H, C):
     for i in range(n):
-        dN_dx = np.empty(NUM_OF_SHAPE_FUNCTIONS)
-        dN_dy = np.empty(NUM_OF_SHAPE_FUNCTIONS)
+        dN_dx = np.empty(NUM_DOF)
+        dN_dy = np.empty(NUM_DOF)
         dx_dxi = _interpolate(dN_dxi[i], x_coords)
         dx_deta = _interpolate(dN_deta[i], x_coords)
         dy_dxi = _interpolate(dN_dxi[i], y_coords)
@@ -108,7 +111,7 @@ def _calculate_for_surface(n, weights, surface,
     L = sqrt((node2_x - node1_x)**2 + (node2_y - node1_y)**2)
     jacobian_det = L / 2
     for i in range(n):
-        N = np.ascontiguousarray(surface[i]).reshape(NUM_OF_SHAPE_FUNCTIONS, 1)
+        N = np.ascontiguousarray(surface[i]).reshape(NUM_DOF, 1)
         Hbc += np.dot(N, N.transpose())*weights[i]*alpha*jacobian_det
         P += N*weights[i]*alpha*ambient_temp*jacobian_det
 
@@ -117,9 +120,9 @@ def _calculate_Hbc_P_for_element(x_coords, y_coords, bc,
                                  n, weights, surfaces,
                                  alpha, ambient_temp,
                                  Hbc, P):
-    for i in range(NUM_OF_SURFACES):
+    for i in range(NUM_SURFACES):
         _calculate_for_surface(n, weights, surfaces[i],
                                x_coords[i], y_coords[i], bc[i],
-                               x_coords[(i+1)%NUM_OF_SHAPE_FUNCTIONS], y_coords[(i+1)%NUM_OF_SHAPE_FUNCTIONS], bc[(i+1)%NUM_OF_SHAPE_FUNCTIONS],
+                               x_coords[(i+1)%NUM_DOF], y_coords[(i+1)%NUM_DOF], bc[(i+1)%NUM_DOF],
                                alpha, ambient_temp,
                                Hbc, P)
