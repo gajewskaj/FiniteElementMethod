@@ -84,7 +84,7 @@ def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, grid: Grid) -> None:
     grid.Hbc_val = data_Hbc_P[-4].copy_to_host().astype(np.float64)
     grid.Hbc_row = data_Hbc_P[-3].copy_to_host()
     grid.Hbc_col = data_Hbc_P[-2].copy_to_host()
-    grid.P = data_Hbc_P[-1].copy_to_host().reshape(-1, 1)
+    grid.P = data_Hbc_P[-1].copy_to_host()
 
 @cuda.jit('void(float64[:,:], float64[:,:], float64[:,:])', device=True)
 def _sum_matrices(A, B, C):
@@ -155,10 +155,10 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
                                c, d, sh,
-                               global_H_values, global_H_row, global_H_col,
-                               global_C_values, global_C_row, global_C_col):
+                               H_val, H_row, H_col,
+                               C_val, C_row, C_col):
     i = cuda.grid(1)
-    if i < len(global_H_values)//NUM_DOF//NUM_DOF:
+    if i < len(H_val)//NUM_DOF//NUM_DOF:
         x_coords = cuda.local.array(NUM_DOF, np.float64)
         y_coords = cuda.local.array(NUM_DOF, np.float64)
         H = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
@@ -183,12 +183,13 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
         # Assembly
         for j in range(NUM_DOF):
             for k in range(NUM_DOF):
-                cuda.atomic.add(global_H_values, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, H[j, k])
-                cuda.atomic.add(global_H_row, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_H_col, i*NUM_DOF*NUM_DOF+ j*NUM_DOF+k, elements_node_ids[i, k] - 1)
-                cuda.atomic.add(global_C_values, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, C[j, k])
-                cuda.atomic.add(global_C_row, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_C_col, i*NUM_DOF*NUM_DOF+j*NUM_DOF+k, elements_node_ids[i, k] - 1)
+                idx = i*NUM_DOF*NUM_DOF+j*NUM_DOF+k
+                H_val[idx] = H[j, k]
+                H_row[idx] = elements_node_ids[i, j] - 1
+                H_col[idx] = elements_node_ids[i, k] - 1
+                C_val[idx] = C[j, k]
+                C_row[idx] = elements_node_ids[i, j] - 1
+                C_col[idx] = elements_node_ids[i, k] - 1
 
 @cuda.jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', device=True)
 def _calculate_for_surface(n, weights, surface,
@@ -213,10 +214,10 @@ def _calculate_for_surface(n, weights, surface,
 def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids,
                                  n, weights, surfaces,
                                  alpha, ambient_temp,
-                                 global_Hbc_values, global_Hbc_row, global_Hbc_col,
-                                 global_P):
+                                 Hbc_val, Hbc_row, Hbc_col,
+                                 P_global):
     i = cuda.grid(1)
-    if i < len(global_Hbc_values)//NUM_DOF//NUM_DOF:
+    if i < len(Hbc_val)//NUM_DOF//NUM_DOF:
         x_coords = cuda.local.array(NUM_DOF, np.float64)
         y_coords = cuda.local.array(NUM_DOF, np.float64)
         bc = cuda.local.array(NUM_DOF, np.int64)
@@ -234,8 +235,9 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids,
                                    Hbc, P)
         # Assembly
         for j in range(NUM_DOF):
-            cuda.atomic.add(global_P, elements_node_ids[i, j] - 1, P[j])
+            cuda.atomic.add(P_global, elements_node_ids[i, j] - 1, P[j])
             for k in range(NUM_DOF):
-                cuda.atomic.add(global_Hbc_values, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, Hbc[j, k])
-                cuda.atomic.add(global_Hbc_row, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, elements_node_ids[i, j] - 1)
-                cuda.atomic.add(global_Hbc_col, i*NUM_DOF*NUM_DOF + j*NUM_DOF + k, elements_node_ids[i, k] - 1)
+                idx = i*NUM_DOF*NUM_DOF+j*NUM_DOF+k
+                Hbc_val[idx] = Hbc[j, k]
+                Hbc_row[idx] = elements_node_ids[i, j] - 1
+                Hbc_col[idx] = elements_node_ids[i, k] - 1

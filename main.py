@@ -35,13 +35,13 @@ def run() -> None:
         calculate_and_assemble_matrices(grid)
         times, temperatures = simulate(grid)
 
-        config.logger.info(f"Time        Min temp    Max temp")
+        config.logger.info(f"Time        Min temp        Max temp")
         for i in range(len(temperatures)):
-            config.logger.info(f"{(times[i]):<12}{round(np.min(temperatures[i]), 3):<12}{round(np.max(temperatures[i]), 3):<12}")
+            config.logger.info(f"{(times[i]):<12}{round(np.min(temperatures[i]), 6):<16}{round(np.max(temperatures[i]), 6):<16}")
 
         # Generate .vtk files for ParaView
-        from src.helpers.vtk_generator import generate_vtk_files
-        generate_vtk_files(output_dir_path, grid, temperatures)
+        # from src.helpers.vtk_generator import generate_vtk_files
+        # generate_vtk_files(output_dir_path, grid, temperatures)
     except Exception:
         config.logger.error(f"Script execution failed due to an exception. Check log file for details.", exc_info=True)
 
