@@ -31,7 +31,7 @@ dN_deta = [
 ]
 
 class UniversalElementQuadrangle():
-    def __init__(self, n: int = 4):
+    def __init__(self, n: int):
         self.n = n
         self.quadrature_1d = GaussianQuadrature(sqrt(n))
         self.xi = np.empty(n)

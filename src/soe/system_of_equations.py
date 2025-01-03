@@ -24,7 +24,6 @@ class SystemOfEquations(ABC):
         col_H = np.concatenate((self.grid.H_col, self.grid.Hbc_col))
         H = cpu_sparse.csr_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim))
         C = cpu_sparse.csr_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
-
         return H, C, P
 
     @abstractmethod

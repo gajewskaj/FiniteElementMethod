@@ -14,9 +14,10 @@ N = [
 ]
 
 class UniversalElementTriangle():
-    def __init__(self, n: int = 3):
+    def __init__(self, n: int):
         self.n = n
-        self.quadrature_1d = GaussianQuadrature(2)
+        self.gaussian_quadrature_traingle_mapping = {1: 1, 3: 2, 4: 3, 6: 4, 7: 5}
+        self.quadrature_1d = GaussianQuadrature(self.gaussian_quadrature_traingle_mapping[n])
         self.xi = np.empty(n)
         self.eta = np.empty(n)
         self.weights = np.empty(n)
