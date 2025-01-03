@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from src.helpers.config import output_path, scripts_path
 
 def parse_arguments() -> str:
-    parser = argparse.ArgumentParser(description="Log parser")
+    parser = argparse.ArgumentParser(description="Time statistics")
     parser.add_argument("--file", type=str, default="time_stats.csv",
                         help="Output filename")
     parser.add_argument("--log-dir-template", type=str, default="*", choices=["*", "*_cpu*", "*_gpu*"],
@@ -79,16 +79,16 @@ def print_table(column_names: list[str], rows: list[list[str]]) -> None:
     table.add_rows(rows)
     print(table)
 
-def save_to_csv(file_name: str, column_names: list[str], rows: list[list[str]]) -> None:
-    with open(os.path.join(scripts_path, file_name), "w", newline="") as f:
+def save_to_csv(filename: str, column_names: list[str], rows: list[list[str]]) -> None:
+    with open(os.path.join(scripts_path, filename), "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(column_names)
         writer.writerows(rows)
 
-file_name, log_dir_template = parse_arguments()
+output_filename, log_dir_template = parse_arguments()
 for directory in glob(output_path + f"/{log_dir_template}"):
     for filename in glob(os.path.join(output_path, directory, "*.log")):
         parse_log_file(filename)
 column_names, rows = interpret_data()
 print_table(column_names, rows)
-save_to_csv(file_name, column_names, rows)
+save_to_csv(output_filename, column_names, rows)
