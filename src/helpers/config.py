@@ -12,3 +12,4 @@ MAIN_LOGGER_NAME = "main_logger"
 logger: logging.Logger = logging.Logger(MAIN_LOGGER_NAME)
 use_gpu: bool = False
 num_of_shape_functions: int = 4
+threads_per_block: int = 512

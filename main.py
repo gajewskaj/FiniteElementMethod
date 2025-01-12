@@ -9,9 +9,9 @@ from src.helpers import config
 def parse_arguments() -> tuple[str, str, bool]:
     parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
     parser.add_argument("--mesh", type=str, default=os.path.join(config.input_path, "50x50_quad.msh"),
-                        help="Path to the input grid file")
+                        help="Path to the input grid file", required=True)
     parser.add_argument("--data", type=str, default=None,
-                        help="Path to the input data file")
+                        help="Path to the input data file", required=True)
     parser.add_argument("--force-cpu", action="store_true",
                         help="Force the simulation to run on CPU")
     args = parser.parse_args()
@@ -40,8 +40,8 @@ def run() -> None:
             config.logger.info(f"{(times[i]):<12}{round(np.min(temperatures[i]), 6):<16}{round(np.max(temperatures[i]), 6):<16}")
 
         # Generate .vtk files for ParaView
-        # from src.helpers.vtk_generator import generate_vtk_files
-        # generate_vtk_files(output_dir_path, grid, temperatures)
+        from src.helpers.vtk_generator import generate_vtk_files
+        generate_vtk_files(output_dir_path, grid, temperatures)
     except Exception:
         config.logger.error(f"Script execution failed due to an exception. Check log file for details.", exc_info=True)
 

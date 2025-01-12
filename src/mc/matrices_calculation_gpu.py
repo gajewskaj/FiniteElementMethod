@@ -10,13 +10,14 @@ from src.uel.universal_element import u_el
 
 NUM_DOF = config.num_of_shape_functions
 NUM_SURFACES = NUM_DOF
+THREADS_PER_BLOCK = config.threads_per_block
 
 @measure_time
 def calculate_and_assemble_matrices(grid: Grid) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
     data_H_C, data_Hbc_P = _send_to_gpu(stream_H_C, stream_Hbc_P, grid)
-    threads_per_block = 512
+    threads_per_block = THREADS_PER_BLOCK
     blocks_per_grid = (len(grid.elements_id) + threads_per_block - 1) // threads_per_block
     _calculate(data_H_C, data_Hbc_P, stream_H_C, stream_Hbc_P, threads_per_block, blocks_per_grid)
     _retrieve_from_gpu(data_H_C, data_Hbc_P, grid)
