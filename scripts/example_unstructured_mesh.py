@@ -1,33 +1,48 @@
-import gmsh
+import argparse
+import os
 import sys
-import math
+import gmsh
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.helpers import config
+
+filename = "unstructured.msh"
+
+min_x = 0
+max_x = 0.100000001
+min_y = -0.0949999988
+max_y = 0.00499999989
 
 gmsh.initialize()
 
-gmsh.model.add("circle_mesh")
+gmsh.model.add(filename.strip(".msh"))
 
+p1 = gmsh.model.geo.addPoint(min_x, min_y, 0)
+p2 = gmsh.model.geo.addPoint(max_x, min_y, 0)
+p3 = gmsh.model.geo.addPoint(max_x, max_y, 0)
+p4 = gmsh.model.geo.addPoint(min_x, max_y, 0)
 
-radius = 0.1
-lc = 0.05
+l1 = gmsh.model.geo.addLine(p1, p2)
+l2 = gmsh.model.geo.addLine(p2, p3)
+l3 = gmsh.model.geo.addLine(p3, p4)
+l4 = gmsh.model.geo.addLine(p4, p1)
 
-p1 = gmsh.model.geo.addPoint(0, radius, 0, lc)
-p2 = gmsh.model.geo.addPoint(radius, 0, 0, lc)
-p3 = gmsh.model.geo.addPoint(0, -radius, 0, lc)
-p4 = gmsh.model.geo.addPoint(-radius, 0, 0, lc)
+curve_loop = gmsh.model.geo.addCurveLoop([l1, l2, l3, l4])
+surface = gmsh.model.geo.addPlaneSurface([curve_loop])
 
-center = gmsh.model.geo.addPoint(0, 0, 0, lc)
-
-arc1 = gmsh.model.geo.addCircleArc(p1, center, p2)
-arc2 = gmsh.model.geo.addCircleArc(p2, center, p3)
-arc3 = gmsh.model.geo.addCircleArc(p3, center, p4)
-arc4 = gmsh.model.geo.addCircleArc(p4, center, p1)
-
-loop = gmsh.model.geo.addCurveLoop([arc1, arc2, arc3, arc4])
-
-surface = gmsh.model.geo.addPlaneSurface([loop])
-
+# Synchronize geometry to be able to work with the mesh
 gmsh.model.geo.synchronize()
+
+# Set mesh size near the boundary points
+gmsh.model.mesh.field.add("MathEval", 1)
+gmsh.model.mesh.field.setString(1, "F", "0.02")  # Defining mesh size
+gmsh.model.mesh.field.setAsBackgroundMesh(1)
+
+# Generate the mesh without transfinite or recombination (unstructured)
 gmsh.model.mesh.generate(2)
 
-gmsh.write("circle_mesh.msh")
+gmsh.fltk.run()
+
+gmsh.write(os.path.join(config.input_path, filename))
+
 gmsh.finalize()

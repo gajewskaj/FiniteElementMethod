@@ -52,6 +52,8 @@ gmsh.model.geo.synchronize()
 
 gmsh.model.mesh.generate(2)
 
+gmsh.fltk.run()
+
 gmsh.write(os.path.join(config.input_path, filename))
 
 gmsh.finalize()
