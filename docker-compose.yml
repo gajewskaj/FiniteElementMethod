@@ -1,0 +1,11 @@
+services:
+  fem:
+    image: fem:latest
+    build: .
+    container_name: fem_container
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    tty: true
+    stdin_open: true
+    gpus: all
