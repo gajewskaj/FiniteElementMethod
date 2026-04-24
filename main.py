@@ -8,10 +8,18 @@ from src.helpers import config
 
 def parse_arguments() -> tuple[str, str, bool]:
     parser = argparse.ArgumentParser(description="Finite Element Method Simulation")
-    parser.add_argument("--mesh", type=str, default=os.path.join(config.input_path, "50x50_quad.msh"),
-                        help="Path to the input grid file", required=True)
-    parser.add_argument("--data", type=str, default=None,
-                        help="Path to the input data file", required=True)
+    parser.add_argument(
+        "--mesh",
+        type=str,
+        default=os.path.join(config.input_path, "10x10_tri.msh"),
+        help="Path to the input mesh file",
+    )
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=os.path.join(config.input_path, "global_data.json"),
+        help="Path to the input data file",
+    )
     parser.add_argument("--force-cpu", action="store_true",
                         help="Force the simulation to run on CPU")
     args = parser.parse_args()

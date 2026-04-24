@@ -49,6 +49,4 @@ def simulate(grid: Grid) -> tuple[list[float], list[np.ndarray[float]]]:
         times.append(dtau)
         temperatures.append(result)
         dtau += soe.step
-    if config.use_gpu:
-        return cp.asnumpy(times), [temp.get() for temp in temperatures]
-    return times, temperatures
+    return cp.asnumpy(times), [temp.get() for temp in temperatures]

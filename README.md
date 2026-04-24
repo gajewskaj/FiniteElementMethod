@@ -18,10 +18,26 @@ Check out a ParaView simulation created using the output from this program:
 ![ParaViewAnimation](img/ParaView_example_animation.gif)
 
 ## How to run
-1. Clone this repository.
-2. In the main folder, open cmd and type: `pip install -r requirements.txt`.
-3. After installing the necessary packages, double click on the `temperature_simulation.py` file or type: `py temperature_simulation.py` in the cmd.
-4. ...
+### Docker (recommended)
+```bash
+docker compose build
+docker compose run --rm fem python main.py
+```
+
+### Local Python
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+By default, it runs with:
+- `--mesh input/10x10_tri.msh`
+- `--data input/global_data.json`
+
+You can override them, e.g.:
+```bash
+python main.py --mesh input/100x100_quad.msh --data input/global_data.json
+```
 
 ## How it works
 Program calculates temperatures $\{ t_1 \}$ by solving the below equation:
@@ -55,73 +71,3 @@ $$
 pipreqs . --force
 ```
 
-### How to create/update the documentation
-If you want to start from scratch:
-```ps
-pip install Sphinx
-mkdir docs
-cd docs
-sphinx-quickstart
-cd ..
-sphinx-apidoc -o docs .
-```
-
-The docs/conf.py file should look something like this:
-```python
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath('..'))
-
-project = 'FiniteElementMethod'
-copyright = '2024, Julia Bahyrycz'
-author = 'Julia Bahyrycz'
-release = 'v1'
-
-extensions = [
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc',
-]
-
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
-```
-
-Make sure that all of the modules have `docs/{module_name}.rst` files generated and that `docs/modules.rst` contains the list of all the modules that you want to document.
-`docs/modules.rst`
-```rst
-FiniteElementMethod
-===================
-
-.. toctree::
-   :maxdepth: 4
-
-   main
-   src
-```
-
-Make sure that `docs/index.rst` contains `modules`:
-```
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   modules
-```
-
-```ps
-pip install sphinx-rtd-theme
-cd docs
-make html
-```
-
-If you already have the docs folder and just want to update:
-```ps
-cd docs
-make clean
-make html
-```
