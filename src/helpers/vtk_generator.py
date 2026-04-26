@@ -3,11 +3,11 @@ import os
 from jinja2 import  Environment, FileSystemLoader, Template
 import numpy as np
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 from src.grid.grid import Grid
 
 def initialize_jinja_environment(template_filepath: str) -> Template:
-    environment = Environment(loader=FileSystemLoader(config.templates_path))
+    environment = Environment(loader=FileSystemLoader(Settings.templates_path))
     template = environment.get_template(template_filepath)
     return template
 
@@ -19,7 +19,7 @@ def generate_file(data: dict, template: Template, dest_dir: str, output_fileame:
 
 def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
     num_files: int = len(temperatures)
-    element_nodes_number: list[int] = [config.num_of_shape_functions] * len(grid.elements_id)
+    element_nodes_number: list[int] = [Settings.MatricesCalculation.num_of_shape_functions] * len(grid.elements_id)
 
     data: dict = {}
     data["nodes_number"] = len(grid.nodes_id)
@@ -35,4 +35,4 @@ def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.n
         data["temperatures"] = temperatures[i]
         filename: str = f"frame{i+1}.vtk"
         generate_file(data, template, output_dir_path, filename)
-    config.logger.info(f"Output files generated in '{output_dir_path}'.")
+    logger.info(f"Output files generated in '{output_dir_path}'.")

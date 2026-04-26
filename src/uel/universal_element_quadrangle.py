@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 from src.uel.gaussian_quadrature import GaussianQuadrature
 
 NUM_DOF = 4

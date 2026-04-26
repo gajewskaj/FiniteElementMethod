@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 from src.uel.gaussian_quadrature import GaussianQuadrature
 
 NUM_DOF = 3
@@ -97,7 +97,7 @@ class UniversalElementTriangle():
                                          0.251878361089654], dtype=float)
             case _:
                 err_msg: str = "Number of integration points for a triangle element must be 1, 3, 4, 6 or 7."
-                config.logger.error(err_msg)
+                logger.error(err_msg)
                 raise RuntimeError(err_msg)
 
     def _fill_shape_functions(self) -> None:

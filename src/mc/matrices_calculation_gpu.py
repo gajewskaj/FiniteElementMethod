@@ -3,14 +3,14 @@ from math import sqrt
 from numba import cuda
 import numpy as np
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 from src.helpers.helpers import measure_time
 from src.grid.grid import Grid
 from src.uel.universal_element import u_el
 
-NUM_DOF = config.num_of_shape_functions
+NUM_DOF = Settings.MatricesCalculation.num_of_shape_functions
 NUM_SURFACES = NUM_DOF
-THREADS_PER_BLOCK = config.threads_per_block
+THREADS_PER_BLOCK = Settings.MatricesCalculation.threads_per_block
 
 @measure_time
 def calculate_and_assemble_matrices(grid: Grid) -> None:

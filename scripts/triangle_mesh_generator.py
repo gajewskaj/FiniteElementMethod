@@ -4,7 +4,7 @@ import sys
 import gmsh
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.helpers import config
+from src.helpers.config import Settings
 
 def parse_arguments() -> tuple[int, int, str]:
     parser = argparse.ArgumentParser(description="Mesh generator")
@@ -51,6 +51,6 @@ gmsh.model.geo.synchronize()
 
 gmsh.model.mesh.generate(2)
 
-gmsh.write(os.path.join(config.input_path, filename))
+gmsh.write(os.path.join(Settings.input_path, filename))
 
 gmsh.finalize()

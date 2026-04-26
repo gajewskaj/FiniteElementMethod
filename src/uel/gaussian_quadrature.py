@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 
 class GaussianQuadrature:
     def __init__(self, n: int):
@@ -45,6 +45,6 @@ class GaussianQuadrature:
                                     (322 - 13*sqrt(70))/900], dtype=float)
             case _:
                 err_msg: str = "Number of integration points in numerical integration must be an integer in range (1;5)."
-                config.logger.error(err_msg)
+                logger.error(err_msg)
                 raise RuntimeError
         return points, weights

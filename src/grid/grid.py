@@ -1,7 +1,7 @@
 import json
 import os
 
-from src.helpers import config
+from src.helpers.config import logger, Settings
 
 import gmshparser
 from gmshparser import Mesh
@@ -47,32 +47,32 @@ class Grid:
         self.Hbc_row: np.ndarray[int]
         self.Hbc_col: np.ndarray[int]
         try:
-            config.logger.info(f"Creating a {self.__class__.__name__} from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
+            logger.info(f"Creating a {self.__class__.__name__} from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'")
             mesh: Mesh = gmshparser.parse(mesh_path)
             self._read_nodes(mesh)
             self._read_elements(mesh)
             with open(data_path, "r") as data_file:
                 data = json.load(data_file)
             self._read_global_data(data)
-            config.num_of_shape_functions = len(self.elements_node_ids[0])
-            config.logger.info(f"Number of shape functions per element: {config.num_of_shape_functions}")
+            Settings.num_of_shape_functions = len(self.elements_node_ids[0])
+            logger.info(f"Number of shape functions per element: {Settings.num_of_shape_functions}")
             self.P = np.zeros(len(self.nodes_id), dtype=np.float64)
-            self.H_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.H_row = np.zeros((len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions), dtype=np.int64)
-            self.H_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
-            self.C_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.C_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
-            self.C_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
-            self.Hbc_val = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.float64)
-            self.Hbc_row = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
-            self.Hbc_col = np.zeros(len(self.elements_id) * config.num_of_shape_functions * config.num_of_shape_functions, dtype=np.int64)
+            self.H_val = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.float64)
+            self.H_row = np.zeros((len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions), dtype=np.int64)
+            self.H_col = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.int64)
+            self.C_val = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.float64)
+            self.C_row = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.int64)
+            self.C_col = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.int64)
+            self.Hbc_val = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.float64)
+            self.Hbc_row = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.int64)
+            self.Hbc_col = np.zeros(len(self.elements_id) * Settings.num_of_shape_functions * Settings.num_of_shape_functions, dtype=np.int64)
         except FileNotFoundError:
             err_msg: str = f"File not found while creating a {self.__class__.__name__} instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
-            config.logger.error(err_msg, exc_info=True)
+            logger.error(err_msg, exc_info=True)
             raise FileNotFoundError(err_msg)
         except Exception:
             err_msg: str = f"Unknown exception while creating a {self.__class__.__name__} instance from input files: '{os.path.basename(mesh_path)}', '{os.path.basename(data_path)}'."
-            config.logger.error(err_msg, exc_info=True)
+            logger.error(err_msg, exc_info=True)
             raise RuntimeError(err_msg)
 
     def _read_global_data(self, input: dict):
@@ -89,7 +89,7 @@ class Grid:
                                       initial_temp, density, specific_heat)
 
     def _read_nodes(self, mesh: Mesh):
-        config.logger.info("Reading nodes from mesh.")
+        logger.info("Reading nodes from mesh.")
         nodes_number: int = mesh.get_number_of_nodes()
         self.nodes_id = np.empty(nodes_number, dtype=np.int64)
         self.nodes_x = np.empty(nodes_number, dtype=np.float64)
@@ -104,10 +104,10 @@ class Grid:
                 self.nodes_x[n_id - 1] = n_coords[0]
                 self.nodes_y[n_id - 1] = n_coords[1]
                 self.nodes_bc[n_id - 1] = bc
-        config.logger.info(f"Number of nodes: {nodes_number}.")
+        logger.info(f"Number of nodes: {nodes_number}.")
 
     def _read_elements(self, mesh: Mesh):
-        config.logger.info("Reading elements from mesh.")
+        logger.info("Reading elements from mesh.")
         element_ids_list = []
         element_node_ids_list = []
         for entity in mesh.get_element_entities():
@@ -120,4 +120,4 @@ class Grid:
         elements_number = len(element_ids_list)
         self.elements_id = np.asarray(element_ids_list)
         self.elements_node_ids = np.asarray(element_node_ids_list, dtype=np.int64)
-        config.logger.info(f"Number of elements: {elements_number}.")
+        logger.info(f"Number of elements: {elements_number}.")

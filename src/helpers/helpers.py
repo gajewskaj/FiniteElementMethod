@@ -3,7 +3,8 @@ import os
 import shutil
 import time
 
-from . import config
+from src.helpers.config import MAIN_LOGGER_NAME, Settings
+import src.helpers.config as config
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -15,27 +16,35 @@ def measure_time(func):
 
     return wrapper
 
-def set_use_gpu(force_cpu: bool = False) -> None:
-    if force_cpu:
-        config.use_gpu = False
-        config.logger.warning("Forcing CPU usage instead of GPU.")
-        return
+def set_algorithms(mc: str, solver: str) -> None:
+    if mc == "gpu":
+        config.logger.info("GPU selected for calculating matrices.")
+        try: import numba
+        except ImportError:
+            Settings.MatricesCalculation.use_gpu = False
+            config.logger.warning("Numba is not installed. CPU will be used for matrices calculation.")
+        else:
+            Settings.MatricesCalculation.use_gpu = True
+    else:
+        config.logger.info("CPU selected for calculating matrices.")
+
+    if solver == "cudss": Settings.Solver.use_cudss = True
+    elif solver == "cupy": Settings.Solver.use_cupy = True
 
     try:
         import cupy
-        import numba
     except ImportError:
-        config.logger.warning("CuPy or Numba is not installed. Using CPU instead.")
+        Settings.Solver.use_cupy = False
+        Settings.Solver.use_cudss = False
+        config.logger.warning("CuPy is not installed. CPU will be used for matrices calculation.")
     else:
         try:
             if not cupy.cuda.is_available():
-                config.use_gpu = False
-                config.logger.warning("CUDA is not available. Using CPU instead.")
-            else:
-                config.use_gpu = True
-                config.logger.info("CUDA is available. Using GPU.")
+                Settings.Solver.use_cupy = False
+                Settings.Solver.use_cudss = False
+                config.logger.warning("CUDA is not available, SciPy solver will be used.")
         except:
-            config.logger.warning("CUDA is not available. Using CPU instead.")
+            config.logger.warning("CUDA is not available, SciPy solver will be used.")
 
 class NoTracebackFilter(logging.Filter):
     def filter(self, record):
@@ -44,31 +53,30 @@ class NoTracebackFilter(logging.Filter):
             record.exc_text = None
         return True
 
-def init_logging(logger_name: str = config.MAIN_LOGGER_NAME,
-                 log_dirpath: str = config.output_path) -> logging.Logger:
-    logger = logging.getLogger(logger_name)
-    logger = logging.getLogger(config.MAIN_LOGGER_NAME)
+def init_logging(logger_name: str = MAIN_LOGGER_NAME,
+                 log_dirpath: str = Settings.output_path) -> logging.Logger:
+    config.logger = logging.getLogger(logger_name)
+    config.logger = logging.getLogger(MAIN_LOGGER_NAME)
     log_filepath = os.path.join(log_dirpath, "log.log")
-    logger.setLevel(logging.DEBUG)
+    config.logger.setLevel(logging.DEBUG)
 
     file_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     file_handler = logging.FileHandler(log_filepath)
     file_handler.setFormatter(file_formatter)
     file_handler.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
+    config.logger.addHandler(file_handler)
 
     console_formatter = logging.Formatter(fmt="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(console_formatter)
     console_handler.setLevel(logging.INFO)
-    console_handler.addFilter(NoTracebackFilter())
-    logger.addHandler(console_handler)
+    config.logger.addHandler(console_handler)
 
-    return logger
+    return config.logger
 
 def create_or_clear_directory(dir_path: str) -> str:
     try:
-        os.mkdir(config.output_path)
+        os.mkdir(Settings.output_path)
     except FileExistsError:
         pass
 
