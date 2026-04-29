@@ -5,14 +5,14 @@ import numpy as np
 
 from src.helpers.config import Settings
 from src.helpers.helpers import measure_time
-from src.grid.grid import Grid
+from src.mesh.mesh import Mesh
 from src.uel.universal_element import u_el
 
-NUM_DOF = Settings.MatricesCalculation.num_of_shape_functions
+NUM_DOF = Settings.MatricesCalculation.DOF
 NUM_SURFACES = NUM_DOF
 
 @measure_time
-def calculate_and_assemble_matrices(grid: Grid) -> None:
+def calculate_and_assemble_matrices(grid: Mesh) -> None:
     for i in range(len(grid.elements_id)):
         _calculate_H_C_for_element(i, grid.nodes_x, grid.nodes_y, grid.elements_node_ids,
                                    u_el.n, u_el.weights, u_el.N,

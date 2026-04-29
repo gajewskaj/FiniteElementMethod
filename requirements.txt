@@ -1,6 +1,5 @@
 cupy_cuda12x==13.4.1
 gmsh==4.15.2
-gmshparser==0.3.1
 Jinja2==3.1.6
 matplotlib==3.10.9
 numba==0.65.0

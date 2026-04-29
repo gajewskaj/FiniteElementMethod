@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy.sparse as scipy_sparse
-from src.grid.grid import Grid
+from src.mesh.mesh import Mesh
 
 class SystemOfEquations(ABC):
     @abstractmethod
-    def __init__(self, grid: Grid):
+    def __init__(self, grid: Mesh):
         self.dim: int = len(grid.nodes_id)
         self.step: float = grid.global_data.simulation_step_time
         self.grid = grid

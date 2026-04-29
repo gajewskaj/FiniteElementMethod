@@ -5,11 +5,11 @@ import numpy as np
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
-from src.grid.grid import Grid
+from src.mesh.mesh import Mesh
 from src.soe.system_of_equations import SystemOfEquations
 
 class SystemOfEquationsCuPy(SystemOfEquations):
-    def __init__(self, grid: Grid):
+    def __init__(self, grid: Mesh):
         super().__init__(grid)
         self.t0: cp.ndarray = cp.full((self.dim, 1), grid.global_data.initial_temp, dtype=cp.float64)
         self.H, self.C, self.P = self._prepare_data()

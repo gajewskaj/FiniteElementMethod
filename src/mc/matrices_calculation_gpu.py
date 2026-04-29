@@ -5,15 +5,15 @@ import numpy as np
 
 from src.helpers.config import logger, Settings
 from src.helpers.helpers import measure_time
-from src.grid.grid import Grid
+from src.mesh.mesh import Mesh
 from src.uel.universal_element import u_el
 
-NUM_DOF = Settings.MatricesCalculation.num_of_shape_functions
+NUM_DOF = Settings.MatricesCalculation.DOF
 NUM_SURFACES = NUM_DOF
 THREADS_PER_BLOCK = Settings.MatricesCalculation.threads_per_block
 
 @measure_time
-def calculate_and_assemble_matrices(grid: Grid) -> None:
+def calculate_and_assemble_matrices(grid: Mesh) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
     data_H_C, data_Hbc_P = _send_to_gpu(stream_H_C, stream_Hbc_P, grid)
@@ -32,7 +32,9 @@ def _calculate(data_H_C: tuple, data_Hbc_P: tuple,
     stream_Hbc_P.synchronize()
 
 @measure_time
-def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid) -> tuple:
+def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Mesh) -> tuple:
+    # Materials
+    materials_cuda = cuda.to_device(grid.global_data.materials)
     # Universal element properties
     weights_cuda = cuda.to_device(u_el.weights, stream=stream_H_C)
     surface_weights_cuda = cuda.to_device(u_el.quadrature_1d.weights, stream=stream_Hbc_P)
@@ -45,6 +47,7 @@ def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid)
     nodes_y_cuda = cuda.to_device(grid.nodes_y)
     nodes_bc_cuda = cuda.to_device(grid.nodes_bc)
     elements_node_ids_cuda = cuda.to_device(grid.elements_node_ids)
+    elements_material_ids_cuda = cuda.to_device(grid.elements_material_ids)
     # Local matrices
     global_H_values_cuda = cuda.to_device(grid.H_val, stream=stream_H_C)
     global_H_row_cuda = cuda.to_device(grid.H_row, stream=stream_H_C)
@@ -57,25 +60,23 @@ def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Grid)
     global_Hbc_col_cuda = cuda.to_device(grid.Hbc_col, stream=stream_Hbc_P)
     global_P_cuda = cuda.to_device(grid.P, stream=stream_Hbc_P)
     return (
-        nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda,
+        nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda, elements_material_ids_cuda,
         u_el.n, weights_cuda, N_cuda,
         dN_dxi_cuda, dN_deta_cuda,
-        grid.global_data.conductivity,
-        grid.global_data.density,
-        grid.global_data.specific_heat,
+        materials_cuda,
         global_H_values_cuda, global_H_row_cuda, global_H_col_cuda,
         global_C_values_cuda, global_C_row_cuda, global_C_col_cuda
         ), (
-        nodes_x_cuda, nodes_y_cuda, nodes_bc_cuda, elements_node_ids_cuda,
+        nodes_x_cuda, nodes_y_cuda, nodes_bc_cuda, elements_node_ids_cuda, elements_material_ids_cuda,
         u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
-        grid.global_data.alpha,
+        materials_cuda,
         grid.global_data.ambient_temp,
         global_Hbc_values_cuda, global_Hbc_row_cuda, global_Hbc_col_cuda,
         global_P_cuda
         )
 
 @measure_time
-def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, grid: Grid) -> None:
+def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, grid: Mesh) -> None:
     grid.H_val = data_H_C[-6].copy_to_host().astype(np.float64)
     grid.H_row = data_H_C[-5].copy_to_host()
     grid.H_col = data_H_C[-4].copy_to_host()
@@ -151,11 +152,11 @@ def _calculate_H_C_for_integration_point(weight, N,
     _sum_matrices(H, H_ip_matrix, H)
     _sum_matrices(C, C_ip_matrix, C)
 
-@cuda.jit('void(float64[:], float64[:], int64[:,:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64, float64, float64, float64[:], int64[:], int64[:], float64[:], int64[:], int64[:])')
-def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
+@cuda.jit('void(float64[:], float64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int64[:], int64[:], float64[:], int64[:], int64[:])')
+def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
-                               c, d, sh,
+                               materials,
                                H_val, H_row, H_col,
                                C_val, C_row, C_col):
     i = cuda.grid(1)
@@ -164,6 +165,9 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids,
         y_coords = cuda.local.array(NUM_DOF, np.float64)
         H = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
         C = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+        c = materials[elements_material_ids[i] - 1, 1]
+        d = materials[elements_material_ids[i] - 1, 2]
+        sh= materials[elements_material_ids[i] - 1, 3]
         for j in range(NUM_DOF):
             x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
             y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
@@ -211,10 +215,10 @@ def _calculate_for_surface(n, weights, surface,
         _multiply_matrix_by_scalar(Hbc_ip, weights[i] * alpha * jacobian_det, Hbc_ip)
         _sum_matrices(Hbc_ip, Hbc, Hbc)
 
-@cuda.jit('void(float64[:], float64[:], int64[:], int64[:,:], int64, float64[:], float64[:,:,:], float64, float64, float64[:], int64[:], int64[:], float64[:])')
-def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids,
+@cuda.jit('void(float64[:], float64[:], int64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int64[:], int64[:], float64[:])')
+def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
                                  n, weights, surfaces,
-                                 alpha, ambient_temp,
+                                 materials, ambient_temp,
                                  Hbc_val, Hbc_row, Hbc_col,
                                  P_global):
     i = cuda.grid(1)
@@ -224,6 +228,7 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids,
         bc = cuda.local.array(NUM_DOF, np.int64)
         P = cuda.local.array(NUM_DOF, np.float64)
         Hbc = cuda.local.array((NUM_DOF, NUM_DOF), np.float64)
+        alpha = materials[elements_material_ids[i] - 1, 0]
         for j in range(NUM_DOF):
             x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
             y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]

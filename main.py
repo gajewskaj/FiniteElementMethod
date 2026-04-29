@@ -46,14 +46,14 @@ def run() -> None:
         config.logger = init_logging(logger_name=MAIN_LOGGER_NAME, log_dirpath=output_dir_path)
         set_algorithms(mc, solver)
 
-        from src.grid.grid import Grid
-        grid = Grid(mesh_filepath, data_filepath)
+        from src.mesh.mesh import Mesh
+        mesh = Mesh(mesh_filepath, data_filepath)
 
         from src.mc.matrices_calculation import calculate_and_assemble_matrices
         from src.soe.temperature_simulation import simulate
 
-        calculate_and_assemble_matrices(grid)
-        times, temperatures = simulate(grid)
+        calculate_and_assemble_matrices(mesh)
+        times, temperatures = simulate(mesh)
 
         config.logger.info(f"Time        Min temp        Max temp")
         for i in range(len(temperatures)):
@@ -61,7 +61,7 @@ def run() -> None:
 
         # Generate .vtk files for ParaView
         from src.helpers.vtk_generator import generate_vtk_files
-        # generate_vtk_files(output_dir_path, grid, temperatures)
+        generate_vtk_files(output_dir_path, mesh, temperatures)
     except Exception as e:
         config.logger.error(f"Script execution failed due to an error:\n{e}", exc_info=True)
 

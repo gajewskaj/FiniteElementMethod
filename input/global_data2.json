@@ -1,0 +1,26 @@
+{
+  "simulation_time": 5000,
+  "simulation_step_time": 50,
+  "ambient_temp": 1200,
+  "initial_temp": 20,
+  "materials": {
+    "copper": {
+      "alpha": 300,
+      "conductivity": 400,
+      "density": 8960,
+      "specific_heat": 385
+    },
+    "styrofoam": {
+      "alpha": 5,
+      "conductivity": 0.035,
+      "density": 20,
+      "specific_heat": 1300
+    },
+    "steel": {
+      "alpha": 300,
+      "conductivity": 25,
+      "density": 7800,
+      "specific_heat": 700
+    }
+  }
+}

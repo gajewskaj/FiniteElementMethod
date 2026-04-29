@@ -1,9 +1,9 @@
 from src.helpers.config import logger, Settings
 
-if Settings.MatricesCalculation.num_of_shape_functions == 3:
+if Settings.MatricesCalculation.DOF == 3:
     from src.uel.universal_element_triangle import UniversalElementTriangle
     u_el = UniversalElementTriangle(3)
-elif Settings.MatricesCalculation.num_of_shape_functions == 4:
+elif Settings.MatricesCalculation.DOF == 4:
     from src.uel.universal_element_quadrangle import UniversalElementQuadrangle
     u_el = UniversalElementQuadrangle(4)
 else:

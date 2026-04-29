@@ -4,7 +4,7 @@ from jinja2 import  Environment, FileSystemLoader, Template
 import numpy as np
 
 from src.helpers.config import logger, Settings
-from src.grid.grid import Grid
+from src.mesh.mesh import Mesh
 
 def initialize_jinja_environment(template_filepath: str) -> Template:
     environment = Environment(loader=FileSystemLoader(Settings.templates_path))
@@ -17,18 +17,18 @@ def generate_file(data: dict, template: Template, dest_dir: str, output_fileame:
     with open(output_filepath, mode="w", encoding="utf-8") as file:
         file.write(content)
 
-def generate_vtk_files(output_dir_path: str, grid: Grid, temperatures: list[np.ndarray]) -> None:
+def generate_vtk_files(output_dir_path: str, mesh: Mesh, temperatures: list[np.ndarray]) -> None:
     num_files: int = len(temperatures)
-    element_nodes_number: list[int] = [Settings.MatricesCalculation.num_of_shape_functions] * len(grid.elements_id)
+    element_nodes_number: list[int] = [Settings.MatricesCalculation.DOF] * len(mesh.elements_id)
 
     data: dict = {}
-    data["nodes_number"] = len(grid.nodes_id)
-    data["nodes_x"] = grid.nodes_x
-    data["nodes_y"] = grid.nodes_y
-    data["elements_number"] = len(grid.elements_id)
-    data["elements_node_ids"] = grid.elements_node_ids
+    data["nodes_number"] = len(mesh.nodes_id)
+    data["nodes_x"] = mesh.nodes_x
+    data["nodes_y"] = mesh.nodes_y
+    data["elements_number"] = len(mesh.elements_id)
+    data["elements_node_ids"] = mesh.elements_node_ids
     data["element_nodes_number"] = element_nodes_number
-    data["sum_elements_data"] = len(grid.elements_id) + sum(element_nodes_number)
+    data["sum_elements_data"] = len(mesh.elements_id) + sum(element_nodes_number)
 
     template: Template = initialize_jinja_environment("temperatures.vtk.jinja")
     for i in range(0, num_files):

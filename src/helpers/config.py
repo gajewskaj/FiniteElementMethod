@@ -13,7 +13,7 @@ class Settings:
     scripts_path: str = os.path.join(project_path, "scripts")
     class MatricesCalculation:
         use_gpu: bool = False
-        num_of_shape_functions: int = 4
+        DOF: int = 4
         threads_per_block: int = 512
     class Solver:
         use_cupy: bool = False
