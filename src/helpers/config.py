@@ -14,7 +14,10 @@ class Settings:
     class MatricesCalculation:
         use_gpu: bool = False
         DOF: int = 4
-        threads_per_block: int = 512
+        TPB: int = 512
+        MAX_MATERIALS: int = 20
+        MATERIAL_QUAL: int = 4
+        MAX_IP: int = 25
     class Solver:
         use_cupy: bool = False
         use_cudss: bool = False

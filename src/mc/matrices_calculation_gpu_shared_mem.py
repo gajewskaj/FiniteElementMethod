@@ -10,6 +10,9 @@ from src.uel.universal_element import u_el
 
 DOF = Settings.MatricesCalculation.DOF
 TPB = Settings.MatricesCalculation.TPB
+MAX_MATERIALS = Settings.MatricesCalculation.MAX_MATERIALS
+MATERIAL_QUAL = Settings.MatricesCalculation.MATERIAL_QUAL
+MAX_IP = Settings.MatricesCalculation.MAX_IP
 
 @measure_time
 def calculate_and_assemble_matrices(grid: Mesh) -> None:
@@ -130,42 +133,56 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_mat
                                materials,
                                H_val, H_row, H_col,
                                C_val, C_row, C_col):
+    materials_shared = cuda.shared.array((MAX_MATERIALS, MATERIAL_QUAL), np.float64)
+    weights_shared = cuda.shared.array(MAX_IP, np.float64)
+    local_idx = cuda.threadIdx.x
+
+    if local_idx == 0:
+        for material_idx in range(len(materials)):
+            for k in range(MATERIAL_QUAL):
+                materials_shared[material_idx, k] = materials[material_idx, k]
+
+    if local_idx < len(weights):
+        weights_shared[local_idx] = weights[local_idx]
+    cuda.syncthreads()
+
     i = cuda.grid(1)
-    if i < len(H_val)//DOF//DOF:
-        x_coords = cuda.local.array(DOF, np.float64)
-        y_coords = cuda.local.array(DOF, np.float64)
-        H = cuda.local.array((DOF, DOF), np.float64)
-        C = cuda.local.array((DOF, DOF), np.float64)
-        dN_dx = cuda.local.array(DOF, np.float64)
-        dN_dy = cuda.local.array(DOF, np.float64)
-        c = materials[elements_material_ids[i] - 1, 1]
-        d = materials[elements_material_ids[i] - 1, 2]
-        sh= materials[elements_material_ids[i] - 1, 3]
-        for j in range(DOF):
-            x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
-            y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
-        for j in range(n):
-            dx_dxi = _interpolate(dN_dxi[j], x_coords)
-            dx_deta = _interpolate(dN_deta[j], x_coords)
-            dy_dxi = _interpolate(dN_dxi[j], y_coords)
-            dy_deta = _interpolate(dN_deta[j], y_coords)
-            jacobian_det = _calculate_jacobian_and_global_shape_derivatives(dN_dxi[j], dN_deta[j],
-                                                                            dx_dxi, dx_deta, dy_dxi, dy_deta,
-                                                                            dN_dx, dN_dy)
-            _calculate_H_C_for_integration_point(weights[j], N[j],
-                                                 jacobian_det, dN_dx, dN_dy,
-                                                 c, d, sh,
-                                                 H, C)
-        # Assembly
-        for j in range(DOF):
-            for k in range(DOF):
-                idx = i*DOF*DOF+j*DOF+k
-                H_val[idx] = H[j, k]
-                H_row[idx] = elements_node_ids[i, j] - 1
-                H_col[idx] = elements_node_ids[i, k] - 1
-                C_val[idx] = C[j, k]
-                C_row[idx] = elements_node_ids[i, j] - 1
-                C_col[idx] = elements_node_ids[i, k] - 1
+    if i >= len(H_val)//DOF//DOF:
+        return
+    x_coords = cuda.local.array(DOF, np.float64)
+    y_coords = cuda.local.array(DOF, np.float64)
+    H = cuda.local.array((DOF, DOF), np.float64)
+    C = cuda.local.array((DOF, DOF), np.float64)
+    dN_dx = cuda.local.array(DOF, np.float64)
+    dN_dy = cuda.local.array(DOF, np.float64)
+    c = materials_shared[elements_material_ids[i] - 1, 1]
+    d = materials_shared[elements_material_ids[i] - 1, 2]
+    sh= materials_shared[elements_material_ids[i] - 1, 3]
+    for j in range(DOF):
+        x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
+        y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
+    for j in range(n):
+        dx_dxi = _interpolate(dN_dxi[j], x_coords)
+        dx_deta = _interpolate(dN_deta[j], x_coords)
+        dy_dxi = _interpolate(dN_dxi[j], y_coords)
+        dy_deta = _interpolate(dN_deta[j], y_coords)
+        jacobian_det = _calculate_jacobian_and_global_shape_derivatives(dN_dxi[j], dN_deta[j],
+                                                                        dx_dxi, dx_deta, dy_dxi, dy_deta,
+                                                                        dN_dx, dN_dy)
+        _calculate_H_C_for_integration_point(weights_shared[j], N[j],
+                                                jacobian_det, dN_dx, dN_dy,
+                                                c, d, sh,
+                                                H, C)
+    # Assembly
+    for j in range(DOF):
+        for k in range(DOF):
+            idx = i*DOF*DOF+j*DOF+k
+            H_val[idx] = H[j, k]
+            H_row[idx] = elements_node_ids[i, j] - 1
+            H_col[idx] = elements_node_ids[i, k] - 1
+            C_val[idx] = C[j, k]
+            C_row[idx] = elements_node_ids[i, j] - 1
+            C_col[idx] = elements_node_ids[i, k] - 1
 
 @cuda.jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', device=True)
 def _calculate_for_surface(n, weights, surface,
@@ -191,29 +208,43 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, 
                                  materials, ambient_temp,
                                  Hbc_val, Hbc_row, Hbc_col,
                                  P_global):
+    materials_shared = cuda.shared.array((MAX_MATERIALS, 4), np.float64)
+    surface_weights_shared = cuda.shared.array(MAX_IP, np.float64)
+    local_idx = cuda.threadIdx.x
+
+    if local_idx == 0:
+        for material_idx in range(len(materials)):
+            for k in range(4):
+                materials_shared[material_idx, k] = materials[material_idx, k]
+
+    if local_idx < len(weights):
+        surface_weights_shared[local_idx] = weights[local_idx]
+    cuda.syncthreads()
+
     i = cuda.grid(1)
-    if i < len(Hbc_val)//DOF//DOF:
-        x_coords = cuda.local.array(DOF, np.float64)
-        y_coords = cuda.local.array(DOF, np.float64)
-        bc = cuda.local.array(DOF, np.int64)
-        P = cuda.local.array(DOF, np.float64)
-        Hbc = cuda.local.array((DOF, DOF), np.float64)
-        alpha = materials[elements_material_ids[i] - 1, 0]
-        for j in range(DOF):
-            x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
-            y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
-            bc[j] = nodes_bc[elements_node_ids[i, j] - 1]
-        for j in range(DOF):
-            _calculate_for_surface(n, weights, surfaces[j],
-                                   x_coords[j], y_coords[j], bc[j],
-                                   x_coords[(j+1)%DOF], y_coords[(j+1)%DOF], bc[(j+1)%DOF],
-                                   alpha, ambient_temp,
-                                   Hbc, P)
-        # Assembly
-        for j in range(DOF):
-            cuda.atomic.add(P_global, elements_node_ids[i, j] - 1, P[j])
-            for k in range(DOF):
-                idx = i*DOF*DOF+j*DOF+k
-                Hbc_val[idx] = Hbc[j, k]
-                Hbc_row[idx] = elements_node_ids[i, j] - 1
-                Hbc_col[idx] = elements_node_ids[i, k] - 1
+    if i >= len(Hbc_val)//DOF//DOF:
+        return
+    x_coords = cuda.local.array(DOF, np.float64)
+    y_coords = cuda.local.array(DOF, np.float64)
+    bc = cuda.local.array(DOF, np.int64)
+    P = cuda.local.array(DOF, np.float64)
+    Hbc = cuda.local.array((DOF, DOF), np.float64)
+    alpha = materials_shared[elements_material_ids[i] - 1, 0]
+    for j in range(DOF):
+        x_coords[j] = nodes_x[elements_node_ids[i, j] - 1]
+        y_coords[j] = nodes_y[elements_node_ids[i, j] - 1]
+        bc[j] = nodes_bc[elements_node_ids[i, j] - 1]
+    for j in range(DOF):
+        _calculate_for_surface(n, surface_weights_shared, surfaces[j],
+                                x_coords[j], y_coords[j], bc[j],
+                                x_coords[(j+1)%DOF], y_coords[(j+1)%DOF], bc[(j+1)%DOF],
+                                alpha, ambient_temp,
+                                Hbc, P)
+    # Assembly
+    for j in range(DOF):
+        cuda.atomic.add(P_global, elements_node_ids[i, j] - 1, P[j])
+        for k in range(DOF):
+            idx = i*DOF*DOF+j*DOF+k
+            Hbc_val[idx] = Hbc[j, k]
+            Hbc_row[idx] = elements_node_ids[i, j] - 1
+            Hbc_col[idx] = elements_node_ids[i, k] - 1

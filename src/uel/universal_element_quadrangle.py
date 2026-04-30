@@ -1,11 +1,9 @@
 from math import sqrt
 import numpy as np
 
-from src.helpers.config import logger, Settings
 from src.uel.gaussian_quadrature import GaussianQuadrature
 
-NUM_DOF = 4
-NUM_SURFACES = NUM_DOF
+DOF = 4
 
 # Shape functions
 N = [
@@ -38,10 +36,10 @@ class UniversalElementQuadrangle():
         self.eta = np.empty(n)
         self.weights = np.empty(n)
 
-        self.dN_dxi = np.empty((self.n, NUM_DOF))
-        self.dN_deta = np.empty((self.n, NUM_DOF))
-        self.N = np.empty((self.n, NUM_DOF))
-        self.surfaces = np.empty((NUM_SURFACES, self.quadrature_1d.n, NUM_DOF))
+        self.dN_dxi = np.empty((self.n, DOF))
+        self.dN_deta = np.empty((self.n, DOF))
+        self.N = np.empty((self.n, DOF))
+        self.surfaces = np.empty((DOF, self.quadrature_1d.n, DOF))
 
         self._init_integration_points_and_weights()
         self._fill_shape_functions_and_derivatives()
@@ -61,7 +59,7 @@ class UniversalElementQuadrangle():
                 self.dN_deta[i, j] = dN_deta[j](self.xi[i])
 
     def _fill_shape_functions_for_surfaces(self) -> None:
-        for i in range(NUM_SURFACES):
+        for i in range(DOF):
             if i % 2 == 0:
                 xi_list = np.array(self.quadrature_1d.points)
                 eta_list = np.full(self.quadrature_1d.n, i-1)
@@ -69,5 +67,5 @@ class UniversalElementQuadrangle():
                 eta_list = np.array(self.quadrature_1d.points)
                 xi_list = np.full(self.quadrature_1d.n, 2-i)
             for j in range(self.quadrature_1d.n):
-                for k in range(NUM_DOF):
+                for k in range(DOF):
                     self.surfaces[i, j, k] = N[k](xi_list[j], eta_list[j])

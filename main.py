@@ -61,7 +61,7 @@ def run() -> None:
 
         # Generate .vtk files for ParaView
         from src.helpers.vtk_generator import generate_vtk_files
-        generate_vtk_files(output_dir_path, mesh, temperatures)
+        # generate_vtk_files(output_dir_path, mesh, temperatures)
     except Exception as e:
         config.logger.error(f"Script execution failed due to an error:\n{e}", exc_info=True)
 

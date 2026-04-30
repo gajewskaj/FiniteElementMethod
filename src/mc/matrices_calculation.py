@@ -4,7 +4,7 @@ from src.mesh.mesh import Mesh
 def calculate_and_assemble_matrices(mesh: Mesh) -> None:
     if Settings.MatricesCalculation.use_gpu:
         logger.info(f"Calculating and assembling matrices using GPU.")
-        from src.mc.matrices_calculation_gpu import calculate_and_assemble_matrices
+        from src.mc.matrices_calculation_gpu_shared_mem import calculate_and_assemble_matrices
     else:
         logger.info(f"Calculating and assembling matrices using CPU.")
         from src.mc.matrices_calculation_cpu import calculate_and_assemble_matrices

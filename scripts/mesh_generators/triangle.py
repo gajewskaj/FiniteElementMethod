@@ -3,10 +3,10 @@ import os
 import sys
 import gmsh
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.helpers.config import Settings
 
-def parse_arguments() -> tuple[int, int, str]:
+def parse_arguments() -> tuple[int, int]:
     parser = argparse.ArgumentParser(description="Mesh generator")
     parser.add_argument("--x-elem", type=int, default=100,
                         help="Number of x elements")
@@ -19,11 +19,12 @@ num_elements_x, num_elements_y = parse_arguments()
 filename = f"{num_elements_x}x{num_elements_y}_tri.msh"
 
 min_x = 0
-max_x = 0.100000001
-min_y = -0.0949999988
-max_y = 0.00499999989
+max_x = 0.1
+min_y = -0.095
+max_y = 0.005
 
 gmsh.initialize()
+gmsh.option.setNumber("General.Terminal", 1)
 
 gmsh.model.add(filename.strip(".msh"))
 
@@ -49,7 +50,18 @@ gmsh.model.geo.mesh.setTransfiniteSurface(surface)
 
 gmsh.model.geo.synchronize()
 
+pg = gmsh.model.addPhysicalGroup(2, [surface])
+gmsh.model.setPhysicalName(2, pg, "material")
+
+borders: list[int] = [l1, l2, l3, l4]
+pg_bc = gmsh.model.addPhysicalGroup(1, borders)
+gmsh.model.setPhysicalName(1, pg_bc, "bc")
+
+gmsh.model.mesh.setOrder(1)
+
 gmsh.model.mesh.generate(2)
+
+gmsh.fltk.run()
 
 gmsh.write(os.path.join(Settings.input_path, filename))
 
