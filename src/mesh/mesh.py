@@ -35,6 +35,9 @@ class Mesh:
         self.elements_id, self.elements_node_ids, self.elements_material_ids = self.read_elements()
         gmsh.finalize()
 
+        logger.info(f"Number of elements: {len(self.elements_id)}")
+        logger.info(f"Number of nodes: {len(self.nodes_id)}")
+
         matrix_size = len(self.elements_id) * Settings.MatricesCalculation.DOF * Settings.MatricesCalculation.DOF
         self.P = np.zeros(len(self.nodes_id), dtype=np.float64)
         self.H_val = np.zeros(matrix_size, dtype=np.float64)

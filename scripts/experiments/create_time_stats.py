@@ -7,14 +7,14 @@ from glob import glob
 
 import prettytable
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from src.helpers.config import output_path, scripts_path
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+from src.helpers.config import Settings
 
 def parse_arguments() -> str:
     parser = argparse.ArgumentParser(description="Time statistics")
     parser.add_argument("--file", type=str, default="time_stats.csv",
                         help="Output filename")
-    parser.add_argument("--log-dir-template", type=str, default="*", choices=["*", "*_cpu*", "*_gpu*"],
+    parser.add_argument("--log-dir-template", type=str, default="*",
                         help="Output directory name template")
     args = parser.parse_args()
     return args.file, args.log_dir_template
@@ -80,14 +80,14 @@ def print_table(column_names: list[str], rows: list[list[str]]) -> None:
     print(table)
 
 def save_to_csv(filename: str, column_names: list[str], rows: list[list[str]]) -> None:
-    with open(os.path.join(scripts_path, filename), "w", newline="") as f:
+    with open(os.path.join(Settings.scripts_path, filename), "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(column_names)
         writer.writerows(rows)
 
 output_filename, log_dir_template = parse_arguments()
-for directory in glob(output_path + f"/{log_dir_template}"):
-    for filename in glob(os.path.join(output_path, directory, "*.log")):
+for directory in glob(Settings.output_path + f"/{log_dir_template}"):
+    for filename in glob(os.path.join(Settings.output_path, directory, "*.log")):
         parse_log_file(filename)
 column_names, rows = interpret_data()
 print_table(column_names, rows)

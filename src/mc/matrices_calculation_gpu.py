@@ -12,13 +12,13 @@ DOF = Settings.MatricesCalculation.DOF
 TPB = Settings.MatricesCalculation.TPB
 
 @measure_time
-def calculate_and_assemble_matrices(grid: Mesh) -> None:
+def calculate_and_assemble_matrices(mesh: Mesh) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
-    data_H_C, data_Hbc_P = _send_to_gpu(stream_H_C, stream_Hbc_P, grid)
-    blocks_per_grid = (len(grid.elements_id) + TPB - 1) // TPB
+    data_H_C, data_Hbc_P = _send_to_gpu(stream_H_C, stream_Hbc_P, mesh)
+    blocks_per_grid = (len(mesh.elements_id) + TPB - 1) // TPB
     _calculate(data_H_C, data_Hbc_P, stream_H_C, stream_Hbc_P, blocks_per_grid)
-    _retrieve_from_gpu(data_H_C, data_Hbc_P, grid)
+    _retrieve_from_gpu(data_H_C, data_Hbc_P, mesh)
 
 @measure_time
 def _calculate(data_H_C: tuple, data_Hbc_P: tuple,
@@ -30,9 +30,9 @@ def _calculate(data_H_C: tuple, data_Hbc_P: tuple,
     stream_Hbc_P.synchronize()
 
 @measure_time
-def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Mesh) -> tuple:
+def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, mesh: Mesh) -> tuple:
     # Materials
-    materials_cuda = cuda.to_device(grid.global_data.materials)
+    materials_cuda = cuda.to_device(mesh.global_data.materials)
     # Universal element properties
     weights_cuda = cuda.to_device(u_el.weights, stream=stream_H_C)
     surface_weights_cuda = cuda.to_device(u_el.quadrature_1d.weights, stream=stream_Hbc_P)
@@ -41,22 +41,22 @@ def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Mesh)
     N_cuda = cuda.to_device(u_el.N, stream=stream_H_C)
     surfaces_cuda = cuda.to_device(u_el.surfaces, stream=stream_Hbc_P)
     # Grid elements
-    nodes_x_cuda = cuda.to_device(grid.nodes_x)
-    nodes_y_cuda = cuda.to_device(grid.nodes_y)
-    nodes_bc_cuda = cuda.to_device(grid.nodes_bc)
-    elements_node_ids_cuda = cuda.to_device(grid.elements_node_ids)
-    elements_material_ids_cuda = cuda.to_device(grid.elements_material_ids)
+    nodes_x_cuda = cuda.to_device(mesh.nodes_x)
+    nodes_y_cuda = cuda.to_device(mesh.nodes_y)
+    nodes_bc_cuda = cuda.to_device(mesh.nodes_bc)
+    elements_node_ids_cuda = cuda.to_device(mesh.elements_node_ids)
+    elements_material_ids_cuda = cuda.to_device(mesh.elements_material_ids)
     # Local matrices
-    global_H_values_cuda = cuda.to_device(grid.H_val, stream=stream_H_C)
-    global_H_row_cuda = cuda.to_device(grid.H_row, stream=stream_H_C)
-    global_H_col_cuda = cuda.to_device(grid.H_col, stream=stream_H_C)
-    global_C_values_cuda = cuda.to_device(grid.C_val, stream=stream_H_C)
-    global_C_row_cuda = cuda.to_device(grid.C_row, stream=stream_H_C)
-    global_C_col_cuda = cuda.to_device(grid.C_col, stream=stream_H_C)
-    global_Hbc_values_cuda = cuda.to_device(grid.Hbc_val, stream=stream_Hbc_P)
-    global_Hbc_row_cuda = cuda.to_device(grid.Hbc_row, stream=stream_Hbc_P)
-    global_Hbc_col_cuda = cuda.to_device(grid.Hbc_col, stream=stream_Hbc_P)
-    global_P_cuda = cuda.to_device(grid.P, stream=stream_Hbc_P)
+    global_H_values_cuda = cuda.to_device(mesh.H_val, stream=stream_H_C)
+    global_H_row_cuda = cuda.to_device(mesh.H_row, stream=stream_H_C)
+    global_H_col_cuda = cuda.to_device(mesh.H_col, stream=stream_H_C)
+    global_C_values_cuda = cuda.to_device(mesh.C_val, stream=stream_H_C)
+    global_C_row_cuda = cuda.to_device(mesh.C_row, stream=stream_H_C)
+    global_C_col_cuda = cuda.to_device(mesh.C_col, stream=stream_H_C)
+    global_Hbc_values_cuda = cuda.to_device(mesh.Hbc_val, stream=stream_Hbc_P)
+    global_Hbc_row_cuda = cuda.to_device(mesh.Hbc_row, stream=stream_Hbc_P)
+    global_Hbc_col_cuda = cuda.to_device(mesh.Hbc_col, stream=stream_Hbc_P)
+    global_P_cuda = cuda.to_device(mesh.P, stream=stream_Hbc_P)
     return (
         nodes_x_cuda, nodes_y_cuda, elements_node_ids_cuda, elements_material_ids_cuda,
         u_el.n, weights_cuda, N_cuda,
@@ -68,23 +68,23 @@ def _send_to_gpu(stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream, grid: Mesh)
         nodes_x_cuda, nodes_y_cuda, nodes_bc_cuda, elements_node_ids_cuda, elements_material_ids_cuda,
         u_el.quadrature_1d.n, surface_weights_cuda, surfaces_cuda,
         materials_cuda,
-        grid.global_data.ambient_temp,
+        mesh.global_data.ambient_temp,
         global_Hbc_values_cuda, global_Hbc_row_cuda, global_Hbc_col_cuda,
         global_P_cuda
         )
 
 @measure_time
-def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, grid: Mesh) -> None:
-    grid.H_val = data_H_C[-6].copy_to_host().astype(np.float64)
-    grid.H_row = data_H_C[-5].copy_to_host()
-    grid.H_col = data_H_C[-4].copy_to_host()
-    grid.C_val = data_H_C[-3].copy_to_host().astype(np.float64)
-    grid.C_row = data_H_C[-2].copy_to_host()
-    grid.C_col = data_H_C[-1].copy_to_host()
-    grid.Hbc_val = data_Hbc_P[-4].copy_to_host().astype(np.float64)
-    grid.Hbc_row = data_Hbc_P[-3].copy_to_host()
-    grid.Hbc_col = data_Hbc_P[-2].copy_to_host()
-    grid.P = data_Hbc_P[-1].copy_to_host()
+def _retrieve_from_gpu(data_H_C: tuple, data_Hbc_P: tuple, mesh: Mesh) -> None:
+    mesh.H_val = data_H_C[-6].copy_to_host().astype(np.float64)
+    mesh.H_row = data_H_C[-5].copy_to_host()
+    mesh.H_col = data_H_C[-4].copy_to_host()
+    mesh.C_val = data_H_C[-3].copy_to_host().astype(np.float64)
+    mesh.C_row = data_H_C[-2].copy_to_host()
+    mesh.C_col = data_H_C[-1].copy_to_host()
+    mesh.Hbc_val = data_Hbc_P[-4].copy_to_host().astype(np.float64)
+    mesh.Hbc_row = data_Hbc_P[-3].copy_to_host()
+    mesh.Hbc_col = data_Hbc_P[-2].copy_to_host()
+    mesh.P = data_Hbc_P[-1].copy_to_host()
 
 @cuda.jit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])', device=True)
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,

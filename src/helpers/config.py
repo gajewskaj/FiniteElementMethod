@@ -16,7 +16,6 @@ class Settings:
         DOF: int = 4
         TPB: int = 512
         MAX_MATERIALS: int = 20
-        MATERIAL_QUAL: int = 4
         MAX_IP: int = 25
     class Solver:
         use_cupy: bool = False
