@@ -5,6 +5,7 @@ import os
 from src.helpers.config import logger, Settings
 
 import numpy as np
+import cupy as cp
 
 class GlobalData:
     def __init__(self, data_path: str):
@@ -35,20 +36,8 @@ class Mesh:
         self.elements_id, self.elements_node_ids, self.elements_material_ids = self.read_elements()
         gmsh.finalize()
 
-        logger.info(f"Number of elements: {len(self.elements_id)}")
-        logger.info(f"Number of nodes: {len(self.nodes_id)}")
-
-        matrix_size = len(self.elements_id) * Settings.MatricesCalculation.DOF * Settings.MatricesCalculation.DOF
-        self.P = np.zeros(len(self.nodes_id), dtype=np.float64)
-        self.H_val = np.zeros(matrix_size, dtype=np.float64)
-        self.H_row = np.zeros(matrix_size, dtype=np.int64)
-        self.H_col = np.zeros(matrix_size, dtype=np.int64)
-        self.C_val = np.zeros(matrix_size, dtype=np.float64)
-        self.C_row = np.zeros(matrix_size, dtype=np.int64)
-        self.C_col = np.zeros(matrix_size, dtype=np.int64)
-        self.Hbc_val = np.zeros(matrix_size, dtype=np.float64)
-        self.Hbc_row = np.zeros(matrix_size, dtype=np.int64)
-        self.Hbc_col = np.zeros(matrix_size, dtype=np.int64)
+        logger.info(f"Number of elements: {len(self.elements_id)}.")
+        logger.info(f"Number of nodes: {len(self.nodes_id)}.")
 
     def read_nodes(self) -> tuple[np.ndarray[int], np.ndarray[float], np.ndarray[float], np.ndarray[int]]:
         node_tags, coords, _ = gmsh.model.mesh.getNodes()

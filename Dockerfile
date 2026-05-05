@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     build-essential \
+    gmsh \
     libcudss0-cuda-12 \
     && rm -rf /var/lib/apt/lists/*
 

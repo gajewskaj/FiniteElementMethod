@@ -145,7 +145,7 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_mat
     cuda.syncthreads()
 
     i = cuda.grid(1)
-    if i >= len(H_val)//DOF//DOF:
+    if i >= len(elements_material_ids):
         return
     x_coords = cuda.local.array(DOF, np.float64)
     y_coords = cuda.local.array(DOF, np.float64)
@@ -218,7 +218,7 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, 
     cuda.syncthreads()
 
     i = cuda.grid(1)
-    if i >= len(Hbc_val)//DOF//DOF:
+    if i >= len(elements_material_ids):
         return
     x_coords = cuda.local.array(DOF, np.float64)
     y_coords = cuda.local.array(DOF, np.float64)

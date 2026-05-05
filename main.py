@@ -49,11 +49,13 @@ def run() -> None:
         from src.mesh.mesh import Mesh
         mesh = Mesh(mesh_filepath, data_filepath)
 
+        from src.mc.out import OutMatrices
         from src.mc.matrices_calculation import calculate_and_assemble_matrices
         from src.soe.temperature_simulation import simulate
 
-        calculate_and_assemble_matrices(mesh)
-        times, temperatures = simulate(mesh)
+        out_mat = OutMatrices(mesh)
+        calculate_and_assemble_matrices(mesh, out_mat)
+        times, temperatures = simulate(mesh, out_mat)
 
         config.logger.info(f"Time        Min temp        Max temp")
         for i in range(len(temperatures)):

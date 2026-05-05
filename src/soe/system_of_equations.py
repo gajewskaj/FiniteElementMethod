@@ -3,21 +3,24 @@ from abc import ABC, abstractmethod
 import numpy as np
 import scipy.sparse as scipy_sparse
 from src.mesh.mesh import Mesh
+from src.mc.out import OutMatrices
 
 class SystemOfEquations(ABC):
     @abstractmethod
-    def __init__(self, grid: Mesh):
-        self.dim: int = len(grid.nodes_id)
-        self.step: float = grid.global_data.simulation_step_time
-        self.grid = grid
+    def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
+        self.dim: int = len(mesh.nodes_id)
+        self.step: float = mesh.global_data.simulation_step_time
+        self.mesh = mesh
+        self.out_mat = out_mat
 
     @abstractmethod
     def _prepare_data(self) -> tuple:
-        data_C, row_C, col_C = self.grid.C_val, self.grid.C_row, self.grid.C_col
-        P = self.grid.P.reshape(-1, 1)
-        data_H = np.concatenate((self.grid.H_val, self.grid.Hbc_val))
-        row_H = np.concatenate((self.grid.H_row, self.grid.Hbc_row))
-        col_H = np.concatenate((self.grid.H_col, self.grid.Hbc_col))
+        self.out_mat.to_numpy()
+        data_C, row_C, col_C = self.out_mat.C_val_out, self.out_mat.C_row_out, self.out_mat.C_col_out
+        P = self.out_mat.P_out.reshape(-1, 1)
+        data_H = np.concatenate((self.out_mat.H_val_out, self.out_mat.Hbc_val_out))
+        row_H = np.concatenate((self.out_mat.H_row_out, self.out_mat.Hbc_row_out))
+        col_H = np.concatenate((self.out_mat.H_col_out, self.out_mat.Hbc_col_out))
         H = scipy_sparse.csr_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim))
         C = scipy_sparse.csr_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
         return H, C, P
