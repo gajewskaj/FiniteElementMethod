@@ -57,7 +57,7 @@ def _calculate_H_C_for_integration_point(weight, N,
             np.dot(dN_dy, dN_dy.transpose()))*jacobian_det*weight
     C += sh*d*(np.dot(N, N.transpose()))*jacobian_det*weight
 
-@njit('void(float64[:], float64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int64[:], int64[:], float64[:], int64[:], int64[:])', parallel=True)
+@njit('void(float64[:], float64[:], int32[:,:], int32[:], int32, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:])', parallel=True)
 def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
@@ -102,7 +102,7 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_mat
                 C_row[idx] = elements_node_ids[i, j] - 1
                 C_col[idx] = elements_node_ids[i, k] - 1
 
-@njit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])')
+@njit('void(int32, float64[:], float64[:,:], float64, float64, int32, float64, float64, int32, float64, float64, float64[:,:], float64[:])')
 def _calculate_for_surface(n, weights, surface,
                            node1_x, node1_y, node1_bc,
                            node2_x, node2_y, node2_bc,
@@ -117,7 +117,7 @@ def _calculate_for_surface(n, weights, surface,
         Hbc += np.dot(N, N.transpose())*weights[i]*alpha*jacobian_det
         P += N*weights[i]*alpha*ambient_temp*jacobian_det
 
-@njit('void(float64[:], float64[:], int64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int64[:], int64[:], float64[:])', parallel=True)
+@njit('void(float64[:], float64[:], int32[:], int32[:,:], int32[:], int32, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int32[:], int32[:], float64[:])', parallel=True)
 def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
                                  n, weights, surfaces,
                                  materials, ambient_temp,

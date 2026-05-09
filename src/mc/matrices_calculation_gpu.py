@@ -102,7 +102,7 @@ def _calculate_H_C_for_integration_point(weight, N,
             H[i, j] += (dN_dx[i] * dN_dx[j] + dN_dy[i] * dN_dy[j]) * factor_H
             C[i, j] += N[i] * N[j] * factor_C
 
-@cuda.jit('void(float64[:], float64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int64[:], int64[:], float64[:], int64[:], int64[:])')
+@cuda.jit('void(float64[:], float64[:], int32[:,:], int32[:], int32, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:])')
 def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
@@ -147,7 +147,7 @@ def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_mat
             C_row[idx] = elements_node_ids[i, j] - 1
             C_col[idx] = elements_node_ids[i, k] - 1
 
-@cuda.jit('void(int64, float64[:], float64[:,:], float64, float64, int64, float64, float64, int64, float64, float64, float64[:,:], float64[:])', device=True)
+@cuda.jit('void(int32, float64[:], float64[:,:], float64, float64, int32, float64, float64, int32, float64, float64, float64[:,:], float64[:])', device=True)
 def _calculate_for_surface(n, weights, surface,
                            node1_x, node1_y, node1_bc,
                            node2_x, node2_y, node2_bc,
@@ -165,7 +165,7 @@ def _calculate_for_surface(n, weights, surface,
             for j in range(DOF):
                 Hbc[k, j] += N[k] * N[j] * factor
 
-@cuda.jit('void(float64[:], float64[:], int64[:], int64[:,:], int64[:], int64, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int64[:], int64[:], float64[:])')
+@cuda.jit('void(float64[:], float64[:], int32[:], int32[:,:], int32[:], int32, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int32[:], int32[:], float64[:])')
 def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
                                  n, weights, surfaces,
                                  materials, ambient_temp,
@@ -176,7 +176,7 @@ def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, 
         return
     x_coords = cuda.local.array(DOF, np.float64)
     y_coords = cuda.local.array(DOF, np.float64)
-    bc = cuda.local.array(DOF, np.int64)
+    bc = cuda.local.array(DOF, np.int32)
     P = cuda.local.array(DOF, np.float64)
     Hbc = cuda.local.array((DOF, DOF), np.float64)
     alpha = materials[elements_material_ids[i] - 1, 0]

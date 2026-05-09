@@ -8,3 +8,4 @@ nvmath_python
 prettytable
 scipy
 nvidia-cudss-cu12
+nvtx

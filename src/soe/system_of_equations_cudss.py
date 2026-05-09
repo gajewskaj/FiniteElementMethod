@@ -1,6 +1,8 @@
 import cupy as cp
+import cupyx.scipy.sparse as cupy_sparse
 import nvmath
 from nvmath.bindings import cudss as cudss
+import nvtx
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -12,6 +14,7 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
         self._handle = cudss.create()
         self._config = cudss.config_create()
         self._data = cudss.data_create(self._handle)
+        # self.A = cupy_sparse.tril(self.A).tocsr()
 
         self.A_cudss = cudss.matrix_create_csr(
             nrows=self.A.shape[0],
@@ -23,8 +26,8 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
             values=self.A.data.data.ptr,
             index_type=nvmath.CudaDataType.CUDA_R_32I,
             value_type=nvmath.CudaDataType.CUDA_R_64F,
-            mtype=cudss.MatrixType.GENERAL,
-            mview=cudss.MatrixViewType.FULL,
+            mtype=cudss.MatrixType.GENERAL, # or SPD
+            mview=cudss.MatrixViewType.FULL, # or LOWER
             index_base=cudss.IndexBase.ZERO,
         )
 
@@ -45,9 +48,10 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
             value_type=nvmath.CudaDataType.CUDA_R_64F,
             layout=cudss.Layout.COL_MAJOR,
         )
-
-        cudss.execute(self._handle, cudss.Phase.ANALYSIS, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
-        cudss.execute(self._handle, cudss.Phase.FACTORIZATION, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
+        with nvtx.annotate("cudss_analysis", color="yellow"):
+            cudss.execute(self._handle, cudss.Phase.ANALYSIS, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
+        with nvtx.annotate("cudss_factorization", color="red"):
+            cudss.execute(self._handle, cudss.Phase.FACTORIZATION, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
 
         def solve_factorized(b: cp.ndarray) -> cp.ndarray:
             b = cp.asarray(b, dtype=cp.float64)

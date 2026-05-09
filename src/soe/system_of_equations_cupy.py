@@ -2,6 +2,7 @@ import cupy as cp
 import cupyx.scipy.sparse as cupy_sparse
 import cupyx.scipy.sparse.linalg as cupy_linalg
 import numpy as np
+import nvtx
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -37,12 +38,17 @@ class SystemOfEquationsCuPy(SystemOfEquations):
 
     @measure_time
     def _factorize(self) -> callable:
-        return cupy_linalg.factorized(self.A)
+        with nvtx.annotate("cupy_factorization", color="red"):
+            return cupy_linalg.factorized(self.A)
 
     @measure_time
     def solve(self) -> cp.ndarray:
-        b = self.P + self.C.dot(self.t0)/self.step
-        result: cp.ndarray = self.solve_factorized(b)
+        with nvtx.annotate("b_build", color="blue"):
+            b = self.P + self.C.dot(self.t0)/self.step
+
+        with nvtx.annotate("solve", color="green"):
+            result: cp.ndarray = self.solve_factorized(b)
+
         self.t0 = result
         return result
 

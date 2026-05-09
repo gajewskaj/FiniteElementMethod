@@ -42,10 +42,10 @@ class Mesh:
     def read_nodes(self) -> tuple[np.ndarray[int], np.ndarray[float], np.ndarray[float], np.ndarray[int]]:
         node_tags, coords, _ = gmsh.model.mesh.getNodes()
         nodes_number = len(node_tags)
-        nodes_id = np.empty(nodes_number, dtype=np.int64)
+        nodes_id = np.empty(nodes_number, dtype=np.int32)
         nodes_x = np.empty(nodes_number, dtype=np.float64)
         nodes_y = np.empty(nodes_number, dtype=np.float64)
-        nodes_bc = np.empty(nodes_number, dtype=np.int64)
+        nodes_bc = np.empty(nodes_number, dtype=np.int32)
         for i, tag in enumerate(node_tags):
             nodes_id[tag - 1] = int(tag)
             nodes_x[tag - 1] = float(coords[3 * i])
@@ -78,9 +78,9 @@ class Mesh:
                         elements_id.append(int(tag))
                         elements_node_ids.append(node_ids)
                         elements_material_ids.append(phys_tag)
-        elements_id_array = np.asarray(elements_id, dtype=np.int64)
-        elements_node_ids_array = np.asarray(elements_node_ids, dtype=np.int64)
-        elements_material_ids_array = np.asarray(elements_material_ids, dtype=np.int64)
+        elements_id_array = np.asarray(elements_id, dtype=np.int32)
+        elements_node_ids_array = np.asarray(elements_node_ids, dtype=np.int32)
+        elements_material_ids_array = np.asarray(elements_material_ids, dtype=np.int32)
 
         logger.info(f"Loaded {len(elements_id_array)} elements.")
         return elements_id_array, elements_node_ids_array, elements_material_ids_array

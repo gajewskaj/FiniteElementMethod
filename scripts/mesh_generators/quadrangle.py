@@ -60,7 +60,7 @@ gmsh.model.setPhysicalName(1, pg_bc, "bc")
 
 gmsh.model.mesh.generate(2)
 
-gmsh.fltk.run()
+# gmsh.fltk.run()
 
 gmsh.write(os.path.join(Settings.input_path, filename))
 
