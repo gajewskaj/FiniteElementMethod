@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 
 from src.helpers.config import logger
 from src.uel.gaussian_quadrature import GaussianQuadrature
@@ -118,3 +119,11 @@ class UniversalElementTriangle():
             for j in range(self.quadrature_1d.n):
                 for k in range(DOF):
                     self.surfaces[i, j, k] = N[k](xi_list[j], eta_list[j])
+
+    def to_cupy(self):
+        self.weights = cp.asarray(self.weights)
+        self.dN_dxi = cp.asarray(self.dN_dxi)
+        self.dN_deta = cp.asarray(self.dN_deta)
+        self.N = cp.asarray(self.N)
+        self.surfaces = cp.asarray(self.surfaces)
+        self.quadrature_1d.to_cupy()

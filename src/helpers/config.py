@@ -13,7 +13,7 @@ class Settings:
     scripts_path: str = os.path.join(project_path, "scripts")
     class MatricesCalculation:
         use_gpu: bool = False
-        DOF: int = 4
+        DOF: int = None
         TPB: int = 512
         MAX_MATERIALS: int = 20
         MAX_IP: int = 25

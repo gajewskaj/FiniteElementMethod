@@ -19,7 +19,6 @@ class OutMatrices():
         self.Hbc_col_out = np.zeros(matrix_size, dtype=np.int32)
         self.P_out = np.zeros(len(mesh.nodes_id), dtype=np.float64)
 
-    @measure_time
     def to_numpy(self) -> None:
         if isinstance(self.P_out, np.ndarray): return
         self.H_val_out = cp.asnumpy(self.H_val_out)
@@ -33,7 +32,6 @@ class OutMatrices():
         self.Hbc_col_out = cp.asnumpy(self.Hbc_col_out)
         self.P_out = cp.asnumpy(self.P_out)
 
-    @measure_time
     def to_cupy(self) -> None:
         if isinstance(self.P_out, cp.ndarray): return
         self.H_val_out = cp.asarray(self.H_val_out, dtype=cp.float64)

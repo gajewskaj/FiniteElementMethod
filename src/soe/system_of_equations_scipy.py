@@ -12,16 +12,16 @@ class SystemOfEquationsSciPy(SystemOfEquations):
     def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
         super().__init__(mesh, out_mat)
         self.t0: np.ndarray = np.full((self.dim, 1), mesh.global_data.initial_temp)
-        self.H, self.C, self.P = self._prepare_data()
+        self.H, self.C, self.P = self.prepare_data()
         self.A = self.H + self.C/self.step
-        self.solve_factorized = self._factorize()
+        self.solve_factorized = self.factorize()
 
     @measure_time
-    def _prepare_data(self) -> tuple[scipy_sparse.csr_matrix, scipy_sparse.csr_matrix]:
-        return super()._prepare_data()
+    def prepare_data(self) -> tuple[scipy_sparse.csr_matrix, scipy_sparse.csr_matrix]:
+        return super().prepare_data()
 
     @measure_time
-    def _factorize(self) -> callable:
+    def factorize(self) -> callable:
         return scipy_linalg.factorized(self.A)
 
     @measure_time

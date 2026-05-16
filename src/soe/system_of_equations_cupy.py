@@ -14,12 +14,12 @@ class SystemOfEquationsCuPy(SystemOfEquations):
     def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
         super().__init__(mesh, out_mat)
         self.t0: cp.ndarray = cp.full((self.dim, 1), mesh.global_data.initial_temp, dtype=cp.float64)
-        self.H, self.C, self.P = self._prepare_data()
+        self.H, self.C, self.P = self.prepare_data()
         self.A = (self.H + self.C/self.step)
-        self.solve_factorized = self._factorize()
+        self.solve_factorized = self.factorize()
 
     @measure_time
-    def _prepare_data(self) -> tuple[cupy_sparse.csr_matrix, cupy_sparse.csr_matrix, cp.ndarray]:
+    def prepare_data(self) -> tuple[cupy_sparse.csr_matrix, cupy_sparse.csr_matrix, cp.ndarray]:
         self.out_mat.to_cupy()
         P = self.out_mat.P_out.reshape(-1, 1)
         H_val = cp.concatenate((self.out_mat.H_val_out, self.out_mat.Hbc_val_out))
@@ -37,14 +37,13 @@ class SystemOfEquationsCuPy(SystemOfEquations):
         return H, C, P
 
     @measure_time
-    def _factorize(self) -> callable:
+    def factorize(self) -> callable:
         with nvtx.annotate("cupy_factorization", color="red"):
             return cupy_linalg.factorized(self.A)
 
     @measure_time
     def solve(self) -> cp.ndarray:
-        with nvtx.annotate("b_build", color="blue"):
-            b = self.P + self.C.dot(self.t0)/self.step
+        b = self.P + self.C.dot(self.t0)/self.step
 
         with nvtx.annotate("solve", color="green"):
             result: cp.ndarray = self.solve_factorized(b)

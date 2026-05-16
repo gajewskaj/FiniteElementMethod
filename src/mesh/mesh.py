@@ -24,6 +24,8 @@ class GlobalData:
                                                      d["materials"][material_name]["conductivity"],
                                                      d["materials"][material_name]["density"],
                                                      d["materials"][material_name]["specific_heat"]], dtype=np.float64)
+    def to_cupy(self):
+        self.materials = cp.asarray(self.materials)
 
 class Mesh:
     def __init__(self, mesh_path: str, data_path: str):
@@ -63,6 +65,7 @@ class Mesh:
         return nodes_id, nodes_x, nodes_y, nodes_bc
 
     def read_elements(self) -> tuple[np.ndarray[int], np.ndarray[np.ndarray[int]], np.ndarray[int]]:
+        global dof
         elements_id: list[int] = []
         elements_node_ids: list[list[int]] = []
         elements_material_ids: list[int] = []
@@ -70,6 +73,10 @@ class Mesh:
             gmsh.model.getPhysicalName(dim, phys_tag)
             for entity in gmsh.model.getEntitiesForPhysicalGroup(dim, phys_tag):
                 elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(dim, entity)
+                if 2 in elem_types:
+                    Settings.MatricesCalculation.DOF = 3
+                elif 3 in elem_types:
+                    Settings.MatricesCalculation.DOF = 4
                 for elem_type, tags, node_tags in zip(elem_types, elem_tags, elem_node_tags):
                     if elem_type not in [2, 3]:
                         continue
@@ -84,3 +91,11 @@ class Mesh:
 
         logger.info(f"Loaded {len(elements_id_array)} elements.")
         return elements_id_array, elements_node_ids_array, elements_material_ids_array
+
+    def to_cupy(self):
+        self.nodes_x = cp.asarray(self.nodes_x)
+        self.nodes_y = cp.asarray(self.nodes_y)
+        self.nodes_bc = cp.asarray(self.nodes_bc)
+        self.elements_node_ids = cp.asarray(self.elements_node_ids)
+        self.elements_material_ids = cp.asarray(self.elements_material_ids)
+        self.global_data.to_cupy()

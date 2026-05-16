@@ -14,7 +14,7 @@ class SystemOfEquations(ABC):
         self.out_mat = out_mat
 
     @abstractmethod
-    def _prepare_data(self) -> tuple:
+    def prepare_data(self) -> tuple:
         self.out_mat.to_numpy()
         data_C, row_C, col_C = self.out_mat.C_val_out, self.out_mat.C_row_out, self.out_mat.C_col_out
         P = self.out_mat.P_out.reshape(-1, 1)
@@ -26,7 +26,7 @@ class SystemOfEquations(ABC):
         return H, C, P
 
     @abstractmethod
-    def _factorize(self) -> callable:
+    def factorize(self) -> callable:
         pass
 
     @abstractmethod

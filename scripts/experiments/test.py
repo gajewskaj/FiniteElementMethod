@@ -8,12 +8,11 @@ from src.helpers.config import Settings
 os.chdir(Settings.project_path)
 
 for i in range(10):
-    mesh_file = "1000x1000_quad.msh"
-    os.system(f"python main.py --mesh {Settings.input_path}/{mesh_file} --data {Settings.input_path}/global_data.json")
-    log_dir_name: str = os.path.join(Settings.output_path, os.path.basename(mesh_file).strip(".msh"))
-    os.rename(log_dir_name, f"{log_dir_name}_gpu{i+1}")
-# os.system(f"python scripts/experiments/create_time_stats.py --file shared_mem_stats.csv --log-dir-template *_shared_mem*")
-os.system(f"python scripts/experiments/create_time_stats.py --file gpu_stats.csv --log-dir-template *_gpu*")
+    for mesh_file in glob(Settings.input_path + "/*.msh"):
+        os.system(f"python main.py --mesh {mesh_file} --data {os.path.join(Settings.input_path, 'global_data.json')} --mc cpu --solver scipy")
+        log_dir_name: str = os.path.join(Settings.output_path, os.path.basename(mesh_file).strip(".msh"))
+        os.rename(log_dir_name, f"{log_dir_name}_scipy{i+1}")
+os.system(f"python scripts/experiments/create_time_stats.py --file scipy.csv --log-dir-template *_scipy*")
 
 # for i in range(10):
 #     for mesh_file in glob(Settings.input_path + "/*.msh"):

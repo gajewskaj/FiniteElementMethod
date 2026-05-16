@@ -1,5 +1,6 @@
 from math import sqrt
 import numpy as np
+import cupy as cp
 
 from src.helpers.config import logger, Settings
 
@@ -48,3 +49,6 @@ class GaussianQuadrature:
                 logger.error(err_msg)
                 raise RuntimeError
         return points, weights
+
+    def to_cupy(self):
+        self.weights = cp.asarray(self.weights)

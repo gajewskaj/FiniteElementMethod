@@ -10,7 +10,7 @@ from src.soe.system_of_equations_cupy import SystemOfEquationsCuPy
 
 class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
     @measure_time
-    def _factorize(self) -> callable:
+    def factorize(self) -> callable:
         self._handle = cudss.create()
         self._config = cudss.config_create()
         self._data = cudss.data_create(self._handle)
