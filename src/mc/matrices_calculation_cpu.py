@@ -15,13 +15,13 @@ set_num_threads(2)
 
 @measure_time
 def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
-    _calculate_H_C_for_element(mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
+    calculate_H_C(mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
                                 u_el.n, u_el.weights, u_el.N,
                                 u_el.dN_dxi, u_el.dN_deta,
                                 mesh.global_data.materials,
                                 out_mat.H_val_out, out_mat.H_row_out, out_mat.H_col_out,
                                 out_mat.C_val_out, out_mat.C_row_out, out_mat.C_col_out)
-    _calculate_Hbc_P_for_element(mesh.nodes_x, mesh.nodes_y, mesh.nodes_bc, mesh.elements_node_ids, mesh.elements_material_ids,
+    calculate_Hbc_P(mesh.nodes_x, mesh.nodes_y, mesh.nodes_bc, mesh.elements_node_ids, mesh.elements_material_ids,
                                     u_el.quadrature_1d.n, u_el.quadrature_1d.weights, u_el.surfaces,
                                     mesh.global_data.materials, mesh.global_data.ambient_temp,
                                     out_mat.Hbc_val_out, out_mat.Hbc_row_out, out_mat.Hbc_col_out, out_mat.P_out)
@@ -58,7 +58,7 @@ def _calculate_H_C_for_integration_point(weight, N,
     C += sh*d*(np.dot(N, N.transpose()))*jacobian_det*weight
 
 @njit('void(float64[:], float64[:], int32[:,:], int32[:], int32, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:])', parallel=True)
-def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
+def calculate_H_C(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
                                materials,
@@ -118,7 +118,7 @@ def _calculate_for_surface(n, weights, surface,
         P += N*weights[i]*alpha*ambient_temp*jacobian_det
 
 @njit('void(float64[:], float64[:], int32[:], int32[:,:], int32[:], int32, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int32[:], int32[:], float64[:])', parallel=True)
-def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
+def calculate_Hbc_P(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
                                  n, weights, surfaces,
                                  materials, ambient_temp,
                                  Hbc_val, Hbc_row, Hbc_col,

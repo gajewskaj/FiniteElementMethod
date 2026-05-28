@@ -18,7 +18,7 @@ MAX_IP = Settings.MatricesCalculation.MAX_IP
 def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
-    data_H_C, data_Hbc_P = send_to_gpu(mesh, out_mat)
+    data_H_C, data_Hbc_P = to_cupy(mesh, out_mat)
     blocks_per_grid = (len(mesh.elements_id) + TPB - 1) // TPB
     _calculate(data_H_C, data_Hbc_P, stream_H_C, stream_Hbc_P, blocks_per_grid)
 
@@ -26,13 +26,13 @@ def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
 def _calculate(data_H_C: tuple, data_Hbc_P: tuple,
                stream_H_C: cuda.stream, stream_Hbc_P: cuda.stream,
                blocks_per_grid: int) -> tuple:
-    _calculate_H_C_for_element[blocks_per_grid, TPB, stream_H_C](*data_H_C)
-    _calculate_Hbc_P_for_element[blocks_per_grid, TPB, stream_Hbc_P](*data_Hbc_P)
+    calculate_H_C[blocks_per_grid, TPB, stream_H_C](*data_H_C)
+    calculate_Hbc_P[blocks_per_grid, TPB, stream_Hbc_P](*data_Hbc_P)
     stream_H_C.synchronize()
     stream_Hbc_P.synchronize()
 
 @measure_time
-def send_to_gpu(mesh: Mesh, out_mat: OutMatrices) -> tuple:
+def to_cupy(mesh: Mesh, out_mat: OutMatrices) -> tuple:
     u_el.to_cupy()
     mesh.to_cupy()
     out_mat.to_cupy()
@@ -90,7 +90,7 @@ def _calculate_H_C_for_integration_point(weight, N,
             C[i, j] += N[i] * N[j] * factor_C
 
 @cuda.jit('void(float64[:], float64[:], int32[:,:], int32[:], int32, float64[:], float64[:,:], float64[:,:], float64[:,:], float64[:,:], float64[:], int32[:], int32[:], float64[:], int32[:], int32[:])')
-def _calculate_H_C_for_element(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
+def calculate_H_C(nodes_x, nodes_y, elements_node_ids, elements_material_ids,
                                n, weights, N,
                                dN_dxi, dN_deta,
                                materials,
@@ -165,7 +165,7 @@ def _calculate_for_surface(n, weights, surface,
                 Hbc[k, j] += N[k] * N[j] * factor
 
 @cuda.jit('void(float64[:], float64[:], int32[:], int32[:,:], int32[:], int32, float64[:], float64[:,:,:], float64[:,:], float64, float64[:], int32[:], int32[:], float64[:])')
-def _calculate_Hbc_P_for_element(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
+def calculate_Hbc_P(nodes_x, nodes_y, nodes_bc, elements_node_ids, elements_material_ids,
                                  n, weights, surfaces,
                                  materials, ambient_temp,
                                  Hbc_val, Hbc_row, Hbc_col,
