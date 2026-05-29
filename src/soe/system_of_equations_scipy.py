@@ -12,21 +12,21 @@ class SystemOfEquationsSciPy(SystemOfEquations):
     def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
         super().__init__(mesh, out_mat)
         self.t0: np.ndarray = np.full((self.dim, 1), mesh.global_data.initial_temp)
-        self.H, self.C, self.P = self.prepare_data()
-        self.A = self.H + self.C/self.step
+        self.prepare_data()
         self.solve_factorized = self.factorize()
 
     @measure_time
-    def prepare_data(self) -> tuple[scipy_sparse.csr_matrix, scipy_sparse.csr_matrix, np.ndarray]:
+    def prepare_data(self) -> None:
         self.out_mat.to_numpy()
         data_C, row_C, col_C = self.out_mat.C_val_out, self.out_mat.C_row_out, self.out_mat.C_col_out
-        P = self.out_mat.P_out.reshape(-1, 1)
+        self.P = self.out_mat.P_out.reshape(-1, 1)
         data_H = np.concatenate((self.out_mat.H_val_out, self.out_mat.Hbc_val_out))
         row_H = np.concatenate((self.out_mat.H_row_out, self.out_mat.Hbc_row_out))
         col_H = np.concatenate((self.out_mat.H_col_out, self.out_mat.Hbc_col_out))
         H = scipy_sparse.csr_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim))
-        C = scipy_sparse.csr_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
-        return H, C, P
+        self.C = scipy_sparse.csr_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
+        
+        self.A = H + self.C/self.step
 
     @measure_time
     def factorize(self) -> callable:

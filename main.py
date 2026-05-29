@@ -30,9 +30,9 @@ def parse_arguments() -> tuple[str, str, bool]:
     parser.add_argument(
         "--solver",
         type=str,
-        default="cudss",
+        default="cudss_v1",
         help="Solver to use for the simulation",
-        choices=["cudss", "cupy", "scipy"]
+        choices=["cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4", "cupy", "scipy"]
     )
     args = parser.parse_args()
     return args.mesh, args.data, args.mc, args.solver

@@ -14,27 +14,25 @@ class SystemOfEquationsCuPy(SystemOfEquations):
     def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
         super().__init__(mesh, out_mat)
         self.t0: cp.ndarray = cp.full((self.dim, 1), mesh.global_data.initial_temp, dtype=cp.float64)
-        self.H, self.C, self.P = self.prepare_data()
-        self.A = (self.H + self.C/self.step)
+        self.prepare_data()
         self.solve_factorized = self.factorize()
 
     @measure_time
-    def prepare_data(self) -> tuple[cupy_sparse.csr_matrix, cupy_sparse.csr_matrix, cp.ndarray]:
+    def prepare_data(self) -> None:
         self.out_mat.to_cupy()
-        P = self.out_mat.P_out.reshape(-1, 1)
+        self.P = self.out_mat.P_out.reshape(-1, 1)
         H_val = cp.concatenate((self.out_mat.H_val_out, self.out_mat.Hbc_val_out))
         H_row = cp.concatenate((self.out_mat.H_row_out, self.out_mat.Hbc_row_out))
         H_col = cp.concatenate((self.out_mat.H_col_out, self.out_mat.Hbc_col_out))
         H = cupy_sparse.csr_matrix((H_val,(H_row, H_col)), shape=(self.dim, self.dim))
-        C = cupy_sparse.csr_matrix(
+        self.C = cupy_sparse.csr_matrix(
             (
                 self.out_mat.C_val_out,
                 (self.out_mat.C_row_out, self.out_mat.C_col_out)
             ),
             shape=(self.dim, self.dim)
         )
-
-        return H, C, P
+        self.A = (H + self.C/self.step)
 
     @measure_time
     def factorize(self) -> callable:
@@ -47,6 +45,7 @@ class SystemOfEquationsCuPy(SystemOfEquations):
 
         with nvtx.annotate("solve", color="green"):
             result: cp.ndarray = self.solve_factorized(b)
+        cp.cuda.get_current_stream().synchronize() # Only for profiling
 
         self.t0 = result
         return result

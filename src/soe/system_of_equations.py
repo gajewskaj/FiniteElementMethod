@@ -13,7 +13,7 @@ class SystemOfEquations(ABC):
         self.out_mat = out_mat
 
     @abstractmethod
-    def prepare_data(self) -> tuple:
+    def prepare_data(self) -> None:
         pass
 
     @abstractmethod

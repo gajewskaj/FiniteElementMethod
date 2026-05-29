@@ -28,8 +28,7 @@ def set_algorithms(mc: str, solver: str) -> None:
     else:
         config.logger.info("CPU selected for calculating matrices.")
 
-    if solver == "cudss": Settings.Solver.use_cudss = True
-    elif solver == "cupy": Settings.Solver.use_cupy = True
+    Settings.Solver.solver = solver
 
     try:
         import cupy

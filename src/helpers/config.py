@@ -18,5 +18,4 @@ class Settings:
         MAX_MATERIALS: int = 20
         MAX_IP: int = 25
     class Solver:
-        use_cupy: bool = False
-        use_cudss: bool = False
+        solver = "cudss_v1"

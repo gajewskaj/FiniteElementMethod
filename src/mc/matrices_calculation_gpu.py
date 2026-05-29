@@ -17,7 +17,7 @@ TPB = Settings.MatricesCalculation.TPB
 def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
-    to_cupy(mesh, out_mat)
+    _to_cupy(mesh, out_mat)
     blocks_per_grid = (len(mesh.elements_id) + TPB - 1) // TPB
     calculate_H_C[blocks_per_grid, TPB, stream_H_C](
         mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
@@ -39,7 +39,7 @@ def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_Hbc_P.synchronize()
 
 @measure_time
-def to_cupy(mesh: Mesh, out_mat: OutMatrices) -> None:
+def _to_cupy(mesh: Mesh, out_mat: OutMatrices) -> None:
     u_el.to_cupy()
     mesh.to_cupy()
     out_mat.to_cupy()
