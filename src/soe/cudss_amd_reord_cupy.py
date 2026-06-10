@@ -1,30 +1,48 @@
 import cupy as cp
 import cupyx.scipy.sparse as cupy_sparse
+import cupyx.scipy.sparse.linalg as cupy_linalg
 import nvmath
 from nvmath.bindings import cudss as cudss
 import nvtx
 import ctypes
-import os
+import numpy as np
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
 from src.soe.system_of_equations_cupy_v1 import SystemOfEquationsCuPy
 
-class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
+class SystemOfEquationsCuDSSCuPy(SystemOfEquationsCuPy):
     @measure_time
     def factorize(self) -> callable:
+        n = self.A.shape[0]
+
+        self.perm = cp.empty(n, dtype=cp.int32)
+        size_written = np.zeros(1, dtype=np.int64)
+        size_written_ptr = size_written.ctypes.data
+
         self._analyze()
-        self._factorize()
+        cudss.data_get(
+            self._handle,
+            self._data,
+            cudss.DataParam.PERM_REORDER_ROW,
+            self.perm.data.ptr,
+            self.perm.nbytes,
+            size_written_ptr
+        )
 
-        def solve_factorized(b: cp.ndarray) -> cp.ndarray:
-            b = cp.asarray(b, dtype=cp.float64)
-            x = cp.zeros_like(b)
-            cudss.matrix_set_values(self.x_cudss, x.data.ptr)
-            cudss.matrix_set_values(self.b_cudss, b.data.ptr)
-            cudss.execute(self._handle, cudss.Phase.SOLVE, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
-            return x
+        self.A_reordered = self.A[self.perm][:, self.perm]
+        return cupy_linalg.splu(self.A_reordered, permc_spec='NATURAL').solve
 
-        return solve_factorized
+    @measure_time
+    def solve(self) -> cp.ndarray:
+        b = self.P + self.C.dot(self.t0)/self.step
+
+        with nvtx.annotate("solve", color="green"):
+            result: cp.ndarray = self.solve_factorized(b[self.perm])[cp.argsort(self.perm)]
+        cp.cuda.get_current_stream().synchronize() # Only for profiling
+
+        self.t0 = result
+        return result
 
     @measure_time
     def prepare_data(self) -> None:
@@ -45,12 +63,22 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
 
         self._handle = cudss.create()
 
-        # Threading layer - for analysis
         lib_path = "/usr/lib/x86_64-linux-gnu/libcudss/12/libcudss_mtlayer_gomp.so.0.7.1"
         cudss.set_threading_layer(self._handle, lib_path)
 
         self._config = cudss.config_create()
         self._data = cudss.data_create(self._handle)
+
+        # Setting reordering algorithm to AMD
+        reordering_alg_c = ctypes.c_int32(cudss.AlgType.ALG_3.value)
+        reordering_alg_ptr = ctypes.addressof(reordering_alg_c)
+
+        cudss.config_set(
+            self._config,
+            cudss.ConfigParam.REORDERING_ALG,
+            reordering_alg_ptr,
+            ctypes.sizeof(reordering_alg_c)
+        )
 
         self.A_cudss = cudss.matrix_create_csr(
             nrows=self.A.shape[0],
@@ -83,7 +111,7 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
             value_type=nvmath.CudaDataType.CUDA_R_64F,
             layout=cudss.Layout.COL_MAJOR,
         )
-        
+
     @measure_time
     def _analyze(self) -> None:
         with nvtx.annotate("cudss_analysis", color="yellow"):

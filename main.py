@@ -32,7 +32,11 @@ def parse_arguments() -> tuple[str, str, bool]:
         type=str,
         default="cudss_v4",
         help="Solver to use for the simulation",
-        choices=["scipy_v1", "scipy_v2", "scipy_v3", "cupy_v1", "cupy_v2", "cupy_v3", "cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4"]
+        choices=["scipy_v1", "scipy_v2", "scipy_v3",
+        "cupy_v1", "cupy_v2", "cupy_v3",
+        "cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4",
+        "cudss_amd_reord_scipy", "cudss_amd_reord_cupy",
+        "cudss_nd_reord_scipy", "cudss_nd_reord_cupy"]
     )
     args = parser.parse_args()
     return args.mesh, args.data, args.mc, args.solver

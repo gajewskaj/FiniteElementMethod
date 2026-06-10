@@ -3,6 +3,7 @@ import cupyx.scipy.sparse as cupy_sparse
 import cupyx.scipy.sparse.linalg as cupy_linalg
 import numpy as np
 import nvtx
+import ctypes
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -37,7 +38,7 @@ class SystemOfEquationsCuPy(SystemOfEquations):
     @measure_time
     def factorize(self) -> callable:
         with nvtx.annotate("cupy_factorization", color="red"):
-            return cupy_linalg.splu(self.A, permc_spec='COL_AMD').solve
+            return cupy_linalg.splu(self.A, permc_spec='COLAMD').solve
 
     @measure_time
     def solve(self) -> cp.ndarray:

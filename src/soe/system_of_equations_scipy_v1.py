@@ -30,7 +30,7 @@ class SystemOfEquationsSciPy(SystemOfEquations):
     
     @measure_time
     def factorize(self) -> callable:
-        return scipy_linalg.splu(self.A, permc_spec='COL_AMD').solve
+        return scipy_linalg.splu(self.A, permc_spec='COLAMD').solve
 
     @measure_time
     def solve(self) -> np.ndarray:

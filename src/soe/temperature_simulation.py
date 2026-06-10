@@ -6,6 +6,18 @@ from src.mc.out import OutMatrices
 
 def simulate(mesh: Mesh, out_mat: OutMatrices) -> tuple[list[float], list[np.ndarray[float]]]:
     match Settings.Solver.solver:
+        case "cudss_amd_reord_scipy":
+            logger.info(f"Solving system of equations using SciPy with AMD cuDSS reordering")
+            from src.soe.cudss_amd_reord_scipy import SystemOfEquationsCuDSSSciPy as SystemOfEquations
+        case "cudss_amd_reord_cupy":
+            logger.info(f"Solving system of equations using CuPy with AMD cuDSS reordering")
+            from src.soe.cudss_amd_reord_cupy import SystemOfEquationsCuDSSCuPy as SystemOfEquations
+        case "cudss_nd_reord_scipy":
+            logger.info(f"Solving system of equations using SciPy with ND cuDSS reordering")
+            from src.soe.cudss_nd_reord_scipy import SystemOfEquationsCuDSSSciPy as SystemOfEquations
+        case "cudss_nd_reord_cupy":
+            logger.info(f"Solving system of equations using CuPy with ND cuDSS reordering")
+            from src.soe.cudss_nd_reord_cupy import SystemOfEquationsCuDSSCuPy as SystemOfEquations
         case "scipy_v1":
             logger.info(f"Solving system of equations using SciPy V1 solver.")
             from src.soe.system_of_equations_scipy_v1 import SystemOfEquationsSciPy as SystemOfEquations
