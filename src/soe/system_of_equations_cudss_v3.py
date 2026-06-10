@@ -7,7 +7,7 @@ import ctypes
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
-from src.soe.system_of_equations_cupy import SystemOfEquationsCuPy
+from src.soe.system_of_equations_cupy_v1 import SystemOfEquationsCuPy
 
 class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
     @measure_time
