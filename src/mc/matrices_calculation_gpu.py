@@ -14,7 +14,7 @@ DOF = Settings.MatricesCalculation.DOF
 TPB = Settings.MatricesCalculation.TPB
 
 @measure_time
-def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
+def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
     _to_cupy(mesh, out_mat)

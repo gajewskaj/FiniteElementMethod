@@ -30,9 +30,9 @@ def parse_arguments() -> tuple[str, str, bool]:
     parser.add_argument(
         "--solver",
         type=str,
-        default="cudss_v1",
+        default="cudss_v4",
         help="Solver to use for the simulation",
-        choices=["cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4", "cupy", "scipy"]
+        choices=["scipy_v1", "scipy_v2", "scipy_v3", "cupy_v1", "cupy_v2", "cupy_v3", "cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4"]
     )
     args = parser.parse_args()
     return args.mesh, args.data, args.mc, args.solver
@@ -50,11 +50,11 @@ def run() -> None:
         mesh = Mesh(mesh_filepath, data_filepath)
 
         from src.mc.out import OutMatrices
-        from src.mc.matrices_calculation import calculate_and_assemble_matrices
+        from src.mc.matrices_calculation import calculate_matrices
         from src.soe.temperature_simulation import simulate
 
         out_mat = OutMatrices(mesh)
-        calculate_and_assemble_matrices(mesh, out_mat)
+        calculate_matrices(mesh, out_mat)
         times, temperatures = simulate(mesh, out_mat)
 
         config.logger.info(f"Time        Min temp        Max temp")

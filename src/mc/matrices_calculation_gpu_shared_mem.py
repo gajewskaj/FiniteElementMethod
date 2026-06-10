@@ -15,7 +15,7 @@ MAX_MATERIALS = Settings.MatricesCalculation.MAX_MATERIALS
 MAX_IP = Settings.MatricesCalculation.MAX_IP
 
 @measure_time
-def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
+def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
     data_H_C, data_Hbc_P = to_cupy(mesh, out_mat)

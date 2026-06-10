@@ -23,14 +23,14 @@ class SystemOfEquationsSciPy(SystemOfEquations):
         data_H = np.concatenate((self.out_mat.H_val_out, self.out_mat.Hbc_val_out))
         row_H = np.concatenate((self.out_mat.H_row_out, self.out_mat.Hbc_row_out))
         col_H = np.concatenate((self.out_mat.H_col_out, self.out_mat.Hbc_col_out))
-        H = scipy_sparse.csr_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim))
-        self.C = scipy_sparse.csr_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
+        H = scipy_sparse.csc_matrix((data_H, (row_H, col_H)), shape=(self.dim, self.dim))
+        self.C = scipy_sparse.csc_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
         
         self.A = H + self.C/self.step
-
+    
     @measure_time
     def factorize(self) -> callable:
-        return scipy_linalg.factorized(self.A)
+        return scipy_linalg.splu(self.A, permc_spec='MMD_ATA').solve
 
     @measure_time
     def solve(self) -> np.ndarray:

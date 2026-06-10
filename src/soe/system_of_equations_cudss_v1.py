@@ -48,17 +48,6 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
         self._data = cudss.data_create(self._handle)
         # self.A = cupy_sparse.tril(self.A).tocsr()
 
-        # Setting reordering algorithm to AMD
-        # reordering_alg_c = ctypes.c_int32(cudss.AlgType.ALG_3.value)
-        # reordering_alg_ptr = ctypes.addressof(reordering_alg_c)
-
-        # cudss.config_set(
-        #     self._config,
-        #     cudss.ConfigParam.REORDERING_ALG,
-        #     reordering_alg_ptr,
-        #     ctypes.sizeof(reordering_alg_c)
-        # )
-
         self.A_cudss = cudss.matrix_create_csr(
             nrows=self.A.shape[0],
             ncols=self.A.shape[1],

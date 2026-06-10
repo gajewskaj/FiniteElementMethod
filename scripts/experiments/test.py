@@ -7,16 +7,10 @@ from src.helpers.config import Settings
 
 os.chdir(Settings.project_path)
 
-for i in range(10):
-    for mesh_file in glob(Settings.input_path + "/*.msh"):
-        os.system(f"python main.py --mesh {mesh_file} --data {os.path.join(Settings.input_path, 'global_data.json')} --mc cpu --solver scipy")
+for solver in ("scipy_v1", "scipy_v2", "scipy_v3", "cupy_v1", "cupy_v2", "cupy_v3"):
+    for i in range(10):
+        mesh_file = os.path.join(Settings.input_path, "1000x1000_quad.msh")
+        os.system(f"python main.py --mesh {mesh_file} --solver {solver}")
         log_dir_name: str = os.path.join(Settings.output_path, os.path.basename(mesh_file).strip(".msh"))
-        os.rename(log_dir_name, f"{log_dir_name}_scipy{i+1}")
-os.system(f"python scripts/experiments/create_time_stats.py --file scipy.csv --log-dir-template *_scipy*")
-
-# for i in range(10):
-#     for mesh_file in glob(Settings.input_path + "/*.msh"):
-#         os.system(f"python main.py --mesh {mesh_file} --data {Settings.input_path}/global_data.json --force-cpu")
-#         log_dir_name: str = os.path.join(Settings.output_path, os.path.basename(mesh_file).strip(".msh"))
-#         os.rename(log_dir_name, f"{log_dir_name}_cpu{i+1}")
-# os.system(f"python scripts/experiments/create_time_stats.py --file cpu_stats.csv --log-dir-template *_cpu*")
+        os.rename(log_dir_name, f"{log_dir_name}_{solver}_{i+1}")
+    os.system(f"python scripts/experiments/create_time_stats.py --file {solver}.csv --log-dir-template *_{solver}_{i+1}*")

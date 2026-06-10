@@ -14,7 +14,7 @@ DOF = Settings.MatricesCalculation.DOF
 set_num_threads(2)
 
 @measure_time
-def calculate_and_assemble_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
+def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     calculate_H_C(mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
                                 u_el.n, u_el.weights, u_el.N,
                                 u_el.dN_dxi, u_el.dN_deta,

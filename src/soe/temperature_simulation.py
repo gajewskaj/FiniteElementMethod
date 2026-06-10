@@ -6,6 +6,24 @@ from src.mc.out import OutMatrices
 
 def simulate(mesh: Mesh, out_mat: OutMatrices) -> tuple[list[float], list[np.ndarray[float]]]:
     match Settings.Solver.solver:
+        case "scipy_v1":
+            logger.info(f"Solving system of equations using SciPy V1 solver.")
+            from src.soe.system_of_equations_scipy_v1 import SystemOfEquationsSciPy as SystemOfEquations
+        case "scipy_v2":
+            logger.info(f"Solving system of equations using SciPy V2 solver.")
+            from src.soe.system_of_equations_scipy_v2 import SystemOfEquationsSciPy as SystemOfEquations
+        case "scipy_v3":
+            logger.info(f"Solving system of equations using SciPy V3 solver.")
+            from src.soe.system_of_equations_scipy_v3 import SystemOfEquationsSciPy as SystemOfEquations
+        case "cupy_v1":
+            logger.info(f"Solving system of equations using CuPy V1 solver.")
+            from src.soe.system_of_equations_cupy_v1 import SystemOfEquationsCuPy as SystemOfEquations
+        case "cupy_v2":
+            logger.info(f"Solving system of equations using CuPy V2 solver.")
+            from src.soe.system_of_equations_cupy_v2 import SystemOfEquationsCuPy as SystemOfEquations
+        case "cupy_v3":
+            logger.info(f"Solving system of equations using CuPy V3 solver.")
+            from src.soe.system_of_equations_cupy_v3 import SystemOfEquationsCuPy as SystemOfEquations
         case "cudss_v1":
             logger.info(f"Solving system of equations using cuDSS V1 solver.")
             from src.soe.system_of_equations_cudss_v1 import SystemOfEquationsCuDSS as SystemOfEquations
@@ -18,12 +36,8 @@ def simulate(mesh: Mesh, out_mat: OutMatrices) -> tuple[list[float], list[np.nda
         case "cudss_v4":
             logger.info(f"Solving system of equations using cuDSS V4 solver.")
             from src.soe.system_of_equations_cudss_v4 import SystemOfEquationsCuDSS as SystemOfEquations
-        case "cupy":
-            logger.info(f"Solving system of equations using CuPy solver.")
-            from src.soe.system_of_equations_cupy import SystemOfEquationsCuPy as SystemOfEquations
         case _:
-            logger.info(f"Solving system of equations using SciPy solver.")
-            from src.soe.system_of_equations_scipy import SystemOfEquationsSciPy as SystemOfEquations
+            raise ValueError(f"Unknown solver: {Settings.Solver.solver}.")
     soe = SystemOfEquations(mesh, out_mat)
     times, temperatures = soe.simulate()
     return times, temperatures
