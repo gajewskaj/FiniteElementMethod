@@ -7,6 +7,7 @@ from nvmath.bindings import cudss as cudss
 import nvtx
 import ctypes
 import numpy as np
+import matplotlib.pyplot as plt
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -33,6 +34,12 @@ class SystemOfEquationsCuDSSSciPy(SystemOfEquationsCuPy):
         self.A = self.A.get()
         self.perm = self.perm.get()
         self.A_reordered = self.A[self.perm][:, self.perm]
+        print(self.A_reordered.nnz)
+        plt.figure(figsize=(6, 6))
+        plt.spy(self.A_reordered, markersize=2)
+
+        plt.savefig("A_perm_cudss_amd.png", dpi=1200, bbox_inches="tight")
+        plt.close()
         return scipy_linalg.splu(self.A_reordered, permc_spec='NATURAL').solve
 
     @measure_time

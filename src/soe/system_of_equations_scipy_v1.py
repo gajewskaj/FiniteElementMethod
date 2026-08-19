@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as scipy_sparse
 import scipy.sparse.linalg as scipy_linalg
+import matplotlib.pyplot as plt
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -27,10 +28,24 @@ class SystemOfEquationsSciPy(SystemOfEquations):
         self.C = scipy_sparse.csc_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
         
         self.A = H + self.C/self.step
+
+        plt.figure(figsize=(6, 6))
+        plt.spy(self.A, markersize=2)
+
+        plt.savefig("A.png", dpi=1200, bbox_inches="tight")
+        plt.close()
     
     @measure_time
     def factorize(self) -> callable:
-        return scipy_linalg.splu(self.A, permc_spec='COLAMD').solve
+        lu = scipy_linalg.splu(self.A, permc_spec='COLAMD')
+        print(lu.L.nnz + lu.U.nnz)
+        A_permuted = self.A[lu.perm_r, :][:, lu.perm_c]
+        plt.figure(figsize=(6, 6))
+        plt.spy(A_permuted, markersize=2)
+
+        plt.savefig("A_perm_scipy_v1.png", dpi=1200, bbox_inches="tight")
+        plt.close()
+        return lu.solve
 
     @measure_time
     def solve(self) -> np.ndarray:

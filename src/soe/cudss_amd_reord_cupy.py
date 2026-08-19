@@ -31,15 +31,20 @@ class SystemOfEquationsCuDSSCuPy(SystemOfEquationsCuPy):
         )
 
         self.A_reordered = self.A[self.perm][:, self.perm]
-        return cupy_linalg.splu(self.A_reordered, permc_spec='NATURAL').solve
+
+        lu = cupy_linalg.splu(self.A_reordered, permc_spec='NATURAL')
+        print(lu.L.nnz + lu.U.nnz)
+        return lu.solve
 
     @measure_time
     def solve(self) -> cp.ndarray:
         b = self.P + self.C.dot(self.t0)/self.step
 
         with nvtx.annotate("solve", color="green"):
+            self.cudart.cudaProfilerStart()
             result: cp.ndarray = self.solve_factorized(b[self.perm])[cp.argsort(self.perm)]
-        cp.cuda.get_current_stream().synchronize() # Only for profiling
+            cp.cuda.get_current_stream().synchronize() # Only for profiling
+            self.cudart.cudaProfilerStop()
 
         self.t0 = result
         return result

@@ -14,6 +14,7 @@ from src.soe.system_of_equations import SystemOfEquations
 class SystemOfEquationsCuPy(SystemOfEquations):
     def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
         super().__init__(mesh, out_mat)
+        self.cudart = ctypes.CDLL('libcudart.so')
         self.t0: cp.ndarray = cp.full((self.dim, 1), mesh.global_data.initial_temp, dtype=cp.float64)
         self.prepare_data()
         self.solve_factorized = self.factorize()
@@ -38,15 +39,19 @@ class SystemOfEquationsCuPy(SystemOfEquations):
     @measure_time
     def factorize(self) -> callable:
         with nvtx.annotate("cupy_factorization", color="red"):
-            return cupy_linalg.splu(self.A, permc_spec='COLAMD').solve
+            lu = cupy_linalg.splu(self.A, permc_spec='COLAMD')
+            print(lu.L.nnz + lu.U.nnz)
+            return lu.solve
 
     @measure_time
     def solve(self) -> cp.ndarray:
         b = self.P + self.C.dot(self.t0)/self.step
 
         with nvtx.annotate("solve", color="green"):
+            # self.cudart.cudaProfilerStart()
             result: cp.ndarray = self.solve_factorized(b)
-        cp.cuda.get_current_stream().synchronize() # Only for profiling
+            cp.cuda.get_current_stream().synchronize() # Only for profiling
+            # self.cudart.cudaProfilerStop()
 
         self.t0 = result
         return result

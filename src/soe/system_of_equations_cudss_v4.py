@@ -5,6 +5,7 @@ from nvmath.bindings import cudss as cudss
 import nvtx
 import ctypes
 import os
+import numpy as np
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -87,14 +88,35 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
     @measure_time
     def _analyze(self) -> None:
         with nvtx.annotate("cudss_analysis", color="yellow"):
+            # self.cudart.cudaProfilerStart()
             cudss.execute(self._handle, cudss.Phase.ANALYSIS, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
             cp.cuda.get_current_stream().synchronize() # Only for profiling
+            # self.cudart.cudaProfilerStop()
 
     @measure_time
     def _factorize(self) -> None:
         with nvtx.annotate("cudss_factorization", color="red"):
+            self.cudart.cudaProfilerStart()
             cudss.execute(self._handle, cudss.Phase.FACTORIZATION, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
             cp.cuda.get_current_stream().synchronize() # Only for profiling
+            self.cudart.cudaProfilerStop()
+        self.get_factorization_info()
+        
+
+    def get_factorization_info(self) -> int:
+        lu_nnz = np.zeros((1,), dtype=np.int64)
+        size_written = np.zeros((1,), dtype=np.uint64)
+
+        cudss.data_get(
+            self._handle,
+            self._data,
+            cudss.DataParam.LU_NNZ,
+            lu_nnz.ctypes.data,
+            lu_nnz.nbytes,
+            size_written.ctypes.data,
+        )
+        print(lu_nnz[0])
+        return lu_nnz[0]
 
     def __del__(self) -> None:
         for attr in ("b_cudss", "x_cudss", "A_cudss"):
