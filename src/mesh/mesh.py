@@ -11,10 +11,10 @@ class GlobalData:
     def __init__(self, data_path: str):
         with open(data_path) as f:
             d = json.load(f)
-        self.simulation_time = d["simulation_time"]
-        self.simulation_step_time = d["simulation_step_time"]
-        self.ambient_temp = d["ambient_temp"]
-        self.initial_temp=d["initial_temp"]
+        self.simulation_time = np.float64(d["simulation_time"])
+        self.simulation_step_time = np.float64(d["simulation_step_time"])
+        self.ambient_temp = np.float64(d["ambient_temp"])
+        self.initial_temp = np.float64(d["initial_temp"])
 
         pg = gmsh.model.getPhysicalGroups()
         self.materials = np.empty((len(pg), 4), dtype=np.float64)

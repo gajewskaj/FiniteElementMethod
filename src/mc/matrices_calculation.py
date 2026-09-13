@@ -3,7 +3,7 @@ from src.mesh.mesh import Mesh
 from src.mc.out import OutMatrices
 
 def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
-    if Settings.MatricesCalculation.use_gpu:
+    if Settings.MatricesCalculation.mc == "gpu":
         logger.info(f"Calculating and assembling matrices using GPU.")
         from src.mc.matrices_calculation_gpu import calculate_matrices
     else:

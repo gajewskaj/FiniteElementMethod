@@ -2,14 +2,25 @@ import cupy as cp
 import cupyx.scipy.sparse as cupy_sparse
 import nvmath
 from nvmath.bindings import cudss as cudss
-import nvtx
+import numpy as np
 import ctypes
+import os
+import torch
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
-from src.soe.system_of_equations_cupy_v1 import SystemOfEquationsCuPy
+from src.mesh.mesh import Mesh
+from src.mc.out import OutMatrices
+from src.soe.system_of_equations import SystemOfEquations
 
-class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
+class SystemOfEquationsCuDSS(SystemOfEquations):
+    def __init__(self, mesh: Mesh, out_mat: OutMatrices, reordering_alg: str) -> None:
+        # reordering_alg is redundant - added for integrity, to be modified in future
+        super().__init__(mesh, out_mat)
+        self.t0: cp.ndarray = cp.full((self.dim, 1), mesh.global_data.initial_temp, dtype=cp.float64)
+        self.prepare_data()
+        self.solve_factorized = self.factorize()
+
     @measure_time
     def factorize(self) -> callable:
         self._analyze()
@@ -25,7 +36,6 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
 
         return solve_factorized
 
-    @measure_time
     def prepare_data(self) -> None:
         self.out_mat.to_cupy()
         self.P = self.out_mat.P_out.reshape(-1, 1)
@@ -43,55 +53,48 @@ class SystemOfEquationsCuDSS(SystemOfEquationsCuPy):
         self.A = (H + self.C/self.step)
 
         self._handle = cudss.create()
-
-        self._config = cudss.config_create()
-        self._data = cudss.data_create(self._handle)
-        # self.A = cupy_sparse.tril(self.A).tocsr()
-
-        self.A_cudss = cudss.matrix_create_csr(
-            nrows=self.A.shape[0],
-            ncols=self.A.shape[1],
-            nnz=self.A.nnz,
-            row_start=self.A.indptr.data.ptr,
-            row_end=0,
-            col_indices=self.A.indices.data.ptr,
-            values=self.A.data.data.ptr,
-            index_type=nvmath.CudaDataType.CUDA_R_32I,
-            value_type=nvmath.CudaDataType.CUDA_R_64F,
-            mtype=cudss.MatrixType.GENERAL,
-            mview=cudss.MatrixViewType.FULL,
-            # mview=cudss.MatrixViewType.LOWER,
-            index_base=cudss.IndexBase.ZERO,
-        )
-        placeholder = cp.zeros((self.dim, 1), dtype=cp.float64)
-        self.x_cudss = cudss.matrix_create_dn(
-            nrows=self.dim,
-            ncols=1,
-            ld=self.dim,
-            values=placeholder.data.ptr,
-            value_type=nvmath.CudaDataType.CUDA_R_64F,
-            layout=cudss.Layout.COL_MAJOR,
-        )
-        self.b_cudss = cudss.matrix_create_dn(
-            nrows=self.dim,
-            ncols=1,
-            ld=self.dim,
-            values=placeholder.data.ptr,
-            value_type=nvmath.CudaDataType.CUDA_R_64F,
-            layout=cudss.Layout.COL_MAJOR,
-        )
-
+        
     @measure_time
     def _analyze(self) -> None:
-        with nvtx.annotate("cudss_analysis", color="yellow"):
-            cudss.execute(self._handle, cudss.Phase.ANALYSIS, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
-            cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.nvtx.range_push("Analyze")
+        cudss.execute(self._handle, cudss.Phase.ANALYSIS, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
+        cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.nvtx.range_pop()
 
     @measure_time
     def _factorize(self) -> None:
-        with nvtx.annotate("cudss_factorization", color="red"):
-            cudss.execute(self._handle, cudss.Phase.FACTORIZATION, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
-            cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.nvtx.range_push("Factorize")
+        cudss.execute(self._handle, cudss.Phase.FACTORIZATION, self._config, self._data, self.A_cudss, self.x_cudss, self.b_cudss)
+        cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.nvtx.range_pop()
+
+    @measure_time
+    def solve(self) -> cp.ndarray:
+        b = self.P + self.C.dot(self.t0)/self.step
+
+        torch.cuda.nvtx.range_push("Solve")
+        torch.cuda.cudart().cudaProfilerStart()
+        result: cp.ndarray = self.solve_factorized(b)
+        cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.cudart().cudaProfilerStop()
+        torch.cuda.nvtx.range_pop()
+
+        self.t0 = result
+        return result
+
+    def simulate(self) -> tuple[list[float], list[np.ndarray[float]]]:
+        times: list[float] = []
+        temperatures: list[cp.ndarray] = []
+        logger.info("Initializing system of equations.")
+        tauk = self.mesh.global_data.simulation_time
+        dtau = self.step
+        logger.info("Calculating temperatures for every timestamp.")
+        while dtau <= tauk:
+            result: cp.ndarray = self.solve()
+            times.append(dtau)
+            temperatures.append(result)
+            dtau += self.step
+        return times, [temp.get() for temp in temperatures]
 
     def __del__(self) -> None:
         for attr in ("b_cudss", "x_cudss", "A_cudss"):

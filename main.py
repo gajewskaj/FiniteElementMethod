@@ -2,7 +2,7 @@ import argparse
 import os
 import numpy as np
 
-from src.helpers.helpers import set_algorithms, create_or_clear_directory, init_logging
+from src.helpers.helpers import create_or_clear_directory, init_logging
 from src.helpers.config import Settings, MAIN_LOGGER_NAME
 import src.helpers.config as config
 
@@ -32,11 +32,11 @@ def parse_arguments() -> tuple[str, str, bool]:
         type=str,
         default="cudss_v4",
         help="Solver to use for the simulation",
-        choices=["scipy_v1", "scipy_v2", "scipy_v3",
-        "cupy_v1", "cupy_v2", "cupy_v3",
+        choices=["scipy_colamd", "scipy_mmd_ata", "scipy_mmd_at_plus_a",
+        "cupy_colamd", "cupy_mmd_ata", "cupy_mmd_at_plus_a",
         "cudss_v1", "cudss_v2", "cudss_v3", "cudss_v4",
-        "cudss_amd_reord_scipy", "cudss_amd_reord_cupy",
-        "cudss_nd_reord_scipy", "cudss_nd_reord_cupy"]
+        "scipy_cudss_amd", "cupy_cudss_amd",
+        "scipy_cudss_nd", "cupy_cudss_nd"]
     )
     args = parser.parse_args()
     return args.mesh, args.data, args.mc, args.solver
@@ -48,7 +48,8 @@ def run() -> None:
         output_dir_path = create_or_clear_directory(os.path.join(Settings.output_path,
                                                                  os.path.basename(mesh_filepath).split(".")[0]))
         config.logger = init_logging(logger_name=MAIN_LOGGER_NAME, log_dirpath=output_dir_path)
-        set_algorithms(mc, solver)
+        Settings.MatricesCalculation.mc = mc
+        Settings.Solver.solver = solver
 
         from src.mesh.mesh import Mesh
         mesh = Mesh(mesh_filepath, data_filepath)

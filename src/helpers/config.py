@@ -12,10 +12,10 @@ class Settings:
     templates_path: str = os.path.join(project_path, "templates")
     scripts_path: str = os.path.join(project_path, "scripts")
     class MatricesCalculation:
-        use_gpu: bool = False
+        mc: str = "gpu"
         DOF: int = None
         TPB: int = 512
         MAX_MATERIALS: int = 20
         MAX_IP: int = 25
     class Solver:
-        solver = "cudss_v1"
+        solver: str = "cudss_v4"

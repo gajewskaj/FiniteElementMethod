@@ -4,7 +4,7 @@ from numba import cuda
 import numpy as np
 import cupy as cp
 
-from src.helpers.config import Settings
+from src.helpers.config import Settings, logger
 from src.helpers.helpers import measure_time
 from src.mesh.mesh import Mesh
 from src.mc.out import OutMatrices
@@ -13,12 +13,18 @@ from src.uel.universal_element import u_el
 DOF = Settings.MatricesCalculation.DOF
 TPB = Settings.MatricesCalculation.TPB
 
+import time
+
+cp.get_default_memory_pool().free_all_blocks()
+cp.get_default_pinned_memory_pool().free_all_blocks()
+
 @measure_time
 def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
     stream_H_C = cuda.stream()
     stream_Hbc_P = cuda.stream()
     _to_cupy(mesh, out_mat)
     blocks_per_grid = (len(mesh.elements_id) + TPB - 1) // TPB
+    start_H_C: float = time.time()
     calculate_H_C[blocks_per_grid, TPB, stream_H_C](
         mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
         u_el.n, u_el.weights, u_el.N,
@@ -27,6 +33,9 @@ def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
         out_mat.H_val_out, out_mat.H_row_out, out_mat.H_col_out,
         out_mat.C_val_out, out_mat.C_row_out, out_mat.C_col_out
         )
+    stream_H_C.synchronize()
+    end_H_C: float = time.time()
+    start_Hbc_P: float = time.time()
     calculate_Hbc_P[blocks_per_grid, TPB, stream_Hbc_P](
         mesh.nodes_x, mesh.nodes_y, mesh.nodes_bc, mesh.elements_node_ids, mesh.elements_material_ids,
         u_el.quadrature_1d.n, u_el.quadrature_1d.weights, u_el.surfaces,
@@ -35,8 +44,12 @@ def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
         out_mat.Hbc_val_out, out_mat.Hbc_row_out, out_mat.Hbc_col_out,
         out_mat.P_out
         )
-    stream_H_C.synchronize()
     stream_Hbc_P.synchronize()
+    end_Hbc_P: float = time.time()
+    time_H_C = end_H_C - start_H_C
+    time_Hbc_P = end_Hbc_P - start_Hbc_P
+    logger.debug(f"Function 'calculate_H_C' executed in {time_H_C} seconds.")
+    logger.debug(f"Function 'calculate_Hbc_P' executed in {time_Hbc_P} seconds.")
 
 @measure_time
 def _to_cupy(mesh: Mesh, out_mat: OutMatrices) -> None:

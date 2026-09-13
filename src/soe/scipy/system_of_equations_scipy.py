@@ -9,11 +9,11 @@ from src.mc.out import OutMatrices
 from src.soe.system_of_equations import SystemOfEquations
 
 class SystemOfEquationsSciPy(SystemOfEquations):
-    def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
+    def __init__(self, mesh: Mesh, out_mat: OutMatrices, reordering_alg: str) -> None:
         super().__init__(mesh, out_mat)
         self.t0: np.ndarray = np.full((self.dim, 1), mesh.global_data.initial_temp)
         self.prepare_data()
-        self.solve_factorized = self.factorize()
+        self.solve_factorized = self.factorize(reordering_alg)
 
     @measure_time
     def prepare_data(self) -> None:
@@ -27,15 +27,15 @@ class SystemOfEquationsSciPy(SystemOfEquations):
         self.C = scipy_sparse.csc_matrix((data_C, (row_C, col_C)), shape=(self.dim, self.dim))
         
         self.A = H + self.C/self.step
-    
+
     @measure_time
-    def factorize(self) -> callable:
-        return scipy_linalg.splu(self.A, permc_spec='MMD_ATA').solve
+    def factorize(self, reordering_alg: str) -> callable:
+        return scipy_linalg.splu(self.A, permc_spec=reordering_alg).solve
 
     @measure_time
     def solve(self) -> np.ndarray:
-        B = self.P + self.C.dot(self.t0)/self.step
-        result: np.ndarray = self.solve_factorized(B)
+        b = self.P + self.C.dot(self.t0)/self.step
+        result: np.ndarray = self.solve_factorized(b)
         self.t0 = result
         return result
 

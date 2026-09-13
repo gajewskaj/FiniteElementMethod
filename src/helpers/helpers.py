@@ -16,35 +16,6 @@ def measure_time(func):
 
     return wrapper
 
-def set_algorithms(mc: str, solver: str) -> None:
-    if mc == "gpu":
-        config.logger.info("GPU selected for calculating matrices.")
-        try: import numba
-        except ImportError:
-            Settings.MatricesCalculation.use_gpu = False
-            config.logger.warning("Numba is not installed. CPU will be used for matrices calculation.")
-        else:
-            Settings.MatricesCalculation.use_gpu = True
-    else:
-        config.logger.info("CPU selected for calculating matrices.")
-
-    Settings.Solver.solver = solver
-
-    try:
-        import cupy
-    except ImportError:
-        Settings.Solver.use_cupy = False
-        Settings.Solver.use_cudss = False
-        config.logger.warning("CuPy is not installed. CPU will be used for matrices calculation.")
-    else:
-        try:
-            if not cupy.cuda.is_available():
-                Settings.Solver.use_cupy = False
-                Settings.Solver.use_cudss = False
-                config.logger.warning("CUDA is not available, SciPy solver will be used.")
-        except:
-            config.logger.warning("CUDA is not available, SciPy solver will be used.")
-
 class NoTracebackFilter(logging.Filter):
     def filter(self, record):
         if record.exc_info:

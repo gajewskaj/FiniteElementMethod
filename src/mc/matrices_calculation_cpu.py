@@ -3,7 +3,7 @@ from math import sqrt
 from numba import njit, prange, set_num_threads
 import numpy as np
 
-from src.helpers.config import Settings
+from src.helpers.config import Settings, logger
 from src.helpers.helpers import measure_time
 from src.mesh.mesh import Mesh
 from src.mc.out import OutMatrices
@@ -13,18 +13,28 @@ DOF = Settings.MatricesCalculation.DOF
 
 set_num_threads(2)
 
+import time
+
 @measure_time
 def calculate_matrices(mesh: Mesh, out_mat: OutMatrices) -> None:
+    start_H_C: float = time.time()
     calculate_H_C(mesh.nodes_x, mesh.nodes_y, mesh.elements_node_ids, mesh.elements_material_ids,
                                 u_el.n, u_el.weights, u_el.N,
                                 u_el.dN_dxi, u_el.dN_deta,
                                 mesh.global_data.materials,
                                 out_mat.H_val_out, out_mat.H_row_out, out_mat.H_col_out,
                                 out_mat.C_val_out, out_mat.C_row_out, out_mat.C_col_out)
+    end_H_C: float = time.time()
+    start_Hbc_P: float = time.time()
     calculate_Hbc_P(mesh.nodes_x, mesh.nodes_y, mesh.nodes_bc, mesh.elements_node_ids, mesh.elements_material_ids,
                                     u_el.quadrature_1d.n, u_el.quadrature_1d.weights, u_el.surfaces,
                                     mesh.global_data.materials, mesh.global_data.ambient_temp,
                                     out_mat.Hbc_val_out, out_mat.Hbc_row_out, out_mat.Hbc_col_out, out_mat.P_out)
+    end_Hbc_P: float = time.time()
+    time_H_C = end_H_C - start_H_C
+    time_Hbc_P = end_Hbc_P - start_Hbc_P
+    logger.debug(f"Function 'calculate_H_C' executed in {time_H_C} seconds.")
+    logger.debug(f"Function 'calculate_Hbc_P' executed in {time_Hbc_P} seconds.")
 
 @njit('float64(float64[:], float64[:], float64, float64, float64, float64, float64[:], float64[:])')
 def _calculate_jacobian_and_global_shape_derivatives(dN_dxi, dN_deta,

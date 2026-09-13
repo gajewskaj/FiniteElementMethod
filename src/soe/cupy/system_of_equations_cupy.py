@@ -2,7 +2,8 @@ import cupy as cp
 import cupyx.scipy.sparse as cupy_sparse
 import cupyx.scipy.sparse.linalg as cupy_linalg
 import numpy as np
-import nvtx
+import ctypes
+import torch
 
 from src.helpers.config import logger
 from src.helpers.helpers import measure_time
@@ -11,11 +12,11 @@ from src.mc.out import OutMatrices
 from src.soe.system_of_equations import SystemOfEquations
 
 class SystemOfEquationsCuPy(SystemOfEquations):
-    def __init__(self, mesh: Mesh, out_mat: OutMatrices) -> None:
+    def __init__(self, mesh: Mesh, out_mat: OutMatrices, reordering_alg: str) -> None:
         super().__init__(mesh, out_mat)
         self.t0: cp.ndarray = cp.full((self.dim, 1), mesh.global_data.initial_temp, dtype=cp.float64)
         self.prepare_data()
-        self.solve_factorized = self.factorize()
+        self.solve_factorized = self.factorize(reordering_alg)
 
     @measure_time
     def prepare_data(self) -> None:
@@ -35,17 +36,22 @@ class SystemOfEquationsCuPy(SystemOfEquations):
         self.A = (H + self.C/self.step)
 
     @measure_time
-    def factorize(self) -> callable:
-        with nvtx.annotate("cupy_factorization", color="red"):
-            return cupy_linalg.splu(self.A, permc_spec='MMD_ATA').solve
+    def factorize(self, reordering_alg: str) -> callable:
+        torch.cuda.nvtx.range_push("Factorize")
+        ret: callable = cupy_linalg.splu(self.A, permc_spec=reordering_alg).solve
+        torch.cuda.nvtx.range_pop()
+        return ret
 
     @measure_time
     def solve(self) -> cp.ndarray:
         b = self.P + self.C.dot(self.t0)/self.step
 
-        with nvtx.annotate("solve", color="green"):
-            result: cp.ndarray = self.solve_factorized(b)
+        torch.cuda.nvtx.range_push("Solve")
+        torch.cuda.cudart().cudaProfilerStart()
+        result: cp.ndarray = self.solve_factorized(b)
         cp.cuda.get_current_stream().synchronize() # Only for profiling
+        torch.cuda.cudart().cudaProfilerStop()
+        torch.cuda.nvtx.range_pop()
 
         self.t0 = result
         return result
