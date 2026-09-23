@@ -1,4 +1,4 @@
-# 🚀 GPU-Accelerated Finite Element Method (FEM) Solver
+# 🚀 GPU-Accelerated FEM Solver
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
 ![CUDA](https://img.shields.io/badge/CUDA-12x-76B900.svg)
@@ -13,7 +13,7 @@ The program is designed for modeling transient thermal phenomena in an object's 
 The program generates `.vtk` files, which can be visualized in tools like ParaView.
 
 <p align="center">
-      <img src="img/ParaView_vis.gif" width="80%" /><br />
+      <img src="img/ParaView_vis.gif" width="50%" /><br />
       <sub><em>Example of a transient thermal simulation visualized in ParaView</em></sub>
 </p>
 
@@ -22,11 +22,10 @@ The program generates `.vtk` files, which can be visualized in tools like ParaVi
 ## ⚡ Key Features & Technologies
 * **Custom CUDA Kernels:** Implemented custom kernels for the calculation and initial assembly of element matrices, achieving a **speedup of several dozen times** compared to the CPU implementation.
 * **Multithreaded CPU Fallback:** A fully functional CPU-based solver for performance baseline comparison.
-* **Multiple Sparse Linear Solvers:** Integration and benchmarking of various sparse linear system solvers:
-    * `SciPy` (CPU-based computations)
-    * `CuPy` (solve phase GPU-accelerated)
-    * `cuDSS` (factorization & solve phases GPU-accelerated)
-* **Profiling:** Analyzed GPU kernels using **Nvidia Nsight Systems** and **Nvidia Nsight Compute**.
+* **Multiple Sparse Linear Solvers:** Integration, benchmarking and profiling (**NVIDIA Nsight Systems** and **NVIDIA Nsight Compute**) of various sparse linear system solvers:
+    * `SciPy` (CPU-based computations),
+    * `CuPy` (*solve* phase GPU-accelerated),
+    * `cuDSS` (*factorization* & *solve* phases GPU-accelerated).
 
 ---
 
@@ -34,15 +33,15 @@ The program generates `.vtk` files, which can be visualized in tools like ParaVi
 Performance experiments and GPU profiling yielded three primary insights regarding GPU computation efficiency.
 
 ### Bug in CuPy Sparse Module (as of v14.2.0)
-I identified a bug in the `sparse` module of the CuPy library that causes massive overhead during the solve phase.
+I identified a bug in the `sparse` module of the CuPy library that causes massive overhead during the *solve* phase.
 
 Solving a linear system of equations $[A] \lbrace x \rbrace = \lbrace b \rbrace$ using direct methods consists of 3 main steps:
 
-| *LU (or Cholesky) decomposition* | *Forward substitution* | *Backward substitution* |
+| *Decomposition* | *Forward substitution* | *Backward substitution* |
 | - | - | - |
 | $[A] = [L][U]$ | $[L] \lbrace c \rbrace = \lbrace b \rbrace$ | $[U] \lbrace x \rbrace = \lbrace c \rbrace$ |
 
-NVIDIA Nsight Systems profiler revealed that **over 90%** of GPU execution time was spent in `cusparse::find_colors_kernel` function. Specifically, the cuSPARSE graph coloring algorithm analyzes the structure of coefficient matrix to plan parallel execution. In this program the structure of $[L]$ and $[U]$ remains static, so `cusparse::find_colors_kernel` only needs to run **twice in total** (once each for $[L]$ and $[U]$), but CuPy executes it **twice per `solve` call**.
+**NVIDIA Nsight Systems** profiler revealed that **over 90%** of GPU execution time was spent in `cusparse::find_colors_kernel` function. Specifically, the cuSPARSE graph coloring algorithm analyzes the structure of coefficient matrix to plan parallel execution. In this program the structure of $[L]$ and $[U]$ remains static, so `cusparse::find_colors_kernel` only needs to run **twice in total** (once each for $[L]$ and $[U]$), but CuPy executes it **twice per `SuperLU.solve()` call**.
 
 You can see in the table below that for 10 solves `cusparse::find_colors_kernel` is called 20 times instead of 2 which would be sufficient:
 
@@ -57,10 +56,10 @@ You can see in the table below that for 10 solves `cusparse::find_colors_kernel`
 
 I described the issue in my Master's thesis and later found an open [pull request](https://github.com/cupy/cupy/pull/10224) (still not merged as of 23.09.2026) fixing the problem by caching and reusing the result of analysis - just as I suggested in my thesis. Benchmarking the fix on my largest matrix yielded a **~10x speedup**, confirming my theoretical estimates: [my review comment](https://github.com/cupy/cupy/pull/10224#issuecomment-5777493410).
 
-### Reordering algorithm matters a lot
+### Impact of Reordering Algorithms on GPU Parallelism
 While matrix reordering is traditionally used to minimize fill-in, massively parallel environments like GPUs demand algorithms that produce optimal execution graphs.
 
-Algorithms should aim for a wide and shallow Elimination Tree, which drastically improves parallelism during both factorization and solve phases. ND (*Nested Dissection*) algorithms achieve this effectively, whereas algorithms like MD (*Minimum Degree*) - despite reducing fill-in - create suboptimal matrix structure for GPUs.
+Algorithms should aim for a wide and shallow Elimination Tree, which drastically improves parallelism during both *factorization* and *solve* phases. ND (*Nested Dissection*) algorithms achieve this effectively, whereas algorithms like MD (*Minimum Degree*) - despite reducing fill-in - create suboptimal matrix structure for GPUs.
 
 This difference is demonstrated below when comparing execution times for cuDSS using ND vs. AMD (*Approximate Minimum Degree*) reordering (both yield similar fill-in factors) across two test systems (🟦 Aorus, 🟥 Estera).
 
@@ -68,26 +67,26 @@ This difference is demonstrated below when comparing execution times for cuDSS u
     <td width="50%">
       <p align="center">
         <img src="img/charts/factorization_time_amd_nd.png" width="100%" /><br />
-        <sub>Factorization</sub>
+        <sub><em>Factorization</em></sub>
       </p>
     </td>
     <td width="50%">
       <p align="center">
         <img src="img/charts/solve_time_amd_nd.png" width="100%" /><br />
-        <sub>Solve</sub>
+        <sub><em>Solve</em></sub>
       </p>
     </td>
 </table>
 
-In CuPy, unfortunately, all available reordering algorithms are based od MD, but taking into consideration all problem with `sparse` module of this library, this one is the least significant, which I proved experimentally in my thesis.
+In CuPy, unfortunately, all available reordering algorithms are based on MD. However, considering all the issues with the library's `sparse` module, this one is the least significant, as I proved experimentally in my thesis.
 
 ### High FLOP Overhead in CuPy
-CuPy's solve phase executes a surprisingly high number of FP64 operations (`ADD + MUL + 2*FMA`). The exact root cause for this excess FLOP count is currently under investigation.
+Profiling with **NVIDIA Nsight Compute** shows that CuPy's *solve* phase executes a surprisingly high number of FP64 operations (`ADD + MUL + 2*FMA`). The exact root cause for this excess FLOP count is currently under investigation.
 
-The chart below compares double-precision floating-point operations in the solve phase using a matrix reordered with cuDSS ND (passed to CuPy with internal reordering disabled, so both solvers process matrices with almost identical number of non-zero elements - `nnz`).
+The chart below compares double-precision floating-point operations in the *solve* phase using a matrix reordered with cuDSS ND (passed to CuPy with internal reordering disabled, so both solvers process matrices with almost identical number of non-zero elements - `nnz`).
 
 <p align="center">
-      <img src="img/charts/solve_flop.png" width="80%" /><br />
+      <img src="img/charts/solve_flop.png" width="50%" /><br />
       <sub><em>Floating point operations of double precision in solve phase</em></sub>
 </p>
 
@@ -101,26 +100,26 @@ Below is a summary of the core results. The full thesis containing detailed metr
 By shifting the calculation and initial assembly of element matrices to the GPU using custom CUDA kernels, the program achieved significant performance gains. The results were tested on 2 computers: (🟦 Aorus, 🟥 Estera) with different 🔴 CPUs and ⭕ GPUs. The performance was evaluated across meshes of varying densities (*DOF - degrees of freedom*).
 
 <p align="center">
-    <img src="img/charts/matrices_calculation_time.png" width="80%" /><br />
+    <img src="img/charts/matrices_calculation_time.png" width="50%" /><br />
     <sub><em>Time needed to calculate and agregate initially the element matrices, logarithmic scale</em></sub>
 </p>
 
 ### 2. Linear Solvers Comparison
-#### Factorization phase
+#### *Factorization* phase
 Factorization time includes symbolic analysis and decomposition:
 - LU for SciPy and CuPy,
 - Cholesky for cuDSS.
 
 <p align="center">
-    <img src="img/charts/factorization_time.png" width="80%" /><br />
+    <img src="img/charts/factorization_time.png" width="50%" /><br />
     <sub><em>Time needed to factorize matrix</em></sub>
 </p>
 
-#### Solve phase
-Solve phase consists of forward and backward substitution steps.
+#### *Solve* phase
+*Solve* phase consists of forward and backward substitution steps.
 
 <p align="center">
-    <img src="img/charts/solving_time.png" width="80%" /><br />
+    <img src="img/charts/solving_time.png" width="50%" /><br />
     <sub><em>Time needed to solve the sparse linear system of equations, logarithmic scale</em></sub>
 </p>
 
